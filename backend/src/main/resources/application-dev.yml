@@ -1,0 +1,12 @@
+spring:
+  application:
+    name: ${APP_NAME}
+
+logging:
+  level:
+    root: INFO
+    com.shoppinglist: DEBUG
+    org.springframework.web: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.orm.jdbc.bind: TRACE
+

@@ -52,6 +52,41 @@ cd shopping-list
 mvnw spring-boot:run
 ```
 
+### 3️⃣ Perfis de Execução
+
+A aplicação suporta diferentes perfis de configuração:
+
+#### **test** (padrão)
+Perfil para testes automatizados
+- Configuração mínima
+- Sem logs detalhados
+
+#### **dev**
+Perfil para desenvolvimento local com logs detalhados
+- **root**: INFO
+- **com.shoppinglist**: DEBUG
+- **org.springframework.web**: DEBUG
+- **org.hibernate.SQL**: DEBUG
+- **org.hibernate.orm.jdbc.bind**: TRACE
+
+Para executar com um perfil específico:
+
+```bash
+# Desenvolvimento
+./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
+
+# Teste
+./mvnw spring-boot:run -Dspring-boot.run.profiles=test
+```
+
+Ou definindo a variável de ambiente:
+```bash
+export PROFILE=dev
+./mvnw spring-boot:run
+```
+
+> **Nota:** Por padrão, se nenhum perfil for especificado, a aplicação usará o perfil **test**.
+
 ---
 
 ## 🔎 Verificando se a aplicação está no ar
@@ -115,7 +150,9 @@ src
 │   │               └── v1
 │   │                   └── HealthController.java
 │   └── resources
-│       └── application.yml
+│       ├── application.yml
+│       ├── application-dev.yml
+│       └── application-test.yml
 └── test
     └── java
         └── br.com.shooping.list
