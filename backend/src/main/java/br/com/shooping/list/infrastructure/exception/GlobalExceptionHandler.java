@@ -1,6 +1,6 @@
 package br.com.shooping.list.infrastructure.exception;
 
-import br.com.shooping.list.application.dto.auth.ErrorResponse;
+import br.com.shooping.list.application.dto.ErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;

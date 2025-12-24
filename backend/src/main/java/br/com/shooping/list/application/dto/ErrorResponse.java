@@ -1,4 +1,4 @@
-package br.com.shooping.list.application.dto.auth;
+package br.com.shooping.list.application.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Builder;
