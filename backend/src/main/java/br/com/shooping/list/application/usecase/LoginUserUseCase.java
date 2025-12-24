@@ -99,7 +99,7 @@ public class LoginUserUseCase {
 
         return LoginResponse.builder()
                 .accessToken(accessToken)
-                .refreshToken(refreshTokenValue) // Retorna o token em texto puro (apenas na resposta)
+                .refreshToken(refreshTokenValue)
                 .expiresIn(expiresIn)
                 .build();
     }

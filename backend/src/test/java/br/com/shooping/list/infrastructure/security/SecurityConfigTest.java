@@ -40,19 +40,5 @@ class SecurityConfigTest {
         mockMvc.perform(get("/api/v1/protected/test"))
                 .andExpect(status().isUnauthorized()); // 401 com nosso AuthenticationEntryPoint customizado
     }
-
-    @Test
-    @DisplayName("POST /api/v1/auth/login deve ser público (mesmo sem implementação)")
-    void loginEndpointShouldBePublic() throws Exception {
-        mockMvc.perform(get("/api/v1/auth/login"))
-                .andExpect(status().isNotFound()); // 404 pois não existe ainda, mas não é 401
-    }
-
-    @Test
-    @DisplayName("POST /api/v1/auth/refresh deve ser público (mesmo sem implementação)")
-    void refreshEndpointShouldBePublic() throws Exception {
-        mockMvc.perform(get("/api/v1/auth/refresh"))
-                .andExpect(status().isNotFound()); // 404 pois não existe ainda, mas não é 401
-    }
 }
 

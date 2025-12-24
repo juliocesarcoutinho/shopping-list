@@ -285,6 +285,28 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * Trata erros de refresh token inválido (expirado, revogado, não encontrado).
+     * <p>
+     * Retorna 401 Unauthorized.
+     */
+    @ExceptionHandler(InvalidRefreshTokenException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidRefreshTokenException(
+            InvalidRefreshTokenException ex,
+            HttpServletRequest request
+    ) {
+        log.warn("Invalid refresh token attempt on path: {}", request.getRequestURI());
+
+        ErrorResponse error = ErrorResponse.of(
+                HttpStatus.UNAUTHORIZED.value(),
+                "Unauthorized",
+                ex.getMessage(),
+                request.getRequestURI()
+        );
+
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
+    }
+
+    /**
      * Trata todas as outras exceções não mapeadas.
      * <p>
      * Retorna 500 Internal Server Error.

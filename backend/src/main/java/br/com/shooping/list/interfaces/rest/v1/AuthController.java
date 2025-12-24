@@ -2,9 +2,12 @@ package br.com.shooping.list.interfaces.rest.v1;
 
 import br.com.shooping.list.application.dto.LoginRequest;
 import br.com.shooping.list.application.dto.LoginResponse;
+import br.com.shooping.list.application.dto.RefreshTokenRequest;
+import br.com.shooping.list.application.dto.RefreshTokenResponse;
 import br.com.shooping.list.application.dto.RegisterRequest;
 import br.com.shooping.list.application.dto.RegisterResponse;
 import br.com.shooping.list.application.usecase.LoginUserUseCase;
+import br.com.shooping.list.application.usecase.RefreshTokenUseCase;
 import br.com.shooping.list.application.usecase.RegisterUserUseCase;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -26,6 +29,7 @@ public class AuthController {
 
     private final RegisterUserUseCase registerUserUseCase;
     private final LoginUserUseCase loginUserUseCase;
+    private final RefreshTokenUseCase refreshTokenUseCase;
 
     /**
      * Endpoint para registro de novo usuário LOCAL
@@ -63,6 +67,29 @@ public class AuthController {
         LoginResponse response = loginUserUseCase.execute(request, userAgent, ip);
 
         log.info("Login realizado com sucesso para email: {}", request.getEmail());
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Endpoint para renovação de access token via refresh token
+     *
+     * @param request refresh token a ser validado e rotacionado
+     * @param httpRequest requisição HTTP para extrair metadata
+     * @return novo access token e novo refresh token (rotacionado)
+     */
+    @PostMapping("/refresh")
+    public ResponseEntity<RefreshTokenResponse> refresh(
+            @Valid @RequestBody RefreshTokenRequest request,
+            HttpServletRequest httpRequest
+    ) {
+        log.info("Requisição de refresh token recebida");
+
+        String userAgent = httpRequest.getHeader("User-Agent");
+        String ip = extractClientIp(httpRequest);
+
+        RefreshTokenResponse response = refreshTokenUseCase.execute(request, userAgent, ip);
+
+        log.info("Refresh token rotacionado com sucesso");
         return ResponseEntity.ok(response);
     }
 
