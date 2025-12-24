@@ -12,6 +12,7 @@ Backend da aplicação **Shopping List**, desenvolvido com **Java LTS** e **Spri
 - **Spring Boot 3.4.1**
   - Spring Web
   - Spring Data JPA
+  - Spring Security
   - Validation
   - Actuator
 - **Maven**
@@ -21,6 +22,8 @@ Backend da aplicação **Shopping List**, desenvolvido com **Java LTS** e **Spri
 - **H2 Database** (Testes)
 - **Docker & Docker Compose**
 - **Hikari CP** (Connection Pool)
+- **Flyway** (Database Migrations)
+- **BCrypt** (Password Hashing)
 
 ---
 
@@ -385,6 +388,22 @@ O projeto é organizado em camadas para manter responsabilidades bem separadas:
 - **CI/CD:** Funciona em qualquer ambiente sem configuração adicional
 - **Console H2:** Disponível em `/h2-console` para debug
 - **Credenciais:** `sa` / senha vazia
+
+### Spring Security (Configuração Base)
+- **Arquitetura:** Stateless (sem sessão no servidor)
+- **CSRF:** Desabilitado (API REST stateless)
+- **CORS:** Configurado para desenvolvimento (localhost:3000, 4200, 8080)
+- **Rotas Públicas:**
+  - `/api/v1/health` - Health check
+  - `/api/v1/auth/**` - Endpoints de autenticação (login, register, refresh)
+  - `/actuator/health` - Actuator health check
+  - `/h2-console/**` - Console H2 (dev)
+- **Rotas Protegidas:** Todas as demais rotas requerem autenticação JWT
+- **Senha:** BCrypt com 10 rounds
+- **HTTP 401:** Resposta customizada para requisições não autenticadas
+- **Preparado para JWT:** Filtros e providers serão implementados nas próximas stories
+
+> 📖 **Documentação detalhada:** Veja [SECURITY.md](SECURITY.md) para guia completo de segurança
 
 ---
 
