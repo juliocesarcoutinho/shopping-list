@@ -306,18 +306,20 @@ Para inspecionar o banco durante os testes (útil para debug):
 Testes Unitários:
   ✅ RegisterUserUseCase     : 6 testes (100% passed)
   ✅ LoginUserUseCase        : 7 testes (100% passed)
+  ✅ RefreshTokenUseCase     : 8 testes (100% passed)
   ✅ JwtService             : 13 testes (100% passed)
-  Total: 26 testes unitários
+  Total: 34 testes unitários
 
 Testes de Integração:
   ✅ AuthController (Register) : 6 testes (100% passed)
   ✅ AuthController (Login)    : 10 testes (100% passed)
+  ✅ AuthController (Refresh)  : 10 testes (100% passed)
   ✅ HealthController          : 1 teste  (100% passed)
   ✅ SecurityConfig            : 5 testes (83% passed - 1 failure conhecido)
-  Total: 22 testes de integração
+  Total: 32 testes de integração
 
-📈 Total Geral: 48 testes | 47 passing | 1 known issue
-⚡ Tempo médio de execução: ~12 segundos
+📈 Total Geral: 66 testes | 65 passing | 1 known issue
+⚡ Tempo médio de execução: ~15 segundos
 ```
 
 ---
@@ -339,9 +341,15 @@ backend/
     │   │       │   ├── dto
     │   │       │   │   ├── ErrorResponse.java
     │   │       │   │   ├── HealthResponse.java
+    │   │       │   │   ├── LoginRequest.java
+    │   │       │   │   ├── LoginResponse.java
+    │   │       │   │   ├── RefreshTokenRequest.java
+    │   │       │   │   ├── RefreshTokenResponse.java
     │   │       │   │   ├── RegisterRequest.java
     │   │       │   │   └── RegisterResponse.java
     │   │       │   └── usecase
+    │   │       │       ├── LoginUserUseCase.java
+    │   │       │       ├── RefreshTokenUseCase.java
     │   │       │       └── RegisterUserUseCase.java
     │   │       ├── domain
     │   │       │   └── user
@@ -356,7 +364,8 @@ backend/
     │   │       │   │   ├── ExpiredJwtException.java
     │   │       │   │   ├── GlobalExceptionHandler.java
     │   │       │   │   ├── InvalidCredentialsException.java
-    │   │       │   │   └── InvalidJwtException.java
+    │   │       │   │   ├── InvalidJwtException.java
+    │   │       │   │   └── InvalidRefreshTokenException.java
     │   │       │   ├── persistence
     │   │       │   │   └── user
     │   │       │   │       ├── JpaRefreshTokenRepository.java
@@ -388,8 +397,9 @@ backend/
                 ├── StartupApplicationTests.java
                 ├── application
                 │   └── usecase
+                │   └── usecase
                 │       ├── LoginUserUseCaseTest.java
-                │       ├── LoginUserUseCaseTest.java
+                │       ├── RefreshTokenUseCaseTest.java
                 │       └── RegisterUserUseCaseTest.java
                 ├── infrastructure
                 │   └── security
@@ -399,8 +409,8 @@ backend/
                     └── rest
                         └── v1
                             ├── AuthControllerLoginTest.java
+                            ├── AuthControllerRefreshTest.java
                             ├── AuthControllerTest.java
-                            └── HealthControllerTest.java
                             └── HealthControllerTest.java
 ```
 
@@ -564,6 +574,91 @@ curl -X POST http://localhost:8080/api/v1/auth/login \
 
 **Múltiplos logins:** A API permite múltiplos logins simultâneos do mesmo usuário (ex: web + mobile). Cada login gera um novo refresh token independente.
 
+### Renovação de Token (Refresh Token)
+- **Endpoint:** `POST /api/v1/auth/refresh`
+- **Descrição:** Renova access token usando refresh token válido com **rotação automática**
+- **Request Body:**
+  ```json
+  {
+    "refreshToken": "49a6336d-5649-466a-afeb-beee6b2f31d0"
+  }
+  ```
+- **Response (200 OK):**
+  ```json
+  {
+    "accessToken": "eyJhbGciOiJIUzI1NiJ9.NOVO_TOKEN...",
+    "refreshToken": "8c7f441e-9abc-4def-1234-567890abcdef",
+    "expiresIn": 3600
+  }
+  ```
+- **Validações:**
+  - Refresh token obrigatório
+  - Token deve existir no banco (validado via hash SHA-256)
+  - Token não pode estar expirado (7 dias padrão)
+  - Token não pode estar revogado (já foi usado)
+- **Segurança - Rotação Automática de Tokens:**
+  - **Token antigo é REVOGADO** automaticamente após o uso (marcado com `revokedAt`)
+  - **Novo refresh token é gerado** (UUID diferente) e armazenado com hash SHA-256
+  - Token antigo fica **vinculado ao novo** via `replacedByTokenId` (auditoria)
+  - **Reuso de token revogado = ALERTA DE SEGURANÇA** (possível comprometimento)
+  - Cada refresh token pode ser usado **apenas UMA vez** (one-time use)
+  - Metadata atualizada: User-Agent, IP do novo dispositivo/sessão
+- **Erros tratados:**
+  - `400 Bad Request`: Refresh token vazio ou null
+  - `401 Unauthorized - "Refresh token inválido"`: Token não encontrado no banco
+  - `401 Unauthorized - "Refresh token expirado"`: Token passou da data de expiração
+  - `401 Unauthorized - "Refresh token já foi utilizado"`: Tentativa de reuso (rotação detectada)
+  - `500 Internal Server Error`: Erros inesperados
+- **Fluxo de rotação:**
+  1. Cliente envia refresh token (UUID em texto puro)
+  2. Backend faz hash SHA-256 do token recebido
+  3. Busca no banco pelo hash
+  4. **Valida:** Existe? Expirado? Revogado?
+  5. Se revogado → **REUSO DETECTADO** → 401 + Log de segurança
+  6. Gera novo access token (JWT)
+  7. Gera novo refresh token (UUID)
+  8. **Revoga token antigo** (marca `revokedAt` e `replacedByTokenId`)
+  9. Persiste novo refresh token (com hash SHA-256)
+  10. Retorna novos tokens ao cliente
+- **Detecção de ataques:**
+  - Se um token revogado for reutilizado, isso indica que:
+    - Token pode ter sido roubado/interceptado
+    - Atacante está tentando usar token antigo
+    - Sistema registra log de segurança com `userId` e `tokenId`
+  - Possível ação futura: Revogar toda a cadeia de tokens do usuário
+- **Camadas utilizadas:**
+  - `interfaces/rest/v1`: AuthController (endpoint REST com extração de metadata)
+  - `application/usecase`: RefreshTokenUseCase (rotação transacional)
+  - `application/dto`: RefreshTokenRequest, RefreshTokenResponse (DTOs validados)
+  - `domain/user`: RefreshToken (com métodos `revoke()`, `isExpired()`, `isRevoked()`)
+  - `infrastructure/persistence`: JpaRefreshTokenRepository (adapter)
+  - `infrastructure/security`: JwtService (geração de access token)
+  - `infrastructure/exception`: InvalidRefreshTokenException, GlobalExceptionHandler
+- **Testes:**
+  - 8 testes unitários do use case (rotação, reuso, expiração, vinculação)
+  - 10 testes de integração end-to-end (sucessos, falhas, múltiplos refreshes)
+
+**Exemplo de uso (cURL):**
+```bash
+# 1. Fazer login para obter refresh token
+curl -X POST http://localhost:8080/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"teste@email.com","password":"senha@123"}'
+
+# 2. Usar refresh token para renovar
+curl -X POST http://localhost:8080/api/v1/auth/refresh \
+  -H "Content-Type: application/json" \
+  -H "User-Agent: Mozilla/5.0" \
+  -d '{"refreshToken":"49a6336d-5649-466a-afeb-beee6b2f31d0"}'
+
+# 3. Tentar reusar o mesmo token (DEVE FALHAR com 401)
+curl -X POST http://localhost:8080/api/v1/auth/refresh \
+  -H "Content-Type: application/json" \
+  -d '{"refreshToken":"49a6336d-5649-466a-afeb-beee6b2f31d0"}'
+```
+
+**Segurança:** Sempre use o **novo** refresh token retornado. O antigo é imediatamente invalidado!
+
 ### Banco de Dados MySQL
 - **Container:** MySQL 9 via Docker Compose
 - **Configuração:** Credenciais via arquivo `.env`
@@ -678,22 +773,25 @@ curl -X POST http://localhost:8080/api/v1/auth/login \
   - ✅ **Repository Pattern** com ports e adapters
   - ✅ **Use Cases** na camada application (orquestração transacional)
   - ✅ **JWT Service** para geração e validação de tokens
-  - ✅ **Refresh Token** com hash SHA-256 (nunca armazenado em texto puro)
+  - ✅ **Refresh Token com Rotação Automática** (one-time use, token revogado após uso)
+  - ✅ **Detecção de Reuso de Tokens** (alerta de segurança para possíveis ataques)
+  - ✅ **Hash SHA-256** para refresh tokens (nunca armazenado em texto puro)
   - ✅ **Global Exception Handler** com respostas padronizadas
   - ✅ **Bean Validation** com validações declarativas nos DTOs
   - ✅ **Flyway Migrations** para versionamento de schema
   - ✅ **Metadata de Sessão** (User-Agent, IP) para auditoria e segurança
+  - ✅ **Vinculação de Tokens** (replacedByTokenId) para rastreabilidade
 - **Testes implementados:**
-  - ✅ Testes unitários (use cases, services) - 26 testes
-  - ✅ Testes de integração (controllers end-to-end) - 22 testes
+  - ✅ Testes unitários (use cases, services) - 34 testes
+  - ✅ Testes de integração (controllers end-to-end) - 32 testes
   - ✅ Coverage de casos de sucesso e falha
-  - ✅ Total: 48 testes | 47 passing
+  - ✅ Total: 66 testes | 65 passing
 - **Funcionalidades de Autenticação:**
   - ✅ **Registro** de usuário LOCAL (POST /api/v1/auth/register)
   - ✅ **Login** de usuário com JWT + Refresh Token (POST /api/v1/auth/login)
-  - 🔜 **Refresh Token** - Renovação de access token (POST /api/v1/auth/refresh)
+  - ✅ **Refresh Token** - Renovação automática com rotação (POST /api/v1/auth/refresh)
   - 🔜 **JWT Authentication Filter** - Interceptação e validação de requests
-  - 🔜 **Logout** - Revogação de refresh tokens
+  - 🔜 **Logout** - Revogação explícita de refresh tokens
   - 🔜 **OAuth2 com Google** - Login social
 - O foco continua sendo **build verde**, **startup limpo**, **testes passando** e **base arquitetural sólida**.
 
