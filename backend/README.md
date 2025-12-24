@@ -17,7 +17,8 @@ Backend da aplicação **Shopping List**, desenvolvido com **Java LTS** e **Spri
 - **Maven**
 - **JUnit 5**
 - **Lombok**
-- **MySQL 9**
+- **MySQL 9** (Desenvolvimento)
+- **H2 Database** (Testes)
 - **Docker & Docker Compose**
 - **Hikari CP** (Connection Pool)
 
@@ -170,10 +171,13 @@ mvnw spring-boot:run
 A aplicação suporta diferentes perfis de configuração:
 
 #### **test** (padrão)
-Perfil para testes automatizados
-- Configuração mínima
-- Sem logs detalhados
-- Sem conexão com banco de dados
+Perfil para testes automatizados com banco de dados em memória
+- **Banco de dados:** H2 em memória (modo MySQL)
+- **Hibernate ddl-auto:** create-drop (recria schema a cada execução)
+- **Isolamento:** Banco zerado a cada execução de teste
+- **Performance:** Rápido, sem dependência de Docker
+- **Logs:** SQL desabilitado para testes mais limpos
+- **CI/CD friendly:** Funciona em qualquer ambiente
 
 #### **dev**
 Perfil para desenvolvimento local com logs detalhados e conexão MySQL
@@ -193,7 +197,7 @@ Para executar com um perfil específico:
 # Desenvolvimento (com MySQL)
 ./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
 
-# Teste (sem MySQL)
+# Teste (com H2 em memória)
 ./mvnw spring-boot:run -Dspring-boot.run.profiles=test
 ```
 
@@ -239,14 +243,42 @@ Resposta esperada:
 
 ## 🧪 Executando os testes
 
+Os testes utilizam **H2 Database em memória**, garantindo isolamento e performance sem depender do MySQL ou Docker.
+
+### Executar todos os testes
 ```bash
 ./mvnw test
 ```
 
-Ou em modo silencioso:
+### Executar em modo silencioso
 ```bash
 ./mvnw -q test
 ```
+
+### Executar testes de uma classe específica
+```bash
+./mvnw test -Dtest=HealthControllerTest
+```
+
+### Características dos Testes
+
+- ✅ **Banco H2 em memória** com modo de compatibilidade MySQL
+- ✅ **Schema recriado automaticamente** a cada execução (`ddl-auto: create-drop`)
+- ✅ **Isolamento total** entre execuções
+- ✅ **Rápido**: Não depende de containers Docker
+- ✅ **CI/CD friendly**: Funciona em qualquer ambiente (GitHub Actions, GitLab CI, etc.)
+- ✅ **Sem configuração adicional**: Basta rodar `mvn test`
+
+### Console H2 (Debug)
+
+Para inspecionar o banco durante os testes (útil para debug):
+
+1. Adicione um breakpoint no teste
+2. Acesse: `http://localhost:8080/h2-console`
+3. Configure:
+   - **JDBC URL:** `jdbc:h2:mem:testdb`
+   - **User:** `sa`
+   - **Password:** (deixe vazio)
 
 ---
 
@@ -344,16 +376,30 @@ O projeto é organizado em camadas para manter responsabilidades bem separadas:
   - Dialect otimizado para MySQL
 - **Integração:** Conecta automaticamente ao container Docker via variáveis de ambiente
 
+### H2 Database para Testes (Profile Test)
+- **Banco em memória:** Não requer instalação ou Docker
+- **Modo MySQL:** Emula comportamento do MySQL para compatibilidade
+- **Schema automático:** `ddl-auto: create-drop` (recria a cada execução)
+- **Isolamento total:** Cada execução de teste tem banco limpo
+- **Performance:** Muito mais rápido que banco persistente
+- **CI/CD:** Funciona em qualquer ambiente sem configuração adicional
+- **Console H2:** Disponível em `/h2-console` para debug
+- **Credenciais:** `sa` / senha vazia
+
 ---
 
 ## 📌 Observações
 
 - Este projeto está em desenvolvimento ativo.
-- **MySQL local via Docker** configurado para ambiente de desenvolvimento.
-- **Datasource configurado por perfil**: Conexão com banco apenas no perfil `dev`.
-- **Schema gerenciado por Hibernate** no ambiente de desenvolvimento (`ddl-auto: update`).
+- **Estratégia de banco por perfil:**
+  - **dev**: MySQL via Docker para desenvolvimento local
+  - **test**: H2 em memória para testes automatizados (sem Docker)
+- **Schema gerenciado por Hibernate:**
+  - `ddl-auto: update` no perfil dev
+  - `ddl-auto: create-drop` no perfil test
 - **Credenciais sensíveis** devem ser mantidas no arquivo `.env` (não versionado).
-- Persistência de dados, segurança, autenticação e migrations serão implementados em stories futuras.
+- **Migrations** (Flyway/Liquibase) serão implementadas em stories futuras para produção.
+- Segurança, autenticação e demais módulos serão adicionados incrementalmente.
 - O foco atual é garantir **build verde**, **startup limpo** e **base arquitetural sólida**.
 
 ---

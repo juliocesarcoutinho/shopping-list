@@ -3,7 +3,14 @@ spring:
     name: ${APP_NAME}
   profiles:
     active: ${PROFILE:test}
-
+  jpa:
+    open-in-view: false
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+    baseline-version: 0
+    validate-on-migrate: true
 
 logging:
   pattern:

@@ -1,11 +1,11 @@
 spring:
   application:
-    name: ${APP_NAME}
+    name: ${APP_NAME:shopping-list}
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://${MYSQL_HOST}:${MYSQL_PORT}/${MYSQL_DATABASE}
-    username: ${MYSQL_USER}
-    password: ${MYSQL_PASSWORD}
+    url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/${MYSQL_DATABASE:shoppinglist_db}
+    username: ${MYSQL_USER:admin}
+    password: ${MYSQL_PASSWORD:admin}
     hikari:
       maximum-pool-size: 10
       minimum-idle: 5
@@ -15,12 +15,16 @@ spring:
       pool-name: HikariCP
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: none
     show-sql: true
     properties:
       hibernate:
         format_sql: true
         use_sql_comments: true
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    clean-disabled: true
 
 logging:
   level:
