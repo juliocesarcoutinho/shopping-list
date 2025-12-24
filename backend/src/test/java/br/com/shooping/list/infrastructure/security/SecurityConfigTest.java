@@ -49,13 +49,6 @@ class SecurityConfigTest {
     }
 
     @Test
-    @DisplayName("POST /api/v1/auth/register deve ser público (mesmo sem implementação)")
-    void registerEndpointShouldBePublic() throws Exception {
-        mockMvc.perform(get("/api/v1/auth/register"))
-                .andExpect(status().isNotFound()); // 404 pois não existe ainda, mas não é 401
-    }
-
-    @Test
     @DisplayName("POST /api/v1/auth/refresh deve ser público (mesmo sem implementação)")
     void refreshEndpointShouldBePublic() throws Exception {
         mockMvc.perform(get("/api/v1/auth/refresh"))

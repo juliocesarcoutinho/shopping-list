@@ -241,6 +241,28 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * Trata erros de email já cadastrado (lógica de negócio).
+     * <p>
+     * Retorna 409 Conflict.
+     */
+    @ExceptionHandler(EmailAlreadyExistsException.class)
+    public ResponseEntity<ErrorResponse> handleEmailAlreadyExistsException(
+            EmailAlreadyExistsException ex,
+            HttpServletRequest request
+    ) {
+        log.warn("Email already exists on path: {}", request.getRequestURI());
+
+        ErrorResponse error = ErrorResponse.of(
+                HttpStatus.CONFLICT.value(),
+                "Conflict",
+                ex.getMessage(),
+                request.getRequestURI()
+        );
+
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+    }
+
+    /**
      * Trata todas as outras exceções não mapeadas.
      * <p>
      * Retorna 500 Internal Server Error.
