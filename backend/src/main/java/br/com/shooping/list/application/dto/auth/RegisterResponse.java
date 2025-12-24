@@ -1,4 +1,4 @@
-package br.com.shooping.list.application.dto;
+package br.com.shooping.list.application.dto.auth;
 
 import br.com.shooping.list.domain.user.AuthProvider;
 import br.com.shooping.list.domain.user.UserStatus;

@@ -1,4 +1,4 @@
-package br.com.shooping.list.application.dto;
+package br.com.shooping.list.application.dto.auth;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;

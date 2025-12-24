@@ -1,7 +1,7 @@
 package br.com.shooping.list.application.usecase;
 
-import br.com.shooping.list.application.dto.RefreshTokenRequest;
-import br.com.shooping.list.application.dto.RefreshTokenResponse;
+import br.com.shooping.list.application.dto.auth.RefreshTokenRequest;
+import br.com.shooping.list.application.dto.auth.RefreshTokenResponse;
 import br.com.shooping.list.domain.user.RefreshToken;
 import br.com.shooping.list.domain.user.RefreshTokenRepository;
 import br.com.shooping.list.domain.user.User;
@@ -52,7 +52,7 @@ public class RefreshTokenUseCase {
         String tokenHash = hashToken(request.getRefreshToken());
 
         // 2. Buscar token no banco pelo hash
-        RefreshToken currentToken = refreshTokenRepository.findByTokenHash(tokenHash)
+        var currentToken = refreshTokenRepository.findByTokenHash(tokenHash)
                 .orElseThrow(() -> {
                     log.warn("Refresh token não encontrado");
                     return new InvalidRefreshTokenException("Refresh token inválido");
@@ -76,7 +76,7 @@ public class RefreshTokenUseCase {
             throw new InvalidRefreshTokenException("Refresh token expirado");
         }
 
-        User user = currentToken.getUser();
+        var user = currentToken.getUser();
         log.info("Refresh token válido para userId={}, email={}", user.getId(), user.getEmail());
 
         // 5. Gerar novo access token (JWT)
@@ -92,14 +92,14 @@ public class RefreshTokenUseCase {
                 .plus(jwtProperties.getRefreshToken().getExpiration());
 
         // 8. Criar e persistir o NOVO refresh token
-        RefreshToken newRefreshToken = RefreshToken.create(
+        var newRefreshToken = RefreshToken.create(
                 user,
                 newRefreshTokenHash,
                 newExpiration,
                 userAgent,
                 ip
         );
-        RefreshToken savedNewToken = refreshTokenRepository.save(newRefreshToken);
+        var savedNewToken = refreshTokenRepository.save(newRefreshToken);
 
         log.info("Novo refresh token criado: tokenId={}, userId={}, expiresAt={}",
                 savedNewToken.getId(), user.getId(), newExpiration);
@@ -115,7 +115,7 @@ public class RefreshTokenUseCase {
         // 10. Retornar novos tokens
         return RefreshTokenResponse.builder()
                 .accessToken(newAccessToken)
-                .refreshToken(newRefreshTokenValue) // Novo token em texto puro
+                .refreshToken(newRefreshTokenValue)
                 .expiresIn(expiresIn)
                 .build();
     }

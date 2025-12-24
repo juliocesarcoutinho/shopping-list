@@ -1,8 +1,8 @@
 package br.com.shooping.list.interfaces.rest.v1;
 
-import br.com.shooping.list.application.dto.LoginRequest;
-import br.com.shooping.list.application.dto.RefreshTokenRequest;
-import br.com.shooping.list.application.dto.RegisterRequest;
+import br.com.shooping.list.application.dto.auth.LoginRequest;
+import br.com.shooping.list.application.dto.auth.RefreshTokenRequest;
+import br.com.shooping.list.application.dto.auth.RegisterRequest;
 import br.com.shooping.list.domain.user.RefreshToken;
 import br.com.shooping.list.domain.user.RefreshTokenRepository;
 import br.com.shooping.list.domain.user.UserRepository;

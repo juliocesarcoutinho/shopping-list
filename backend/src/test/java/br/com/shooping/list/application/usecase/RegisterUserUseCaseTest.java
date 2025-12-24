@@ -1,7 +1,7 @@
 package br.com.shooping.list.application.usecase;
 
-import br.com.shooping.list.application.dto.RegisterRequest;
-import br.com.shooping.list.application.dto.RegisterResponse;
+import br.com.shooping.list.application.dto.auth.RegisterRequest;
+import br.com.shooping.list.application.dto.auth.RegisterResponse;
 import br.com.shooping.list.domain.user.AuthProvider;
 import br.com.shooping.list.domain.user.User;
 import br.com.shooping.list.domain.user.UserRepository;
@@ -17,7 +17,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import java.time.Instant;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;

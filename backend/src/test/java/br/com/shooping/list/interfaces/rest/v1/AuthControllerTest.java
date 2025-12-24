@@ -1,6 +1,6 @@
 package br.com.shooping.list.interfaces.rest.v1;
 
-import br.com.shooping.list.application.dto.RegisterRequest;
+import br.com.shooping.list.application.dto.auth.RegisterRequest;
 import br.com.shooping.list.domain.user.UserRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;

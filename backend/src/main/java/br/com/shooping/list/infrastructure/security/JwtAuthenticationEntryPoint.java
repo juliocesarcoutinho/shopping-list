@@ -1,6 +1,6 @@
 package br.com.shooping.list.infrastructure.security;
 
-import br.com.shooping.list.application.dto.ErrorResponse;
+import br.com.shooping.list.application.dto.auth.ErrorResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

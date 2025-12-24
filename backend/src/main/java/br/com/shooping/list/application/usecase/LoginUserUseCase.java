@@ -1,7 +1,7 @@
 package br.com.shooping.list.application.usecase;
 
-import br.com.shooping.list.application.dto.LoginRequest;
-import br.com.shooping.list.application.dto.LoginResponse;
+import br.com.shooping.list.application.dto.auth.LoginRequest;
+import br.com.shooping.list.application.dto.auth.LoginResponse;
 import br.com.shooping.list.domain.user.RefreshToken;
 import br.com.shooping.list.domain.user.RefreshTokenRepository;
 import br.com.shooping.list.domain.user.User;
@@ -50,7 +50,7 @@ public class LoginUserUseCase {
         log.info("Tentativa de login para email={}", request.getEmail());
 
         // Buscar usuário por email
-        User user = userRepository.findByEmail(request.getEmail())
+        var user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> {
                     log.warn("Login falhou: usuário não encontrado para email={}", request.getEmail());
                     return new InvalidCredentialsException("Credenciais inválidas");
@@ -85,7 +85,7 @@ public class LoginUserUseCase {
                 .plus(jwtProperties.getRefreshToken().getExpiration());
 
         // Criar e persistir refresh token
-        RefreshToken refreshToken = RefreshToken.create(
+        var refreshToken = RefreshToken.create(
                 user,
                 refreshTokenHash,
                 refreshTokenExpiration,

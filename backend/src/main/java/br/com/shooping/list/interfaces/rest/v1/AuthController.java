@@ -1,11 +1,11 @@
 package br.com.shooping.list.interfaces.rest.v1;
 
-import br.com.shooping.list.application.dto.LoginRequest;
-import br.com.shooping.list.application.dto.LoginResponse;
-import br.com.shooping.list.application.dto.RefreshTokenRequest;
-import br.com.shooping.list.application.dto.RefreshTokenResponse;
-import br.com.shooping.list.application.dto.RegisterRequest;
-import br.com.shooping.list.application.dto.RegisterResponse;
+import br.com.shooping.list.application.dto.auth.LoginRequest;
+import br.com.shooping.list.application.dto.auth.LoginResponse;
+import br.com.shooping.list.application.dto.auth.RefreshTokenRequest;
+import br.com.shooping.list.application.dto.auth.RefreshTokenResponse;
+import br.com.shooping.list.application.dto.auth.RegisterRequest;
+import br.com.shooping.list.application.dto.auth.RegisterResponse;
 import br.com.shooping.list.application.usecase.LoginUserUseCase;
 import br.com.shooping.list.application.usecase.RefreshTokenUseCase;
 import br.com.shooping.list.application.usecase.RegisterUserUseCase;

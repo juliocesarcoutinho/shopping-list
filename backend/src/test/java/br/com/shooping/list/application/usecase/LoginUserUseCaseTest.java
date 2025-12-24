@@ -1,8 +1,7 @@
 package br.com.shooping.list.application.usecase;
 
-import br.com.shooping.list.application.dto.LoginRequest;
-import br.com.shooping.list.application.dto.LoginResponse;
-import br.com.shooping.list.domain.user.AuthProvider;
+import br.com.shooping.list.application.dto.auth.LoginRequest;
+import br.com.shooping.list.application.dto.auth.LoginResponse;
 import br.com.shooping.list.domain.user.RefreshToken;
 import br.com.shooping.list.domain.user.RefreshTokenRepository;
 import br.com.shooping.list.domain.user.User;

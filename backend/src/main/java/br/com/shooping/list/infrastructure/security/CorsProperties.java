@@ -25,6 +25,9 @@ public final class CorsProperties {
         /** Frontend React (porta padrão) */
         public static final String REACT = "http://localhost:3000";
 
+        /**Front VueJs (porta padrão)*/
+        public static final String VUEJS = "http://localhost:5173";
+
         /** Frontend Angular (porta padrão) */
         public static final String ANGULAR = "http://localhost:4200";
 
@@ -38,7 +41,7 @@ public final class CorsProperties {
          * - https://shoppinglist.com.br
          */
         public static List<String> getAll() {
-            return List.of(REACT, ANGULAR, SELF);
+            return List.of(REACT, ANGULAR, SELF, VUEJS);
         }
 
         private AllowedOrigins() {

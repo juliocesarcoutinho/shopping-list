@@ -1,7 +1,7 @@
 package br.com.shooping.list.application.usecase;
 
-import br.com.shooping.list.application.dto.RegisterRequest;
-import br.com.shooping.list.application.dto.RegisterResponse;
+import br.com.shooping.list.application.dto.auth.RegisterRequest;
+import br.com.shooping.list.application.dto.auth.RegisterResponse;
 import br.com.shooping.list.domain.user.User;
 import br.com.shooping.list.domain.user.UserRepository;
 import br.com.shooping.list.infrastructure.exception.EmailAlreadyExistsException;
@@ -51,7 +51,7 @@ public class RegisterUserUseCase {
         );
 
         // Persistir
-        User savedUser = userRepository.save(user);
+        var savedUser = userRepository.save(user);
         log.info("Usuário registrado com sucesso: id={}, email={}", savedUser.getId(), savedUser.getEmail());
 
         // Mapear para resposta (sem dados sensíveis)

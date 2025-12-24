@@ -1,6 +1,6 @@
 package br.com.shooping.list.infrastructure.exception;
 
-import br.com.shooping.list.application.dto.ErrorResponse;
+import br.com.shooping.list.application.dto.auth.ErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -53,7 +53,7 @@ public class GlobalExceptionHandler {
                 .map(this::mapFieldError)
                 .collect(Collectors.toList());
 
-        ErrorResponse error = ErrorResponse.withDetails(
+        var error = ErrorResponse.withDetails(
                 HttpStatus.BAD_REQUEST.value(),
                 "Bad Request",
                 "Erro de validação. Verifique os campos enviados.",
@@ -76,7 +76,7 @@ public class GlobalExceptionHandler {
     ) {
         log.warn("Malformed JSON on path: {}", request.getRequestURI(), ex);
 
-        ErrorResponse error = ErrorResponse.of(
+        var error = ErrorResponse.of(
                 HttpStatus.BAD_REQUEST.value(),
                 "Bad Request",
                 "JSON malformado. Verifique a sintaxe do corpo da requisição.",
@@ -98,7 +98,7 @@ public class GlobalExceptionHandler {
     ) {
         log.warn("Authentication error on path: {}", request.getRequestURI(), ex);
 
-        ErrorResponse error = ErrorResponse.of(
+        var error = ErrorResponse.of(
                 HttpStatus.UNAUTHORIZED.value(),
                 "Unauthorized",
                 "Autenticação requerida. Por favor, forneça um token JWT válido.",
@@ -120,7 +120,7 @@ public class GlobalExceptionHandler {
     ) {
         log.warn("Expired JWT token on path: {}", request.getRequestURI());
 
-        ErrorResponse error = ErrorResponse.of(
+        var error = ErrorResponse.of(
                 HttpStatus.UNAUTHORIZED.value(),
                 "Unauthorized",
                 "Token JWT expirado. Por favor, faça login novamente ou renove seu token.",
@@ -142,7 +142,7 @@ public class GlobalExceptionHandler {
     ) {
         log.warn("Invalid JWT token on path: {}", request.getRequestURI());
 
-        ErrorResponse error = ErrorResponse.of(
+        var error = ErrorResponse.of(
                 HttpStatus.UNAUTHORIZED.value(),
                 "Unauthorized",
                 "Token JWT inválido. Por favor, forneça um token válido.",
@@ -164,7 +164,7 @@ public class GlobalExceptionHandler {
     ) {
         log.warn("Access denied on path: {}", request.getRequestURI(), ex);
 
-        ErrorResponse error = ErrorResponse.of(
+        var error = ErrorResponse.of(
                 HttpStatus.FORBIDDEN.value(),
                 "Forbidden",
                 "Acesso negado. Você não tem permissão para acessar este recurso.",
@@ -186,7 +186,7 @@ public class GlobalExceptionHandler {
     ) {
         log.debug("Resource not found on path: {}", request.getRequestURI());
 
-        ErrorResponse error = ErrorResponse.of(
+        var error = ErrorResponse.of(
                 HttpStatus.NOT_FOUND.value(),
                 "Not Found",
                 "Recurso não encontrado.",
@@ -208,7 +208,7 @@ public class GlobalExceptionHandler {
     ) {
         log.warn("Illegal argument on path: {}", request.getRequestURI(), ex);
 
-        ErrorResponse error = ErrorResponse.of(
+        var error = ErrorResponse.of(
                 HttpStatus.BAD_REQUEST.value(),
                 "Bad Request",
                 ex.getMessage(),
@@ -230,7 +230,7 @@ public class GlobalExceptionHandler {
     ) {
         log.warn("Illegal state on path: {}", request.getRequestURI(), ex);
 
-        ErrorResponse error = ErrorResponse.of(
+        var error = ErrorResponse.of(
                 HttpStatus.CONFLICT.value(),
                 "Conflict",
                 ex.getMessage(),
@@ -252,7 +252,7 @@ public class GlobalExceptionHandler {
     ) {
         log.warn("Email already exists on path: {}", request.getRequestURI());
 
-        ErrorResponse error = ErrorResponse.of(
+        var error = ErrorResponse.of(
                 HttpStatus.CONFLICT.value(),
                 "Conflict",
                 ex.getMessage(),
@@ -274,7 +274,7 @@ public class GlobalExceptionHandler {
     ) {
         log.warn("Invalid credentials attempt on path: {}", request.getRequestURI());
 
-        ErrorResponse error = ErrorResponse.of(
+        var error = ErrorResponse.of(
                 HttpStatus.UNAUTHORIZED.value(),
                 "Unauthorized",
                 ex.getMessage(),
@@ -296,7 +296,7 @@ public class GlobalExceptionHandler {
     ) {
         log.warn("Invalid refresh token attempt on path: {}", request.getRequestURI());
 
-        ErrorResponse error = ErrorResponse.of(
+        var error = ErrorResponse.of(
                 HttpStatus.UNAUTHORIZED.value(),
                 "Unauthorized",
                 ex.getMessage(),
@@ -320,7 +320,7 @@ public class GlobalExceptionHandler {
     ) {
         log.error("Unexpected error on path: {}", request.getRequestURI(), ex);
 
-        ErrorResponse error = ErrorResponse.of(
+        var error = ErrorResponse.of(
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
                 "Internal Server Error",
                 "Erro interno do servidor. Por favor, tente novamente mais tarde.",
