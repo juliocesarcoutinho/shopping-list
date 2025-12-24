@@ -263,6 +263,28 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * Trata erros de credenciais inválidas (login).
+     * <p>
+     * Retorna 401 Unauthorized.
+     */
+    @ExceptionHandler(InvalidCredentialsException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidCredentialsException(
+            InvalidCredentialsException ex,
+            HttpServletRequest request
+    ) {
+        log.warn("Invalid credentials attempt on path: {}", request.getRequestURI());
+
+        ErrorResponse error = ErrorResponse.of(
+                HttpStatus.UNAUTHORIZED.value(),
+                "Unauthorized",
+                ex.getMessage(),
+                request.getRequestURI()
+        );
+
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
+    }
+
+    /**
      * Trata todas as outras exceções não mapeadas.
      * <p>
      * Retorna 500 Internal Server Error.

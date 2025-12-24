@@ -25,6 +25,7 @@ Backend da aplicação **Shopping List**, desenvolvido com **Java LTS** e **Spri
 - **Flyway** (Database Migrations)
 - **BCrypt** (Password Hashing)
 - **JWT (JSON Web Token)** - jjwt-api, jjwt-impl, jjwt-jackson
+- **Spring Dotenv** - Carregamento automático de variáveis .env
 
 ---
 
@@ -55,14 +56,27 @@ O projeto utiliza MySQL como banco de dados, executado em container Docker para 
 As credenciais e configurações do banco são definidas no arquivo `.env` na raiz do projeto:
 
 ```env
+# MySQL
 MYSQL_ROOT_PASSWORD=root_password
 MYSQL_DATABASE=shoppinglist_db
 MYSQL_USER=admin
 MYSQL_PASSWORD=admin
 MYSQL_PORT=3306
+
+# JWT (⚠️ OBRIGATÓRIO - Mínimo 32 caracteres / 256 bits)
+JWT_SECRET=sua-chave-super-secreta-com-minimo-32-caracteres-aqui
+JWT_ISSUER=shopping-list-api
+
+# Application
+APP_NAME=shopping-list
+PROFILE=dev
 ```
 
-> ⚠️ **Importante:** O arquivo `.env` contém credenciais sensíveis e **não deve ser commitado** no repositório. Use o arquivo `.env.example` como referência.
+> ⚠️ **Importante:** 
+> - O arquivo `.env` contém credenciais sensíveis e **não deve ser commitado** no repositório
+> - Use o arquivo `.env.example` como referência
+> - **JWT_SECRET deve ter no mínimo 32 caracteres** (256 bits) para HS256
+> - Gere um secret seguro: `openssl rand -base64 32`
 
 ### Comandos Docker
 
@@ -291,17 +305,19 @@ Para inspecionar o banco durante os testes (útil para debug):
 
 Testes Unitários:
   ✅ RegisterUserUseCase     : 6 testes (100% passed)
+  ✅ LoginUserUseCase        : 7 testes (100% passed)
   ✅ JwtService             : 13 testes (100% passed)
-  Total: 19 testes unitários
+  Total: 26 testes unitários
 
 Testes de Integração:
-  ✅ AuthController         : 6 testes (100% passed)
-  ✅ HealthController       : 1 teste  (100% passed)
-  ✅ SecurityConfig         : 5 testes (83% passed - 1 failure conhecido)
-  Total: 12 testes de integração
+  ✅ AuthController (Register) : 6 testes (100% passed)
+  ✅ AuthController (Login)    : 10 testes (100% passed)
+  ✅ HealthController          : 1 teste  (100% passed)
+  ✅ SecurityConfig            : 5 testes (83% passed - 1 failure conhecido)
+  Total: 22 testes de integração
 
-📈 Total Geral: 31 testes | 30 passing | 1 known issue
-⚡ Tempo médio de execução: ~8 segundos
+📈 Total Geral: 48 testes | 47 passing | 1 known issue
+⚡ Tempo médio de execução: ~12 segundos
 ```
 
 ---
@@ -331,17 +347,19 @@ backend/
     │   │       │   └── user
     │   │       │       ├── AuthProvider.java
     │   │       │       ├── RefreshToken.java
+    │   │       │       ├── RefreshTokenRepository.java
     │   │       │       ├── User.java
-    │   │       │       ├── UserRepository.java
-    │   │       │       └── UserStatus.java
+    │   │       │       └── UserRepository.java
     │   │       ├── infrastructure
     │   │       │   ├── exception
     │   │       │   │   ├── EmailAlreadyExistsException.java
     │   │       │   │   ├── ExpiredJwtException.java
     │   │       │   │   ├── GlobalExceptionHandler.java
+    │   │       │   │   ├── InvalidCredentialsException.java
     │   │       │   │   └── InvalidJwtException.java
     │   │       │   ├── persistence
     │   │       │   │   └── user
+    │   │       │   │       ├── JpaRefreshTokenRepository.java
     │   │       │   │       └── JpaUserRepository.java
     │   │       │   └── security
     │   │       │       ├── CorsProperties.java
@@ -370,6 +388,8 @@ backend/
                 ├── StartupApplicationTests.java
                 ├── application
                 │   └── usecase
+                │       ├── LoginUserUseCaseTest.java
+                │       ├── LoginUserUseCaseTest.java
                 │       └── RegisterUserUseCaseTest.java
                 ├── infrastructure
                 │   └── security
@@ -378,7 +398,9 @@ backend/
                 └── interfaces
                     └── rest
                         └── v1
+                            ├── AuthControllerLoginTest.java
                             ├── AuthControllerTest.java
+                            └── HealthControllerTest.java
                             └── HealthControllerTest.java
 ```
 
@@ -476,6 +498,71 @@ curl -X POST http://localhost:8080/api/v1/auth/register \
     "password": "senha@123"
   }'
 ```
+
+### Login de Usuário (User Login)
+- **Endpoint:** `POST /api/v1/auth/login`
+- **Descrição:** Autentica usuário LOCAL e retorna tokens de acesso
+- **Request Body:**
+  ```json
+  {
+    "email": "usuario@exemplo.com",
+    "password": "senha@Segura123"
+  }
+  ```
+- **Response (200 OK):**
+  ```json
+  {
+    "accessToken": "eyJhbGciOiJIUzI1NiJ9.eyJwcm92aWRlciI6IkxPQ0FMIiwibmFtZSI6Ikpvw6NvIFNpbHZhIiwiZW1haWwiOiJ0ZXN0ZUBlbWFpbC5jb20iLCJzdWIiOiIxIiwiaXNzIjoic2hvcHBpbmctbGlzdC1hcGkiLCJpYXQiOjE3NjY2MDQ0MjIsImV4cCI6MTc2NjYwODAyMn0...",
+    "refreshToken": "49a6336d-5649-466a-afeb-beee6b2f31d0",
+    "expiresIn": 3600
+  }
+  ```
+- **Validações:**
+  - Email obrigatório e formato válido
+  - Senha obrigatória
+  - Usuário deve existir e estar ativo (status ACTIVE)
+  - Senha deve corresponder ao hash armazenado
+- **Segurança:**
+  - **Access Token (JWT):** Token assinado com HS256, expira em 1 hora (configurável)
+  - **Refresh Token (UUID):** Token único para renovação, expira em 7 dias (configurável)
+  - Refresh token **armazenado como hash SHA-256** no banco (nunca em texto puro)
+  - Senha validada com **BCrypt**
+  - Metadata capturada: User-Agent, IP (para auditoria e segurança)
+  - Logs estruturados para tentativas de login
+- **Erros tratados:**
+  - `400 Bad Request`: Validação de campos (email inválido, campos obrigatórios)
+  - `401 Unauthorized`: Credenciais inválidas (email não existe, senha incorreta, usuário inativo)
+  - `500 Internal Server Error`: Erros inesperados
+- **Fluxo de segurança do Refresh Token:**
+  1. Gerado UUID único: `49a6336d-5649-466a-afeb-beee6b2f31d0`
+  2. Hash SHA-256 calculado: `8Zv+9kF3pL2mN4qR7tY1wX5cA0bD6eH8...`
+  3. **Banco armazena:** Apenas o hash SHA-256
+  4. **Cliente recebe:** UUID em texto puro
+  5. **Validação futura:** Cliente envia UUID → Hasheamos → Comparamos com banco
+- **Camadas utilizadas:**
+  - `interfaces/rest/v1`: AuthController (endpoint REST com extração de metadata)
+  - `application/usecase`: LoginUserUseCase (orquestração transacional)
+  - `application/dto`: LoginRequest, LoginResponse (DTOs validados)
+  - `domain/user`: User, RefreshToken, UserRepository, RefreshTokenRepository (ports)
+  - `infrastructure/persistence`: JpaUserRepository, JpaRefreshTokenRepository (adapters)
+  - `infrastructure/security`: JwtService (geração de access token)
+  - `infrastructure/exception`: InvalidCredentialsException, GlobalExceptionHandler
+- **Testes:**
+  - 7 testes unitários do use case (credenciais válidas/inválidas, hash de token, usuário inativo)
+  - 10 testes de integração end-to-end (sucesso, erros, persistência, metadata)
+
+**Exemplo de uso (cURL):**
+```bash
+curl -X POST http://localhost:8080/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -H "User-Agent: Mozilla/5.0" \
+  -d '{
+    "email": "teste@email.com",
+    "password": "senha@123"
+  }'
+```
+
+**Múltiplos logins:** A API permite múltiplos logins simultâneos do mesmo usuário (ex: web + mobile). Cada login gera um novo refresh token independente.
 
 ### Banco de Dados MySQL
 - **Container:** MySQL 9 via Docker Compose
@@ -580,26 +667,34 @@ curl -X POST http://localhost:8080/api/v1/auth/register \
   - **Hibernate** (`ddl-auto: create-drop`) no perfil `test`
 - **Credenciais sensíveis** devem ser mantidas no arquivo `.env` (não versionado):
   - Credenciais MySQL
-  - JWT Secret (mínimo 256 bits para HS256)
+  - JWT Secret (mínimo 256 bits / 32 caracteres para HS256)
+  - **Importante:** Use `openssl rand -base64 32` para gerar secret seguro
+- **Carregamento de .env:**
+  - Biblioteca `spring-dotenv` carrega automaticamente o arquivo `.env` no startup
+  - Variáveis disponíveis via `${NOME_VARIAVEL}` no `application.yml`
 - **Arquitetura implementada:**
   - ✅ **Clean Architecture** com separação em 4 camadas
   - ✅ **DDD** (Domain-Driven Design) com agregados User e RefreshToken
   - ✅ **Repository Pattern** com ports e adapters
   - ✅ **Use Cases** na camada application (orquestração transacional)
   - ✅ **JWT Service** para geração e validação de tokens
+  - ✅ **Refresh Token** com hash SHA-256 (nunca armazenado em texto puro)
   - ✅ **Global Exception Handler** com respostas padronizadas
   - ✅ **Bean Validation** com validações declarativas nos DTOs
   - ✅ **Flyway Migrations** para versionamento de schema
+  - ✅ **Metadata de Sessão** (User-Agent, IP) para auditoria e segurança
 - **Testes implementados:**
-  - ✅ Testes unitários (use cases, services)
-  - ✅ Testes de integração (controllers end-to-end)
+  - ✅ Testes unitários (use cases, services) - 26 testes
+  - ✅ Testes de integração (controllers end-to-end) - 22 testes
   - ✅ Coverage de casos de sucesso e falha
-- **Próximas funcionalidades:**
-  - Login de usuário (POST /api/v1/auth/login)
-  - Refresh token (POST /api/v1/auth/refresh)
-  - JWT Authentication Filter (interceptação de requests)
-  - Logout (revogação de tokens)
-  - OAuth2 com Google
+  - ✅ Total: 48 testes | 47 passing
+- **Funcionalidades de Autenticação:**
+  - ✅ **Registro** de usuário LOCAL (POST /api/v1/auth/register)
+  - ✅ **Login** de usuário com JWT + Refresh Token (POST /api/v1/auth/login)
+  - 🔜 **Refresh Token** - Renovação de access token (POST /api/v1/auth/refresh)
+  - 🔜 **JWT Authentication Filter** - Interceptação e validação de requests
+  - 🔜 **Logout** - Revogação de refresh tokens
+  - 🔜 **OAuth2 com Google** - Login social
 - O foco continua sendo **build verde**, **startup limpo**, **testes passando** e **base arquitetural sólida**.
 
 ---
