@@ -1,0 +1,142 @@
+package br.com.shooping.list.infrastructure.security;
+
+import br.com.shooping.list.domain.user.User;
+import br.com.shooping.list.infrastructure.exception.ExpiredJwtException;
+import br.com.shooping.list.infrastructure.exception.InvalidJwtException;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+
+import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+
+/**
+ * Serviço responsável pela geração e validação de JWT (Access Tokens)
+ * Centraliza toda a lógica de criação, assinatura e validação de tokens
+ */
+@Service
+@RequiredArgsConstructor
+@Slf4j
+public class JwtService {
+
+    private final JwtProperties jwtProperties;
+
+    /**
+     * Gera um access token JWT para o usuário autenticado
+     *
+     * @param user usuário autenticado
+     * @return token JWT assinado
+     */
+    public String generateAccessToken(User user) {
+        log.debug("Gerando access token para userId={}, email={}", user.getId(), user.getEmail());
+
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("email", user.getEmail());
+        claims.put("name", user.getName());
+        claims.put("provider", user.getProvider().name());
+
+        Instant now = Instant.now();
+        Instant expiration = now.plus(jwtProperties.getAccessToken().getExpiration());
+
+        String token = Jwts.builder()
+                .claims(claims)
+                .subject(user.getId().toString())
+                .issuer(jwtProperties.getIssuer())
+                .issuedAt(Date.from(now))
+                .expiration(Date.from(expiration))
+                .signWith(getSigningKey())
+                .compact();
+
+        log.debug("Access token gerado com sucesso. Expira em: {}", expiration);
+        return token;
+    }
+
+    /**
+     * Extrai o userId (subject) do token JWT
+     *
+     * @param token token JWT
+     * @return userId como String
+     */
+    public String extractUserId(String token) {
+        return extractAllClaims(token).getSubject();
+    }
+
+    /**
+     * Extrai o email do token JWT
+     *
+     * @param token token JWT
+     * @return email do usuário
+     */
+    public String extractEmail(String token) {
+        return extractAllClaims(token).get("email", String.class);
+    }
+
+    /**
+     * Extrai o nome do token JWT
+     *
+     * @param token token JWT
+     * @return nome do usuário
+     */
+    public String extractName(String token) {
+        return extractAllClaims(token).get("name", String.class);
+    }
+
+    /**
+     * Valida se o token é válido (assinatura correta e não expirado)
+     *
+     * @param token token JWT a ser validado
+     * @throws ExpiredJwtException se o token estiver expirado
+     * @throws InvalidJwtException se o token for inválido (assinatura, formato, etc)
+     */
+    public void validateToken(String token) {
+        try {
+            extractAllClaims(token);
+            log.debug("Token validado com sucesso");
+        } catch (io.jsonwebtoken.ExpiredJwtException e) {
+            log.warn("Token expirado: {}", e.getMessage());
+            throw new ExpiredJwtException("Token JWT expirado", e);
+        } catch (io.jsonwebtoken.security.SignatureException e) {
+            log.warn("Assinatura inválida: {}", e.getMessage());
+            throw new InvalidJwtException("Assinatura do token JWT inválida", e);
+        } catch (io.jsonwebtoken.MalformedJwtException e) {
+            log.warn("Token malformado: {}", e.getMessage());
+            throw new InvalidJwtException("Token JWT malformado", e);
+        } catch (Exception e) {
+            log.error("Erro ao validar token: {}", e.getMessage());
+            throw new InvalidJwtException("Erro ao validar token JWT", e);
+        }
+    }
+
+    /**
+     * Extrai todos os claims do token JWT
+     *
+     * @param token token JWT
+     * @return Claims extraídos
+     * @throws io.jsonwebtoken.JwtException se token inválido, expirado ou malformado
+     */
+    public Claims extractAllClaims(String token) {
+        return Jwts.parser()
+                .verifyWith(getSigningKey())
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
+    }
+
+    /**
+     * Gera a chave de assinatura a partir do secret configurado
+     *
+     * @return SecretKey para assinatura HMAC
+     */
+    private SecretKey getSigningKey() {
+        byte[] keyBytes = jwtProperties.getSecret().getBytes(StandardCharsets.UTF_8);
+        return Keys.hmacShaKeyFor(keyBytes);
+    }
+}
+

@@ -12,6 +12,11 @@ spring:
     baseline-version: 0
     validate-on-migrate: true
 
+app:
+  jwt:
+    secret: ${JWT_SECRET}
+    issuer: ${JWT_ISSUER:shopping-list-api}
+
 logging:
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - [service=${spring.application.name}] [profile=${spring.profiles.active:default}] %msg%n"

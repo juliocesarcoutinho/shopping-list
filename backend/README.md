@@ -413,13 +413,20 @@ O projeto é organizado em camadas para manter responsabilidades bem separadas:
 - **Estratégia de banco por perfil:**
   - **dev**: MySQL via Docker para desenvolvimento local
   - **test**: H2 em memória para testes automatizados (sem Docker)
-- **Schema gerenciado por Hibernate:**
-  - `ddl-auto: update` no perfil dev
-  - `ddl-auto: create-drop` no perfil test
-- **Credenciais sensíveis** devem ser mantidas no arquivo `.env` (não versionado).
-- **Migrations** (Flyway/Liquibase) serão implementadas em stories futuras para produção.
-- Segurança, autenticação e demais módulos serão adicionados incrementalmente.
-- O foco atual é garantir **build verde**, **startup limpo** e **base arquitetural sólida**.
+- **Schema gerenciado por:**
+  - **Flyway** no perfil `dev` (migrations versionadas)
+  - **Hibernate** (`ddl-auto: create-drop`) no perfil `test`
+- **Credenciais sensíveis** devem ser mantidas no arquivo `.env` (não versionado):
+  - Credenciais MySQL
+  - JWT Secret (mínimo 256 bits para HS256)
+- **JWT implementado** com geração, validação e exceções customizadas.
+- **Domínio User/RefreshToken** implementado seguindo DDD.
+- **Próximas funcionalidades:**
+  - JWT Authentication Filter
+  - Endpoints de autenticação (login, register, refresh)
+  - Repository layer para User e RefreshToken
+  - Casos de uso (Use Cases) na camada application
+- O foco continua sendo **build verde**, **startup limpo**, **testes passando** e **base arquitetural sólida**.
 
 ---
 

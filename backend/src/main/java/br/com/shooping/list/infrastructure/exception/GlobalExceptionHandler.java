@@ -109,6 +109,50 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * Trata erros de token JWT expirado.
+     * <p>
+     * Retorna 401 Unauthorized.
+     */
+    @ExceptionHandler(ExpiredJwtException.class)
+    public ResponseEntity<ErrorResponse> handleExpiredJwtException(
+            ExpiredJwtException ex,
+            HttpServletRequest request
+    ) {
+        log.warn("Expired JWT token on path: {}", request.getRequestURI());
+
+        ErrorResponse error = ErrorResponse.of(
+                HttpStatus.UNAUTHORIZED.value(),
+                "Unauthorized",
+                "Token JWT expirado. Por favor, faça login novamente ou renove seu token.",
+                request.getRequestURI()
+        );
+
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
+    }
+
+    /**
+     * Trata erros de token JWT inválido.
+     * <p>
+     * Retorna 401 Unauthorized.
+     */
+    @ExceptionHandler(InvalidJwtException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidJwtException(
+            InvalidJwtException ex,
+            HttpServletRequest request
+    ) {
+        log.warn("Invalid JWT token on path: {}", request.getRequestURI());
+
+        ErrorResponse error = ErrorResponse.of(
+                HttpStatus.UNAUTHORIZED.value(),
+                "Unauthorized",
+                "Token JWT inválido. Por favor, forneça um token válido.",
+                request.getRequestURI()
+        );
+
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
+    }
+
+    /**
      * Trata erros de permissão (usuário autenticado mas sem acesso).
      * <p>
      * Retorna 403 Forbidden.

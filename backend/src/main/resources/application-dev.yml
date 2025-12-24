@@ -26,6 +26,13 @@ spring:
     baseline-on-migrate: true
     clean-disabled: true
 
+app:
+  jwt:
+    access-token:
+      expiration: 1h
+    refresh-token:
+      expiration: 7d
+
 logging:
   level:
     root: INFO
