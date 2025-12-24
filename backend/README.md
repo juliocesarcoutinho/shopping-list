@@ -16,6 +16,8 @@ Backend da aplicação **Shopping List**, desenvolvido com **Java LTS** e **Spri
 - **Maven**
 - **JUnit 5**
 - **Lombok**
+- **MySQL 9**
+- **Docker & Docker Compose**
 
 ---
 
@@ -26,11 +28,80 @@ Antes de iniciar, certifique-se de ter instalado:
 - **Java LTS** configurado no PATH
 - **Maven Wrapper** (já incluso no projeto)
 - **Git**
+- **Docker** e **Docker Compose**
 
 Para verificar:
 ```bash
 java -version
+docker --version
+docker compose version
 ```
+
+---
+
+## 🐳 Banco de Dados (MySQL com Docker)
+
+O projeto utiliza MySQL como banco de dados, executado em container Docker para facilitar o desenvolvimento local.
+
+### Configuração
+
+As credenciais e configurações do banco são definidas no arquivo `.env` na raiz do projeto:
+
+```env
+MYSQL_ROOT_PASSWORD=root_password
+MYSQL_DATABASE=shoppinglist_db
+MYSQL_USER=admin
+MYSQL_PASSWORD=admin
+MYSQL_PORT=3306
+```
+
+> ⚠️ **Importante:** O arquivo `.env` contém credenciais sensíveis e **não deve ser commitado** no repositório. Use o arquivo `.env.example` como referência.
+
+### Comandos Docker
+
+#### Subir o container MySQL
+```bash
+docker compose up -d
+```
+
+#### Verificar status do container
+```bash
+docker compose ps
+```
+
+#### Ver logs do MySQL
+```bash
+docker compose logs -f mysql
+```
+
+#### Parar o container
+```bash
+docker compose down
+```
+
+#### Remover container e dados (⚠️ cuidado: apaga todos os dados)
+```bash
+docker compose down -v
+```
+
+### Conexão com o Banco
+
+Após subir o container, você pode conectar ao MySQL usando:
+
+- **Host:** `localhost`
+- **Porta:** `3306` (ou a porta definida em `MYSQL_PORT`)
+- **Database:** `shoppinglist_db`
+- **Usuário:** `admin`
+- **Senha:** `admin`
+
+**String de conexão:**
+```
+jdbc:mysql://localhost:3306/shoppinglist_db
+```
+
+### Health Check
+
+O container possui verificação automática de saúde (healthcheck) que testa a conexão com o MySQL a cada 10 segundos.
 
 ---
 
@@ -39,10 +110,26 @@ java -version
 ### 1️⃣ Clonar o repositório
 ```bash
 git clone <URL_DO_REPOSITORIO>
-cd shopping-list
+cd shopping-list/backend
 ```
 
-### 2️⃣ Executar a aplicação
+### 2️⃣ Configurar variáveis de ambiente
+Copie o arquivo `.env.example` para `.env` e ajuste as credenciais se necessário:
+```bash
+cp .env.example .env
+```
+
+### 3️⃣ Subir o banco de dados MySQL
+```bash
+docker compose up -d
+```
+
+Aguarde alguns segundos para o MySQL inicializar completamente. Você pode verificar o status com:
+```bash
+docker compose logs -f mysql
+```
+
+### 4️⃣ Executar a aplicação
 ```bash
 ./mvnw spring-boot:run
 ```
@@ -52,7 +139,7 @@ cd shopping-list
 mvnw spring-boot:run
 ```
 
-### 3️⃣ Perfis de Execução
+### 5️⃣ Perfis de Execução
 
 A aplicação suporta diferentes perfis de configuração:
 
@@ -135,32 +222,37 @@ Ou em modo silencioso:
 ## 📦 Estrutura do Projeto
 
 ```text
-src
-├── main
-│   ├── java
-│   │   └── br.com.shooping.list
-│   │       ├── StartupApplication.java
-│   │       ├── application
-│   │       │   └── dto
-│   │       │       └── HealthResponse.java
-│   │       ├── domain
-│   │       ├── infrastructure
-│   │       └── interfaces
-│   │           └── rest
-│   │               └── v1
-│   │                   └── HealthController.java
-│   └── resources
-│       ├── application.yml
-│       ├── application-dev.yml
-│       └── application-test.yml
-└── test
-    └── java
-        └── br.com.shooping.list
-            ├── StartupApplicationTests.java
-            └── interfaces
-                └── rest
-                    └── v1
-                        └── HealthControllerTest.java
+backend/
+├── docker-compose.yml
+├── .env (não versionado)
+├── .env.example
+├── pom.xml
+└── src
+    ├── main
+    │   ├── java
+    │   │   └── br.com.shooping.list
+    │   │       ├── StartupApplication.java
+    │   │       ├── application
+    │   │       │   └── dto
+    │   │       │       └── HealthResponse.java
+    │   │       ├── domain
+    │   │       ├── infrastructure
+    │   │       └── interfaces
+    │   │           └── rest
+    │   │               └── v1
+    │   │                   └── HealthController.java
+    │   └── resources
+    │       ├── application.yml
+    │       ├── application-dev.yml
+    │       └── application-test.yml
+    └── test
+        └── java
+            └── br.com.shooping.list
+                ├── StartupApplicationTests.java
+                └── interfaces
+                    └── rest
+                        └── v1
+                            └── HealthControllerTest.java
 ```
 
 ---
@@ -201,11 +293,21 @@ O projeto é organizado em camadas para manter responsabilidades bem separadas:
   - `application/dto`: HealthResponse (DTO de resposta)
 - **Testes:** Teste de integração com `@WebMvcTest` validando o comportamento do endpoint
 
+### Banco de Dados MySQL
+- **Container:** MySQL 9 via Docker Compose
+- **Configuração:** Credenciais via arquivo `.env`
+- **Volume persistente:** Dados mantidos em volume Docker (`mysql-data`)
+- **Health Check:** Verificação automática de disponibilidade do banco
+- **Porta:** 3306 (configurável via `MYSQL_PORT`)
+- **Database inicial:** `shoppinglist_db` criado automaticamente
+
 ---
 
 ## 📌 Observações
 
-- Este projeto inicia apenas com a **estrutura base** do backend.
+- Este projeto está em desenvolvimento ativo.
+- **MySQL local via Docker** configurado para ambiente de desenvolvimento.
+- **Credenciais sensíveis** devem ser mantidas no arquivo `.env` (não versionado).
 - Persistência, segurança, autenticação e demais módulos serão adicionados em stories futuras.
 - O foco atual é garantir **build verde**, **startup limpo** e **base arquitetural sólida**.
 
