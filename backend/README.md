@@ -11,6 +11,7 @@ Backend da aplicação **Shopping List**, desenvolvido com **Java LTS** e **Spri
 - **Java 21 (LTS)**
 - **Spring Boot 3.4.1**
   - Spring Web
+  - Spring Data JPA
   - Validation
   - Actuator
 - **Maven**
@@ -18,6 +19,7 @@ Backend da aplicação **Shopping List**, desenvolvido com **Java LTS** e **Spri
 - **Lombok**
 - **MySQL 9**
 - **Docker & Docker Compose**
+- **Hikari CP** (Connection Pool)
 
 ---
 
@@ -103,6 +105,30 @@ jdbc:mysql://localhost:3306/shoppinglist_db
 
 O container possui verificação automática de saúde (healthcheck) que testa a conexão com o MySQL a cada 10 segundos.
 
+### Configuração do Datasource (Profile Dev)
+
+No perfil `dev`, a aplicação está configurada para conectar automaticamente ao MySQL usando as variáveis de ambiente do `.env`:
+
+#### **Datasource**
+- **Driver:** MySQL Connector/J (`com.mysql.cj.jdbc.Driver`)
+- **URL:** `jdbc:mysql://${MYSQL_HOST}:${MYSQL_PORT}/${MYSQL_DATABASE}`
+- **Pool de Conexões:** HikariCP
+
+#### **HikariCP (Connection Pool)**
+- `maximum-pool-size`: 10 conexões
+- `minimum-idle`: 5 conexões ociosas
+- `connection-timeout`: 30 segundos
+- `idle-timeout`: 30 segundos
+- `max-lifetime`: 10 minutos
+
+#### **JPA/Hibernate**
+- `ddl-auto`: **update** (cria/atualiza schema automaticamente no dev)
+- `show-sql`: true (exibe SQL no console)
+- `format_sql`: true (formata SQL para melhor legibilidade)
+- `use_sql_comments`: true (adiciona comentários no SQL gerado)
+
+> ⚠️ **Importante:** O `ddl-auto: update` está configurado apenas para **desenvolvimento**. Em produção, use `validate` ou `none` e gerencie o schema via migrations (Flyway/Liquibase).
+
 ---
 
 ## ▶️ Como executar o projeto
@@ -147,22 +173,27 @@ A aplicação suporta diferentes perfis de configuração:
 Perfil para testes automatizados
 - Configuração mínima
 - Sem logs detalhados
+- Sem conexão com banco de dados
 
 #### **dev**
-Perfil para desenvolvimento local com logs detalhados
-- **root**: INFO
-- **com.shoppinglist**: DEBUG
-- **org.springframework.web**: DEBUG
-- **org.hibernate.SQL**: DEBUG
-- **org.hibernate.orm.jdbc.bind**: TRACE
+Perfil para desenvolvimento local com logs detalhados e conexão MySQL
+- **Datasource:** Conecta ao MySQL via Docker
+- **Hibernate ddl-auto:** update (gerencia schema automaticamente)
+- **Logs detalhados:**
+  - **root**: INFO
+  - **com.shoppinglist**: DEBUG
+  - **org.springframework.web**: DEBUG
+  - **org.hibernate.SQL**: DEBUG
+  - **org.hibernate.orm.jdbc.bind**: TRACE
+- **Connection Pool:** HikariCP com 10 conexões máximas
 
 Para executar com um perfil específico:
 
 ```bash
-# Desenvolvimento
+# Desenvolvimento (com MySQL)
 ./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
 
-# Teste
+# Teste (sem MySQL)
 ./mvnw spring-boot:run -Dspring-boot.run.profiles=test
 ```
 
@@ -301,14 +332,28 @@ O projeto é organizado em camadas para manter responsabilidades bem separadas:
 - **Porta:** 3306 (configurável via `MYSQL_PORT`)
 - **Database inicial:** `shoppinglist_db` criado automaticamente
 
+### Datasource e Persistência (Profile Dev)
+- **Driver:** MySQL Connector/J
+- **Connection Pool:** HikariCP com configuração otimizada
+  - 10 conexões máximas
+  - 5 conexões ociosas mínimas
+  - Timeout de 30 segundos
+- **JPA/Hibernate:**
+  - Gerenciamento automático de schema (`ddl-auto: update`)
+  - SQL logging habilitado com formatação
+  - Dialect otimizado para MySQL
+- **Integração:** Conecta automaticamente ao container Docker via variáveis de ambiente
+
 ---
 
 ## 📌 Observações
 
 - Este projeto está em desenvolvimento ativo.
 - **MySQL local via Docker** configurado para ambiente de desenvolvimento.
+- **Datasource configurado por perfil**: Conexão com banco apenas no perfil `dev`.
+- **Schema gerenciado por Hibernate** no ambiente de desenvolvimento (`ddl-auto: update`).
 - **Credenciais sensíveis** devem ser mantidas no arquivo `.env` (não versionado).
-- Persistência, segurança, autenticação e demais módulos serão adicionados em stories futuras.
+- Persistência de dados, segurança, autenticação e migrations serão implementados em stories futuras.
 - O foco atual é garantir **build verde**, **startup limpo** e **base arquitetural sólida**.
 
 ---
