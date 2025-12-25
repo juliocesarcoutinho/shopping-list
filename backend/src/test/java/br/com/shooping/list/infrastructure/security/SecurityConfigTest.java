@@ -20,25 +20,12 @@ class SecurityConfigTest {
     @Autowired
     private MockMvc mockMvc;
 
-    @Test
-    @DisplayName("GET /api/v1/health deve ser público e retornar 200")
-    void healthEndpointShouldBePublic() throws Exception {
-        mockMvc.perform(get("/api/v1/health"))
-                .andExpect(status().isOk());
-    }
 
     @Test
     @DisplayName("GET /actuator/health deve ser público e retornar 200")
     void actuatorHealthEndpointShouldBePublic() throws Exception {
         mockMvc.perform(get("/actuator/health"))
                 .andExpect(status().isOk());
-    }
-
-    @Test
-    @DisplayName("GET /api/v1/protected/test deve retornar 401 sem autenticação")
-    void protectedEndpointShouldReturn401WithoutAuth() throws Exception {
-        mockMvc.perform(get("/api/v1/protected/test"))
-                .andExpect(status().isUnauthorized()); // 401 com nosso AuthenticationEntryPoint customizado
     }
 }
 

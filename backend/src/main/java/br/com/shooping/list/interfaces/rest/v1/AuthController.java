@@ -41,7 +41,7 @@ public class AuthController {
     public ResponseEntity<RegisterResponse> register(@Valid @RequestBody RegisterRequest request) {
         log.info("Requisição de registro recebida para email: {}", request.getEmail());
 
-        RegisterResponse response = registerUserUseCase.execute(request);
+        var response = registerUserUseCase.execute(request);
 
         log.info("Usuário registrado com sucesso: id={}", response.getId());
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
@@ -64,7 +64,7 @@ public class AuthController {
         String userAgent = httpRequest.getHeader("User-Agent");
         String ip = extractClientIp(httpRequest);
 
-        LoginResponse response = loginUserUseCase.execute(request, userAgent, ip);
+        var response = loginUserUseCase.execute(request, userAgent, ip);
 
         log.info("Login realizado com sucesso para email: {}", request.getEmail());
         return ResponseEntity.ok(response);
@@ -87,7 +87,7 @@ public class AuthController {
         String userAgent = httpRequest.getHeader("User-Agent");
         String ip = extractClientIp(httpRequest);
 
-        RefreshTokenResponse response = refreshTokenUseCase.execute(request, userAgent, ip);
+        var response = refreshTokenUseCase.execute(request, userAgent, ip);
 
         log.info("Refresh token rotacionado com sucesso");
         return ResponseEntity.ok(response);
