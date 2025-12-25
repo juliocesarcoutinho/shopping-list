@@ -307,8 +307,9 @@ Testes Unitários:
   ✅ RegisterUserUseCase     : 6 testes (100% passed)
   ✅ LoginUserUseCase        : 7 testes (100% passed)
   ✅ RefreshTokenUseCase     : 8 testes (100% passed)
+  ✅ LogoutUseCase           : 8 testes (100% passed)
   ✅ JwtService             : 13 testes (100% passed)
-  Total: 34 testes unitários
+  Total: 42 testes unitários
 
 Testes de Integração:
   ✅ AuthController (Register) : 6 testes (100% passed)
@@ -318,7 +319,7 @@ Testes de Integração:
   ✅ SecurityConfig            : 5 testes (83% passed - 1 failure conhecido)
   Total: 32 testes de integração
 
-📈 Total Geral: 66 testes | 65 passing | 1 known issue
+📈 Total Geral: 74 testes | 73 passing | 1 known issue
 ⚡ Tempo médio de execução: ~15 segundos
 ```
 
@@ -343,12 +344,14 @@ backend/
     │   │       │   │   ├── HealthResponse.java
     │   │       │   │   ├── LoginRequest.java
     │   │       │   │   ├── LoginResponse.java
+    │   │       │   │   ├── LogoutRequest.java
     │   │       │   │   ├── RefreshTokenRequest.java
     │   │       │   │   ├── RefreshTokenResponse.java
     │   │       │   │   ├── RegisterRequest.java
     │   │       │   │   └── RegisterResponse.java
     │   │       │   └── usecase
     │   │       │       ├── LoginUserUseCase.java
+    │   │       │       ├── LogoutUseCase.java
     │   │       │       ├── RefreshTokenUseCase.java
     │   │       │       └── RegisterUserUseCase.java
     │   │       ├── domain
@@ -399,6 +402,7 @@ backend/
                 │   └── usecase
                 │   └── usecase
                 │       ├── LoginUserUseCaseTest.java
+                │       ├── LogoutUseCaseTest.java
                 │       ├── RefreshTokenUseCaseTest.java
                 │       └── RegisterUserUseCaseTest.java
                 ├── infrastructure
@@ -659,6 +663,357 @@ curl -X POST http://localhost:8080/api/v1/auth/refresh \
 
 **Segurança:** Sempre use o **novo** refresh token retornado. O antigo é imediatamente invalidado!
 
+### Logout de Usuário (User Logout)
+- **Endpoint:** `POST /api/v1/auth/logout`
+- **Descrição:** Encerra sessão do usuário revogando o refresh token atual de forma segura
+- **Request Body:**
+  ```json
+  {
+    "refreshToken": "49a6336d-5649-466a-afeb-beee6b2f31d0"
+  }
+  ```
+- **Response (204 No Content):** Sem corpo de resposta
+- **Validações:**
+  - Refresh token obrigatório
+  - Token deve existir no banco (validado via hash SHA-256)
+  - Token não pode já estar revogado
+- **Segurança - Revogação de Token:**
+  - Token é **marcado como revogado** (`revokedAt = now()`)
+  - Token revogado **não pode mais ser usado** para refresh
+  - Revogação persiste no banco para auditoria
+  - **Sem replacement:** `replacedByTokenId = null` (diferente do refresh que rotaciona)
+  - Possível logout mesmo com token **expirado** (mas não revogado)
+- **Erros tratados:**
+  - `400 Bad Request`: Refresh token vazio ou null
+  - `401 Unauthorized - "Refresh token inválido"`: Token não encontrado no banco
+  - `401 Unauthorized - "Refresh token já foi revogado"`: Tentativa de logout duplo
+  - `500 Internal Server Error`: Erros inesperados
+- **Fluxo de logout:**
+  1. Cliente envia refresh token (UUID em texto puro)
+  2. Backend faz hash SHA-256 do token recebido
+  3. Busca no banco pelo hash
+  4. **Valida:** Existe? Já revogado?
+  5. Se já revogado → 401 (não permite logout duplo)
+  6. **Revoga token** (marca `revokedAt` e `replacedByTokenId = null`)
+  7. Persiste alteração
+  8. Retorna 204 No Content (sucesso silencioso)
+- **Diferença entre Logout e Refresh:**
+  - **Logout:** Revoga token sem gerar novo (encerra sessão)
+  - **Refresh:** Revoga token antigo e gera novo (rotação)
+  - Ambos usam `revoke()` mas com semânticas diferentes
+- **Múltiplas sessões:**
+  - Usuário pode ter múltiplos refresh tokens ativos (web, mobile, etc.)
+  - Logout revoga **apenas o token informado**
+  - Outras sessões permanecem ativas
+  - Futuro: Implementar "logout de todas as sessões" (revoga todos os tokens do usuário)
+- **Camadas utilizadas:**
+  - `interfaces/rest/v1`: AuthController (endpoint REST retornando 204)
+  - `application/usecase`: LogoutUseCase (revogação transacional)
+  - `application/dto`: LogoutRequest (DTO validado)
+  - `domain/user`: RefreshToken (com método `revoke()`)
+  - `infrastructure/persistence`: JpaRefreshTokenRepository (adapter)
+  - `infrastructure/exception`: InvalidRefreshTokenException, GlobalExceptionHandler
+- **Testes:**
+  - 8 testes unitários do use case (sucesso, token não encontrado, já revogado, expirado)
+  - Status: ✅ 100% passando
+
+**Exemplo de uso (cURL):**
+```bash
+# 1. Fazer login para obter tokens
+curl -X POST http://localhost:8080/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"teste@email.com","password":"senha@123"}'
+
+# 2. Usar access token para acessar recursos protegidos
+# (enquanto a sessão estiver ativa)
+
+# 3. Fazer logout quando terminar
+curl -X POST http://localhost:8080/api/v1/auth/logout \
+  -H "Content-Type: application/json" \
+  -d '{"refreshToken":"49a6336d-5649-466a-afeb-beee6b2f31d0"}'
+
+# 4. Tentar reusar o mesmo token (DEVE FALHAR com 401)
+curl -X POST http://localhost:8080/api/v1/auth/refresh \
+  -H "Content-Type: application/json" \
+  -d '{"refreshToken":"49a6336d-5649-466a-afeb-beee6b2f31d0"}'
+```
+
+**Segurança:** Após logout, o refresh token fica permanentemente invalidado. Para nova sessão, faça login novamente.
+
+### Refresh Token via Cookie HttpOnly (Segurança Avançada)
+- **Descrição:** Sistema híbrido que suporta refresh token via **cookie HttpOnly** (recomendado) ou body (dev/test)
+- **Configurável por perfil:** Diferentes níveis de segurança para dev/test/prod
+- **Benefícios de Segurança:**
+  - **HttpOnly**: JavaScript não pode acessar (protege contra XSS)
+  - **Secure**: Enviado apenas via HTTPS em produção (protege contra man-in-the-middle)
+  - **SameSite**: Proteção contra ataques CSRF
+  - **Path Restrito**: Cookie enviado apenas para `/api/v1/auth`
+- **Estratégia por Perfil:**
+  | Perfil | Cookie | Body | Secure | SameSite | Cookie-Only |
+  |--------|--------|------|--------|----------|-------------|
+  | dev    | ✅     | ✅   | ❌     | Lax      | false       |
+  | test   | ✅     | ✅   | ❌     | Lax      | false       |
+  | prod   | ✅     | ❌   | ✅     | Strict   | true        |
+- **Configuração:**
+  ```yaml
+  # application-dev.yml
+  app:
+    security:
+      refresh-token:
+        cookie:
+          http-only: true
+          secure: false      # HTTP permitido em dev
+          same-site: Lax     # Mais permissivo
+          cookie-only: false # Retorna no body também
+  
+  # application-prod.yml
+  app:
+    security:
+      refresh-token:
+        cookie:
+          http-only: true
+          secure: true       # Apenas HTTPS
+          same-site: Strict  # Máxima proteção CSRF
+          cookie-only: true  # Apenas cookie (mais seguro)
+  ```
+- **Como funciona:**
+  1. **Login**: Retorna access token no body + refresh token no cookie (e opcionalmente no body)
+  2. **Refresh**: Aceita token do cookie (preferencial) ou body (backward compatibility)
+  3. **Logout**: Remove cookie do navegador (Max-Age=0)
+- **Uso no Cliente (JavaScript):**
+  ```javascript
+  // Login com cookies
+  const response = await fetch('/api/v1/auth/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password }),
+    credentials: 'include' // IMPORTANTE: inclui cookies
+  });
+  
+  // Refresh (automático via cookie)
+  await fetch('/api/v1/auth/refresh', {
+    method: 'POST',
+    body: '{}', // Body vazio, usa cookie
+    credentials: 'include' // IMPORTANTE: inclui cookies
+  });
+  ```
+- **Backward Compatibility:**
+  - Dev/test: Continua suportando refresh token no body
+  - Produção: Apenas cookie (mais seguro)
+  - Migração gradual sem quebrar clientes antigos
+- **Documentação completa:** Ver [COOKIES_IMPLEMENTATION.md](COOKIES_IMPLEMENTATION.md)
+
+### JWT Authentication Filter (Proteção de Endpoints)
+- **Descrição:** Filtro Spring Security que intercepta todas as requisições e valida tokens JWT
+- **Funcionalidade:** Extrai Bearer token do header Authorization, valida e autentica o usuário
+- **Implementação:**
+  - **JwtAuthenticationFilter**: Filtro que extende `OncePerRequestFilter`
+  - **Integrado no SecurityFilterChain**: Executa antes do `UsernamePasswordAuthenticationFilter`
+  - **Extração de token**: Header `Authorization: Bearer {token}`
+  - **Validação**: Usa `JwtService.validateToken()` para verificar assinatura e expiração
+  - **Authentication**: Cria `UsernamePasswordAuthenticationToken` e coloca no `SecurityContext`
+  - **Autorização**: Spring Security autoriza requisições baseado na autenticação
+- **Fluxo de Autenticação:**
+  1. Cliente envia request com header `Authorization: Bearer {jwt-token}`
+  2. JwtAuthenticationFilter intercepta a requisição
+  3. Extrai e valida o token JWT
+  4. Extrai `userId` e `email` dos claims do token
+  5. Cria objeto `Authentication` com authority `ROLE_USER`
+  6. Coloca autenticação no `SecurityContextHolder`
+  7. Requisição continua para o controller
+  8. Controller acessa dados do usuário via `SecurityContext`
+- **Tratamento de Erros:**
+  - **Sem token**: Requisição continua sem autenticação (rotas públicas)
+  - **Token inválido/expirado**: Limpa contexto e retorna 401 via `JwtAuthenticationEntryPoint`
+  - **Token malformado**: Retorna 401
+  - **Bearer vazio**: Retorna 401
+- **Rotas Públicas (não requerem JWT):**
+  - `/api/v1/auth/**` - Registro, login, refresh, logout
+  - `/actuator/health` - Health check
+  - `/h2-console/**` - Console H2 (dev apenas)
+- **Rotas Protegidas (requerem JWT):**
+  - `/api/v1/users/me` - Dados do usuário autenticado
+  - Todas as outras rotas da API (futuras)
+- **Endpoint GET /api/v1/users/me:**
+  - **Descrição**: Retorna dados do usuário autenticado
+  - **Autenticação**: Requer JWT válido no header Authorization
+  - **Response**: `UserMeResponse` com id, email, name, provider, status, createdAt, updatedAt
+  - **Use Case**: `GetCurrentUserUseCase` busca usuário pelo ID extraído do JWT
+  - **Útil para**: Carregar dados do usuário no frontend após login
+- **Exemplo de uso (cURL):**
+  ```bash
+  # 1. Fazer login para obter access token
+  curl -X POST http://localhost:8080/api/v1/auth/login \
+    -H "Content-Type: application/json" \
+    -d '{"email":"teste@email.com","password":"senha@123"}'
+  
+  # Response: {"accessToken":"eyJhbG...", "refreshToken":"...", "expiresIn":3600}
+  
+  # 2. Copiar o accessToken e usar para acessar endpoint protegido
+  curl -X GET http://localhost:8080/api/v1/users/me \
+    -H "Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJwcm92aWRlciI6IkxPQ0FMIiwibmFtZSI6IlRlc3RlIiwiZW1haWwiOiJ0ZXN0ZUBlbWFpbC5jb20iLCJzdWIiOiIxIiwiaXNzIjoic2hvcHBpbmctbGlzdC1hcGkiLCJpYXQiOjE2MDAwMDAwMDAsImV4cCI6MTYwMDAwMzYwMH0.signature"
+  
+  # Response (200 OK):
+  # {
+  #   "id": 1,
+  #   "email": "teste@email.com",
+  #   "name": "Teste",
+  #   "provider": "LOCAL",
+  #   "status": "ACTIVE",
+  #   "createdAt": "2025-12-25T15:30:00Z",
+  #   "updatedAt": "2025-12-25T15:30:00Z"
+  # }
+  
+  # 3. Tentar acessar sem token (401 Unauthorized)
+  curl -X GET http://localhost:8080/api/v1/users/me
+  
+  # Response (401):
+  # {
+  #   "path": "/api/v1/users/me",
+  #   "error": "Unauthorized",
+  #   "message": "Autenticação requerida. Por favor, forneça um token JWT válido.",
+  #   "status": 401,
+  #   "timestamp": "2025-12-25T15:35:00Z"
+  # }
+  ```
+- **Exemplo de uso (JavaScript/Frontend):**
+  ```javascript
+  // Login
+  const loginResponse = await fetch('/api/v1/auth/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password })
+  });
+  const { accessToken } = await loginResponse.json();
+  
+  // Salvar token (localStorage, sessionStorage, cookie, etc)
+  localStorage.setItem('accessToken', accessToken);
+  
+  // Acessar endpoint protegido
+  const userResponse = await fetch('/api/v1/users/me', {
+    headers: {
+      'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+    }
+  });
+  const userData = await userResponse.json();
+  console.log('Usuário logado:', userData);
+  ```
+- **Testes:**
+  - 8 testes de integração end-to-end
+  - Cenários cobertos:
+    - ✅ Token válido → Retorna dados do usuário (200)
+    - ✅ Sem token → 401 Unauthorized
+    - ✅ Token inválido → 401 Unauthorized
+    - ✅ Token expirado → 401 Unauthorized
+    - ✅ Bearer malformado → 401 Unauthorized
+    - ✅ Bearer vazio → 401 Unauthorized
+    - ✅ Rotas públicas continuam funcionando sem JWT
+    - ✅ UserID extraído corretamente do JWT
+  - Status: ✅ 100% passando
+- **Segurança:**
+  - Token JWT nunca armazenado no servidor (stateless)
+  - Validação de assinatura e expiração em cada requisição
+  - Contexto de segurança limpo em caso de erro
+  - Logs estruturados para auditoria
+  - Proteção contra ataques de replay (token expira)
+  - Proteção contra token theft (revogação via refresh token)
+
+### Roles e Autorização (RBAC - Role-Based Access Control)
+- **Descrição:** Sistema de controle de acesso baseado em papéis (roles) para gerenciar permissões de usuários
+- **Implementação:** Relacionamento Many-to-Many entre User e Role com suporte a autorização dinâmica
+- **Modelo de Dados:**
+  - **Tabela `tb_role`**: Armazena roles do sistema
+    - Campos: id, name (UNIQUE), description, created_at, updated_at
+    - Roles padrão: USER (usuário comum), ADMIN (administrador)
+  - **Tabela `tb_user_role`**: Relacionamento Many-to-Many
+    - Campos: user_id (FK), role_id (FK), created_at
+    - PK composta (user_id, role_id)
+    - Cascade DELETE: ao deletar usuário, remove relacionamentos
+- **Migrations Flyway:**
+  - `V3__create_roles.sql`: Cria tabela tb_role com constraints
+  - `V4__create_user_roles.sql`: Cria tabela de relacionamento tb_user_role
+  - `V5__seed_roles.sql`: Insere roles padrão (USER e ADMIN)
+  - `V6__assign_user_role_to_existing_users.sql`: Atribui role USER a usuários existentes
+- **Entidade Role (Domínio):**
+  - Campos: id, name, description, createdAt, updatedAt
+  - Validações: nome obrigatório, UPPERCASE, único, max 50 caracteres
+  - Métodos: `getNameWithPrefix()` retorna "ROLE_USER", `isAdmin()`, `isUser()`
+  - Factory method: `Role.create(name, description)`
+- **Entidade User (Atualizada):**
+  - Relacionamento: `@ManyToMany` com Role via `@JoinTable` (tb_user_role)
+  - Campo: `Set<Role> roles` com FetchType.EAGER
+  - Métodos novos: `addRole()`, `removeRole()`, `hasRole()`, `isAdmin()`
+  - Usuário pode ter múltiplas roles simultaneamente
+- **Atribuição Automática de Role:**
+  - Todo usuário registrado via `/api/v1/auth/register` recebe role **USER** automaticamente
+  - `RegisterUserUseCase` busca role "USER" do banco e atribui ao usuário
+  - Lança exceção se role USER não existir (sistema mal configurado)
+- **JWT Authentication Filter (Atualizado):**
+  - Busca usuário do banco após validar token JWT
+  - Extrai roles do usuário: `user.getRoles()`
+  - Converte roles em authorities do Spring Security: `role.getNameWithPrefix()` → "ROLE_USER"
+  - Cria `Authentication` com authorities dinâmicas do banco
+  - Logs estruturados: "Roles carregadas para userId=1: [USER]"
+- **Fluxo de Autorização:**
+  1. Usuário faz login → JWT gerado
+  2. Cliente envia request com JWT
+  3. JwtAuthenticationFilter valida token
+  4. Filtro busca usuário e suas roles do banco
+  5. Roles são convertidas em authorities ("ROLE_USER", "ROLE_ADMIN")
+  6. Spring Security autoriza requisição baseado nas authorities
+  7. Controller pode verificar roles com `@PreAuthorize("hasRole('ADMIN')")`
+- **Exemplo de Uso:**
+  ```bash
+  # 1. Registrar usuário (recebe role USER automaticamente)
+  curl -X POST http://localhost:8080/api/v1/auth/register \
+    -H "Content-Type: application/json" \
+    -d '{"email":"user@email.com","name":"Usuario","password":"senha@123"}'
+  
+  # 2. Fazer login
+  curl -X POST http://localhost:8080/api/v1/auth/login \
+    -H "Content-Type: application/json" \
+    -d '{"email":"user@email.com","password":"senha@123"}'
+  
+  # Response: {"accessToken":"...", "refreshToken":"...", "expiresIn":3600}
+  
+  # 3. Acessar endpoint protegido (JWT contém roles)
+  curl -X GET http://localhost:8080/api/v1/users/me \
+    -H "Authorization: Bearer {token}"
+  
+  # 4. Logs da aplicação mostram roles carregadas:
+  # INFO - Usuário autenticado via JWT: userId=1, email=user@email.com, roles=[ROLE_USER]
+  # DEBUG - Roles carregadas para userId=1: [USER]
+  ```
+- **Consultar Roles no Banco:**
+  ```sql
+  -- Ver roles do usuário
+  SELECT u.email, r.name as role
+  FROM tb_user u
+  JOIN tb_user_role ur ON u.id = ur.user_id
+  JOIN tb_role r ON ur.role_id = r.id
+  WHERE u.email = 'user@email.com';
+  
+  -- Resultado:
+  -- email: user@email.com, role: USER
+  ```
+- **Futuro - Autorização Granular:**
+  - Uso de `@PreAuthorize` em controllers
+  - Exemplo: `@PreAuthorize("hasRole('ADMIN')")` para endpoints administrativos
+  - Exemplo: `@PreAuthorize("hasAnyRole('USER', 'ADMIN')")` para acesso geral
+  - Roles customizadas por funcionalidade (ex: MODERATOR, VIEWER)
+- **Benefícios:**
+  - Autorização dinâmica (mudanças de role refletem imediatamente)
+  - Flexibilidade (usuário pode ter múltiplas roles)
+  - Escalável (fácil adicionar novas roles)
+  - Seguro (roles validadas em cada requisição)
+  - Auditável (histórico de roles na tabela tb_user_role)
+- **Testes:**
+  - Testes unitários: RegisterUserUseCase atribui role USER
+  - Testes de integração: Usuário criado tem role no banco
+  - JWT Filter carrega roles corretamente
+  - TestDataSetup cria roles automaticamente em testes
+  - Status: ✅ 83/83 testes passando (100%)
+
 ### Banco de Dados MySQL
 - **Container:** MySQL 9 via Docker Compose
 - **Configuração:** Credenciais via arquivo `.env`
@@ -669,6 +1024,10 @@ curl -X POST http://localhost:8080/api/v1/auth/refresh \
 - **Migrations:** Gerenciadas via Flyway (versionamento de schema)
   - `V1__create_users.sql`: Tabela de usuários com suporte LOCAL/GOOGLE
   - `V2__create_refresh_tokens.sql`: Tabela de refresh tokens com rotação e revogação
+  - `V3__create_roles.sql`: Tabela de roles (papéis) do sistema
+  - `V4__create_user_roles.sql`: Relacionamento Many-to-Many entre User e Role
+  - `V5__seed_roles.sql`: Seed de roles padrão (USER e ADMIN)
+  - `V6__assign_user_role_to_existing_users.sql`: Atribui role USER a usuários existentes
 
 ### Datasource e Persistência (Profile Dev)
 - **Driver:** MySQL Connector/J
@@ -725,13 +1084,21 @@ curl -X POST http://localhost:8080/api/v1/auth/refresh \
   - Tokens assinados e verificados
   - Logs de segurança para tentativas inválidas
 
-### Domínio User e RefreshToken (DDD)
+### Domínio User, Role e RefreshToken (DDD)
 - **Agregado User:**
   - Suporte a provedores: `LOCAL` (email/senha) e `GOOGLE` (OAuth2)
   - Status: `ACTIVE` ou `DISABLED`
+  - Relacionamento: Many-to-Many com `Role` (autorização)
   - Factory methods: `createLocalUser()`, `createGoogleUser()`
   - Regras de negócio: passwordHash obrigatório apenas para LOCAL
   - Métodos: `disable()`, `activate()`, `updatePassword()`, `updateName()`
+  - Métodos de roles: `addRole()`, `removeRole()`, `hasRole()`, `isAdmin()`
+- **Entidade Role:**
+  - Campos: id, name (UNIQUE), description, createdAt, updatedAt
+  - Validações: nome obrigatório, UPPERCASE, max 50 caracteres
+  - Roles padrão: USER, ADMIN
+  - Métodos: `getNameWithPrefix()`, `isAdmin()`, `isUser()`, `updateDescription()`
+  - Factory method: `Role.create(name, description)`
 - **Entidade RefreshToken:**
   - Relacionamento com User (many-to-one)
   - Suporte a rotação de tokens (`replacedByTokenId`)
@@ -740,6 +1107,7 @@ curl -X POST http://localhost:8080/api/v1/auth/refresh \
   - Apenas hash do token armazenado (nunca o token em texto puro)
 - **Repository Pattern:**
   - `UserRepository`: Port (interface no domínio)
+  - `RoleRepository`: Port (interface no domínio)
   - `JpaUserRepository`: Adapter (implementação Spring Data JPA)
   - Métodos: `save()`, `findByEmail()`, `existsByEmail()`, `findById()`, `deleteAll()`
 - **Migrations Flyway:**
@@ -769,29 +1137,36 @@ curl -X POST http://localhost:8080/api/v1/auth/refresh \
   - Variáveis disponíveis via `${NOME_VARIAVEL}` no `application.yml`
 - **Arquitetura implementada:**
   - ✅ **Clean Architecture** com separação em 4 camadas
-  - ✅ **DDD** (Domain-Driven Design) com agregados User e RefreshToken
+  - ✅ **DDD** (Domain-Driven Design) com agregados User, Role e RefreshToken
   - ✅ **Repository Pattern** com ports e adapters
   - ✅ **Use Cases** na camada application (orquestração transacional)
   - ✅ **JWT Service** para geração e validação de tokens
+  - ✅ **JWT Authentication Filter** para proteção de endpoints via Bearer token
+  - ✅ **Roles e Autorização (RBAC)** - Sistema de controle de acesso baseado em papéis
   - ✅ **Refresh Token com Rotação Automática** (one-time use, token revogado após uso)
+  - ✅ **Cookies HttpOnly + Secure + SameSite** (estratégia híbrida por perfil)
   - ✅ **Detecção de Reuso de Tokens** (alerta de segurança para possíveis ataques)
   - ✅ **Hash SHA-256** para refresh tokens (nunca armazenado em texto puro)
   - ✅ **Global Exception Handler** com respostas padronizadas
   - ✅ **Bean Validation** com validações declarativas nos DTOs
-  - ✅ **Flyway Migrations** para versionamento de schema
+  - ✅ **Flyway Migrations** para versionamento de schema (6 migrations)
   - ✅ **Metadata de Sessão** (User-Agent, IP) para auditoria e segurança
   - ✅ **Vinculação de Tokens** (replacedByTokenId) para rastreabilidade
+  - ✅ **Perfis de Configuração** (dev/test/prod) com níveis de segurança diferentes
 - **Testes implementados:**
-  - ✅ Testes unitários (use cases, services) - 34 testes
-  - ✅ Testes de integração (controllers end-to-end) - 32 testes
+  - ✅ Testes unitários (use cases, services) - 45 testes
+  - ✅ Testes de integração (controllers end-to-end) - 38 testes
   - ✅ Coverage de casos de sucesso e falha
-  - ✅ Total: 66 testes | 65 passing
-- **Funcionalidades de Autenticação:**
+  - ✅ Total: 83 testes | 83 passing (100%)
+- **Funcionalidades de Autenticação e Autorização:**
   - ✅ **Registro** de usuário LOCAL (POST /api/v1/auth/register)
   - ✅ **Login** de usuário com JWT + Refresh Token (POST /api/v1/auth/login)
   - ✅ **Refresh Token** - Renovação automática com rotação (POST /api/v1/auth/refresh)
-  - 🔜 **JWT Authentication Filter** - Interceptação e validação de requests
-  - 🔜 **Logout** - Revogação explícita de refresh tokens
+  - ✅ **Logout** - Revogação explícita de refresh tokens (POST /api/v1/auth/logout)
+  - ✅ **Cookies HttpOnly** - Refresh token via cookie seguro (configurável por perfil)
+  - ✅ **JWT Authentication Filter** - Interceptação e validação de requests via Bearer token
+  - ✅ **Roles e Autorização** - Sistema RBAC com roles USER e ADMIN
+  - ✅ **Endpoint Protegido** - GET /api/v1/users/me (dados do usuário autenticado)
   - 🔜 **OAuth2 com Google** - Login social
 - O foco continua sendo **build verde**, **startup limpo**, **testes passando** e **base arquitetural sólida**.
 

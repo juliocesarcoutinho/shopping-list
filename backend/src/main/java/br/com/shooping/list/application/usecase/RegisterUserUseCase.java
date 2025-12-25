@@ -2,6 +2,8 @@ package br.com.shooping.list.application.usecase;
 
 import br.com.shooping.list.application.dto.auth.RegisterRequest;
 import br.com.shooping.list.application.dto.auth.RegisterResponse;
+import br.com.shooping.list.domain.user.Role;
+import br.com.shooping.list.domain.user.RoleRepository;
 import br.com.shooping.list.domain.user.User;
 import br.com.shooping.list.domain.user.UserRepository;
 import br.com.shooping.list.infrastructure.exception.EmailAlreadyExistsException;
@@ -13,11 +15,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Caso de uso: Registrar novo usuário LOCAL
- * <p>
+ *
  * Responsabilidades:
  * - Validar email único
  * - Fazer hash da senha
  * - Criar usuário no domínio
+ * - Atribuir role USER padrão
  * - Persistir via repositório
  * - Retornar resposta sem dados sensíveis
  */
@@ -27,6 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class RegisterUserUseCase {
 
     private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Transactional
@@ -49,6 +53,16 @@ public class RegisterUserUseCase {
                 request.getName(),
                 passwordHash
         );
+
+        // Buscar e atribuir role USER padrão
+        Role userRole = roleRepository.findByName("USER")
+                .orElseThrow(() -> {
+                    log.error("Role USER não encontrada no banco. Execute as migrations Flyway.");
+                    return new IllegalStateException("Role USER não encontrada. Sistema mal configurado.");
+                });
+
+        user.addRole(userRole);
+        log.debug("Role USER atribuída ao usuário: email={}", request.getEmail());
 
         // Persistir
         var savedUser = userRepository.save(user);

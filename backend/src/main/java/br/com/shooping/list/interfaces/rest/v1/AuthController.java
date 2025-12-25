@@ -2,14 +2,18 @@ package br.com.shooping.list.interfaces.rest.v1;
 
 import br.com.shooping.list.application.dto.auth.LoginRequest;
 import br.com.shooping.list.application.dto.auth.LoginResponse;
+import br.com.shooping.list.application.dto.auth.LogoutRequest;
 import br.com.shooping.list.application.dto.auth.RefreshTokenRequest;
 import br.com.shooping.list.application.dto.auth.RefreshTokenResponse;
 import br.com.shooping.list.application.dto.auth.RegisterRequest;
 import br.com.shooping.list.application.dto.auth.RegisterResponse;
 import br.com.shooping.list.application.usecase.LoginUserUseCase;
+import br.com.shooping.list.application.usecase.LogoutUseCase;
 import br.com.shooping.list.application.usecase.RefreshTokenUseCase;
 import br.com.shooping.list.application.usecase.RegisterUserUseCase;
+import br.com.shooping.list.infrastructure.security.CookieService;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,6 +24,8 @@ import org.springframework.web.bind.annotation.*;
 /**
  * Controller REST para operações de autenticação
  * Base path: /api/v1/auth
+ *
+ * Suporta refresh token via cookie HttpOnly (seguro) e body (dev/test)
  */
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -30,6 +36,8 @@ public class AuthController {
     private final RegisterUserUseCase registerUserUseCase;
     private final LoginUserUseCase loginUserUseCase;
     private final RefreshTokenUseCase refreshTokenUseCase;
+    private final LogoutUseCase logoutUseCase;
+    private final CookieService cookieService;
 
     /**
      * Endpoint para registro de novo usuário LOCAL
@@ -52,12 +60,14 @@ public class AuthController {
      *
      * @param request dados de login (email, senha)
      * @param httpRequest requisição HTTP para extrair metadata
-     * @return tokens de acesso e refresh
+     * @param httpResponse resposta HTTP para adicionar cookie
+     * @return tokens de acesso e refresh (refresh também vai no cookie)
      */
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(
             @Valid @RequestBody LoginRequest request,
-            HttpServletRequest httpRequest
+            HttpServletRequest httpRequest,
+            HttpServletResponse httpResponse
     ) {
         log.info("Requisição de login recebida para email: {}", request.getEmail());
 
@@ -66,31 +76,110 @@ public class AuthController {
 
         var response = loginUserUseCase.execute(request, userAgent, ip);
 
+        // Adiciona refresh token no cookie HttpOnly
+        cookieService.addRefreshTokenCookie(httpResponse, response.getRefreshToken());
+
+        // Se cookie-only está ativado, remove refresh token do body (mais seguro)
+        if (cookieService.isCookieOnly()) {
+            response = new LoginResponse(
+                    response.getAccessToken(),
+                    null, // refresh token só no cookie
+                    response.getExpiresIn()
+            );
+            log.debug("Modo cookie-only ativado: refresh token removido do body");
+        }
+
         log.info("Login realizado com sucesso para email: {}", request.getEmail());
         return ResponseEntity.ok(response);
     }
 
     /**
      * Endpoint para renovação de access token via refresh token
+     * Aceita refresh token via cookie (preferencial) ou body (dev/test)
      *
-     * @param request refresh token a ser validado e rotacionado
-     * @param httpRequest requisição HTTP para extrair metadata
-     * @return novo access token e novo refresh token (rotacionado)
+     * @param request refresh token a ser validado e rotacionado (opcional se vier no cookie)
+     * @param httpRequest requisição HTTP para extrair metadata e cookie
+     * @param httpResponse resposta HTTP para adicionar novo cookie
+     * @return novo access token e novo refresh token (refresh também vai no cookie)
      */
     @PostMapping("/refresh")
     public ResponseEntity<RefreshTokenResponse> refresh(
-            @Valid @RequestBody RefreshTokenRequest request,
-            HttpServletRequest httpRequest
+            @RequestBody(required = false) RefreshTokenRequest request,
+            HttpServletRequest httpRequest,
+            HttpServletResponse httpResponse
     ) {
         log.info("Requisição de refresh token recebida");
+
+        // Prioriza cookie, mas aceita body se não houver cookie (backward compatibility)
+        String refreshToken = cookieService.getRefreshTokenFromCookie(httpRequest)
+                .orElseGet(() -> {
+                    if (request == null || request.getRefreshToken() == null || request.getRefreshToken().isBlank()) {
+                        log.warn("Refresh token não encontrado nem no cookie nem no body");
+                        throw new IllegalArgumentException("Refresh token é obrigatório");
+                    }
+                    log.debug("Usando refresh token do body (cookie não encontrado)");
+                    return request.getRefreshToken();
+                });
 
         String userAgent = httpRequest.getHeader("User-Agent");
         String ip = extractClientIp(httpRequest);
 
-        var response = refreshTokenUseCase.execute(request, userAgent, ip);
+        var refreshRequest = new RefreshTokenRequest(refreshToken);
+        var response = refreshTokenUseCase.execute(refreshRequest, userAgent, ip);
+
+        // Adiciona novo refresh token no cookie HttpOnly (rotação)
+        cookieService.addRefreshTokenCookie(httpResponse, response.getRefreshToken());
+
+        // Se cookie-only está ativado, remove refresh token do body (mais seguro)
+        if (cookieService.isCookieOnly()) {
+            response = new RefreshTokenResponse(
+                    response.getAccessToken(),
+                    null, // refresh token só no cookie
+                    response.getExpiresIn()
+            );
+            log.debug("Modo cookie-only ativado: refresh token removido do body");
+        }
 
         log.info("Refresh token rotacionado com sucesso");
         return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Endpoint para logout (revogação de refresh token)
+     * Aceita refresh token via cookie (preferencial) ou body (dev/test)
+     *
+     * @param request refresh token a ser revogado (opcional se vier no cookie)
+     * @param httpRequest requisição HTTP para extrair cookie
+     * @param httpResponse resposta HTTP para remover cookie
+     * @return 204 No Content
+     */
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(
+            @RequestBody(required = false) LogoutRequest request,
+            HttpServletRequest httpRequest,
+            HttpServletResponse httpResponse
+    ) {
+        log.info("Requisição de logout recebida");
+
+        // Prioriza cookie, mas aceita body se não houver cookie (backward compatibility)
+        String refreshToken = cookieService.getRefreshTokenFromCookie(httpRequest)
+                .orElseGet(() -> {
+                    if (request == null || request.getRefreshToken() == null || request.getRefreshToken().isBlank()) {
+                        log.warn("Refresh token não encontrado nem no cookie nem no body");
+                        throw new IllegalArgumentException("Refresh token é obrigatório");
+                    }
+                    log.debug("Usando refresh token do body (cookie não encontrado)");
+                    return request.getRefreshToken();
+                });
+
+        var logoutRequest = new LogoutRequest(refreshToken);
+        logoutUseCase.execute(logoutRequest);
+
+        // Remove cookie do navegador
+        cookieService.clearRefreshTokenCookie(httpResponse);
+
+        log.info("Logout realizado com sucesso");
+        return ResponseEntity.noContent().build();
     }
 
     /**

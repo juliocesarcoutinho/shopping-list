@@ -3,6 +3,8 @@ package br.com.shooping.list.application.usecase;
 import br.com.shooping.list.application.dto.auth.RegisterRequest;
 import br.com.shooping.list.application.dto.auth.RegisterResponse;
 import br.com.shooping.list.domain.user.AuthProvider;
+import br.com.shooping.list.domain.user.Role;
+import br.com.shooping.list.domain.user.RoleRepository;
 import br.com.shooping.list.domain.user.User;
 import br.com.shooping.list.domain.user.UserRepository;
 import br.com.shooping.list.domain.user.UserStatus;
@@ -35,12 +37,16 @@ class RegisterUserUseCaseTest {
     private UserRepository userRepository;
 
     @Mock
+    private RoleRepository roleRepository;
+
+    @Mock
     private PasswordEncoder passwordEncoder;
 
     @InjectMocks
     private RegisterUserUseCase registerUserUseCase;
 
     private RegisterRequest validRequest;
+    private Role userRole;
 
     @BeforeEach
     void setUp() {
@@ -49,6 +55,29 @@ class RegisterUserUseCaseTest {
                 "Teste User",
                 "senha@123"
         );
+
+        // Criar role USER para os testes
+        userRole = Role.create("USER", "Usuário padrão");
+        var idField = getFieldAndSetAccessible(Role.class, "id");
+        setField(idField, userRole, 1L);
+    }
+
+    private java.lang.reflect.Field getFieldAndSetAccessible(Class<?> clazz, String fieldName) {
+        try {
+            var field = clazz.getDeclaredField(fieldName);
+            field.setAccessible(true);
+            return field;
+        } catch (NoSuchFieldException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void setField(java.lang.reflect.Field field, Object target, Object value) {
+        try {
+            field.set(target, value);
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Test
@@ -58,6 +87,7 @@ class RegisterUserUseCaseTest {
         String hashedPassword = "$2a$10$hashedPassword";
         when(userRepository.findByEmail(validRequest.getEmail())).thenReturn(Optional.empty());
         when(passwordEncoder.encode(validRequest.getPassword())).thenReturn(hashedPassword);
+        when(roleRepository.findByName("USER")).thenReturn(Optional.of(userRole));
 
         User savedUser = User.createLocalUser(
                 validRequest.getEmail(),
@@ -99,6 +129,7 @@ class RegisterUserUseCaseTest {
         String hashedPassword = "$2a$10$differentHash";
         when(userRepository.findByEmail(anyString())).thenReturn(Optional.empty());
         when(passwordEncoder.encode(validRequest.getPassword())).thenReturn(hashedPassword);
+        when(roleRepository.findByName("USER")).thenReturn(Optional.of(userRole));
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         // Act
@@ -141,6 +172,7 @@ class RegisterUserUseCaseTest {
         // Arrange
         when(userRepository.findByEmail(anyString())).thenReturn(Optional.empty());
         when(passwordEncoder.encode(anyString())).thenReturn("hashedPassword");
+        when(roleRepository.findByName("USER")).thenReturn(Optional.of(userRole));
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         // Act
@@ -156,6 +188,7 @@ class RegisterUserUseCaseTest {
         // Arrange
         when(userRepository.findByEmail(anyString())).thenReturn(Optional.empty());
         when(passwordEncoder.encode(anyString())).thenReturn("hashedPassword");
+        when(roleRepository.findByName("USER")).thenReturn(Optional.of(userRole));
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         // Act
@@ -171,6 +204,7 @@ class RegisterUserUseCaseTest {
         // Arrange
         when(userRepository.findByEmail(anyString())).thenReturn(Optional.empty());
         when(passwordEncoder.encode(anyString())).thenReturn("hashedPassword");
+        when(roleRepository.findByName("USER")).thenReturn(Optional.of(userRole));
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> {
             User user = invocation.getArgument(0);
             try {

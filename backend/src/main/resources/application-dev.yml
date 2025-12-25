@@ -32,6 +32,16 @@ app:
       expiration: 1h
     refresh-token:
       expiration: 7d
+  security:
+    refresh-token:
+      cookie:
+        name: refreshToken
+        http-only: true
+        secure: false # HTTP permitido em dev
+        path: /api/v1/auth
+        same-site: Lax # Mais permissivo para dev
+        max-age: 604800 # 7 dias (mesmo do token)
+        cookie-only: false # Retorna no body também (backward compatibility)
 
 logging:
   level:

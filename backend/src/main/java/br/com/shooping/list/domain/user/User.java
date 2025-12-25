@@ -6,7 +6,9 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.Instant;
+import java.util.HashSet;
 import java.util.Objects;
+import java.util.Set;
 
 @Entity
 @Table(name = "tb_user")
@@ -39,6 +41,14 @@ public class User {
 
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
+
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(
+            name = "tb_user_role",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "role_id")
+    )
+    private Set<Role> roles = new HashSet<>();
 
     // Construtor para criação via LOCAL
     private User(String email, String name, String passwordHash, AuthProvider provider) {
@@ -127,6 +137,53 @@ public class User {
         }
         this.passwordHash = passwordHash;
         this.updatedAt = Instant.now();
+    }
+
+    /**
+     * Adiciona uma role ao usuário.
+     * Utilizado no registro para atribuir role USER padrão.
+     *
+     * @param role role a ser adicionada
+     * @throws IllegalArgumentException se role for nula
+     */
+    public void addRole(Role role) {
+        if (role == null) {
+            throw new IllegalArgumentException("Role não pode ser nula");
+        }
+        this.roles.add(role);
+        this.updatedAt = Instant.now();
+    }
+
+    /**
+     * Remove uma role do usuário.
+     *
+     * @param role role a ser removida
+     */
+    public void removeRole(Role role) {
+        if (role != null) {
+            this.roles.remove(role);
+            this.updatedAt = Instant.now();
+        }
+    }
+
+    /**
+     * Verifica se o usuário possui uma role específica.
+     *
+     * @param roleName nome da role (ex: "USER", "ADMIN")
+     * @return true se possui a role
+     */
+    public boolean hasRole(String roleName) {
+        return roles.stream()
+                .anyMatch(role -> role.getName().equals(roleName));
+    }
+
+    /**
+     * Verifica se o usuário é administrador.
+     *
+     * @return true se possui role ADMIN
+     */
+    public boolean isAdmin() {
+        return hasRole("ADMIN");
     }
 
     public boolean isActive() {

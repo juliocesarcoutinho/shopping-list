@@ -23,4 +23,14 @@ app:
       expiration: 15m
     refresh-token:
       expiration: 1d
+  security:
+    refresh-token:
+      cookie:
+        name: refreshToken
+        http-only: true
+        secure: false # HTTP permitido em test
+        path: /api/v1/auth
+        same-site: Lax
+        max-age: 86400 # 1 dia (mesmo do token no test)
+        cookie-only: false # Retorna no body também (facilita testes)
 

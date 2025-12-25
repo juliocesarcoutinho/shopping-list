@@ -2,6 +2,7 @@ package br.com.shooping.list.interfaces.rest.v1;
 
 import br.com.shooping.list.application.dto.auth.RegisterRequest;
 import br.com.shooping.list.domain.user.UserRepository;
+import br.com.shooping.list.test.support.TestDataSetup;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -38,9 +39,13 @@ class AuthControllerTest {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private TestDataSetup testDataSetup;
+
     @BeforeEach
     void setUp() {
         userRepository.deleteAll();
+        testDataSetup.createDefaultRoles();
     }
 
     @Test

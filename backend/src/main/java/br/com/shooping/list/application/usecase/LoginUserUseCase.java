@@ -4,23 +4,19 @@ import br.com.shooping.list.application.dto.auth.LoginRequest;
 import br.com.shooping.list.application.dto.auth.LoginResponse;
 import br.com.shooping.list.domain.user.RefreshToken;
 import br.com.shooping.list.domain.user.RefreshTokenRepository;
-import br.com.shooping.list.domain.user.User;
 import br.com.shooping.list.domain.user.UserRepository;
 import br.com.shooping.list.domain.user.UserStatus;
 import br.com.shooping.list.infrastructure.exception.InvalidCredentialsException;
 import br.com.shooping.list.infrastructure.security.JwtProperties;
 import br.com.shooping.list.infrastructure.security.JwtService;
+import br.com.shooping.list.infrastructure.security.TokenHashUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
-import java.util.Base64;
 import java.util.UUID;
 
 /**
@@ -78,7 +74,7 @@ public class LoginUserUseCase {
         String refreshTokenValue = UUID.randomUUID().toString();
 
         // Fazer hash do refresh token (SHA-256)
-        String refreshTokenHash = hashToken(refreshTokenValue);
+        String refreshTokenHash = TokenHashUtil.hashToken(refreshTokenValue);
 
         // Calcular expiração do refresh token
         Instant refreshTokenExpiration = Instant.now()
@@ -102,20 +98,6 @@ public class LoginUserUseCase {
                 .refreshToken(refreshTokenValue)
                 .expiresIn(expiresIn)
                 .build();
-    }
-
-    /**
-     * Gera hash SHA-256 do token para armazenamento seguro
-     */
-    private String hashToken(String token) {
-        try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] hash = digest.digest(token.getBytes(StandardCharsets.UTF_8));
-            return Base64.getEncoder().encodeToString(hash);
-        } catch (NoSuchAlgorithmException e) {
-            log.error("Erro ao gerar hash do refresh token", e);
-            throw new RuntimeException("Erro ao processar refresh token", e);
-        }
     }
 }
 

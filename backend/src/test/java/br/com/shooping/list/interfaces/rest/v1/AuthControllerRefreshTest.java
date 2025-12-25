@@ -6,6 +6,7 @@ import br.com.shooping.list.application.dto.auth.RegisterRequest;
 import br.com.shooping.list.domain.user.RefreshToken;
 import br.com.shooping.list.domain.user.RefreshTokenRepository;
 import br.com.shooping.list.domain.user.UserRepository;
+import br.com.shooping.list.test.support.TestDataSetup;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -45,10 +46,14 @@ class AuthControllerRefreshTest {
     @Autowired
     private RefreshTokenRepository refreshTokenRepository;
 
+    @Autowired
+    private TestDataSetup testDataSetup;
+
     @BeforeEach
     void setUp() {
         refreshTokenRepository.deleteAll();
         userRepository.deleteAll();
+        testDataSetup.createDefaultRoles();
     }
 
     @Test
@@ -195,14 +200,14 @@ class AuthControllerRefreshTest {
         // Arrange
         RefreshTokenRequest emptyRequest = new RefreshTokenRequest("");
 
-        // Act & Assert
+        // Act & Assert - Com cookies, token vazio no body sem cookie retorna IllegalArgumentException
         mockMvc.perform(post("/api/v1/auth/refresh")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(emptyRequest)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status", is(400)))
-                .andExpect(jsonPath("$.details", hasSize(1)))
-                .andExpect(jsonPath("$.details[0].field", is("refreshToken")));
+                .andExpect(jsonPath("$.error", is("Bad Request")))
+                .andExpect(jsonPath("$.message", containsString("obrigatório")));
     }
 
     @Test
@@ -211,14 +216,14 @@ class AuthControllerRefreshTest {
         // Arrange
         RefreshTokenRequest nullRequest = new RefreshTokenRequest(null);
 
-        // Act & Assert
+        // Act & Assert - Com cookies, token null no body sem cookie retorna IllegalArgumentException
         mockMvc.perform(post("/api/v1/auth/refresh")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(nullRequest)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status", is(400)))
-                .andExpect(jsonPath("$.details", hasSize(1)))
-                .andExpect(jsonPath("$.details[0].field", is("refreshToken")));
+                .andExpect(jsonPath("$.error", is("Bad Request")))
+                .andExpect(jsonPath("$.message", containsString("obrigatório")));
     }
 
     @Test

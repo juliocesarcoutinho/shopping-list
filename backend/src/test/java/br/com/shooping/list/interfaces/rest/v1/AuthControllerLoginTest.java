@@ -4,6 +4,7 @@ import br.com.shooping.list.application.dto.auth.LoginRequest;
 import br.com.shooping.list.application.dto.auth.RegisterRequest;
 import br.com.shooping.list.domain.user.RefreshTokenRepository;
 import br.com.shooping.list.domain.user.UserRepository;
+import br.com.shooping.list.test.support.TestDataSetup;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -43,10 +44,14 @@ class AuthControllerLoginTest {
     @Autowired
     private RefreshTokenRepository refreshTokenRepository;
 
+    @Autowired
+    private TestDataSetup testDataSetup;
+
     @BeforeEach
     void setUp() {
         refreshTokenRepository.deleteAll();
         userRepository.deleteAll();
+        testDataSetup.createDefaultRoles();
     }
 
     @Test

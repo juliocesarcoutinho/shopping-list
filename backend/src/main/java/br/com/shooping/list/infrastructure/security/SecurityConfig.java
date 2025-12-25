@@ -10,6 +10,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -23,16 +24,21 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
  * - CSRF desabilitado (API REST)
  * - CORS configurado para desenvolvimento
  * - Rotas públicas e protegidas
- * - Base para filtros JWT (a serem implementados)
+ * - Filtro JWT para autenticação via Bearer token
  */
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
 
     private final JwtAuthenticationEntryPoint authenticationEntryPoint;
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
-    public SecurityConfig(JwtAuthenticationEntryPoint authenticationEntryPoint) {
+    public SecurityConfig(
+            JwtAuthenticationEntryPoint authenticationEntryPoint,
+            JwtAuthenticationFilter jwtAuthenticationFilter
+    ) {
         this.authenticationEntryPoint = authenticationEntryPoint;
+        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
     }
 
     private static final String[] PUBLIC_ENDPOINTS = {
@@ -68,6 +74,10 @@ public class SecurityConfig {
                         // Todas as outras requisições precisam autenticação
                         .anyRequest().authenticated()
                 )
+
+                // Adiciona filtro JWT antes do filtro de autenticação padrão
+                // Isso garante que o JWT seja processado ANTES da autorização
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
 
                 // Desabilita frame options para H2 Console (apenas dev)
                 .headers(headers -> headers

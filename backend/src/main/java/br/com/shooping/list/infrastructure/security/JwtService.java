@@ -89,6 +89,43 @@ public class JwtService {
     }
 
     /**
+     * Gera um access token JWT com tempo de expiração customizado.
+     * <p>
+     * Útil para testes de tokens expirados.
+     *
+     * @param userId ID do usuário
+     * @param email email do usuário
+     * @param name nome do usuário
+     * @param provider provedor de autenticação
+     * @param expirationMillis tempo de expiração em milissegundos
+     * @return token JWT assinado
+     */
+    public String generateAccessTokenWithCustomExpiration(
+            Long userId,
+            String email,
+            String name,
+            String provider,
+            Long expirationMillis
+    ) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("email", email);
+        claims.put("name", name);
+        claims.put("provider", provider);
+
+        Instant now = Instant.now();
+        Instant expiration = now.plusMillis(expirationMillis);
+
+        return Jwts.builder()
+                .claims(claims)
+                .subject(userId.toString())
+                .issuer(jwtProperties.getIssuer())
+                .issuedAt(Date.from(now))
+                .expiration(Date.from(expiration))
+                .signWith(getSigningKey())
+                .compact();
+    }
+
+    /**
      * Valida se o token é válido (assinatura correta e não expirado)
      *
      * @param token token JWT a ser validado
