@@ -15,6 +15,7 @@
     <description>backend</description>
     <properties>
         <java.version>21</java.version>
+        <testcontainers.version>1.19.3</testcontainers.version>
     </properties>
     <dependencies>
         <dependency>
@@ -105,6 +106,25 @@
             <groupId>com.google.api-client</groupId>
             <artifactId>google-api-client</artifactId>
             <version>2.2.0</version>
+        </dependency>
+        <!-- Testcontainers for integration tests with real MySQL -->
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers</artifactId>
+            <version>${testcontainers.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>mysql</artifactId>
+            <version>${testcontainers.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>${testcontainers.version}</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 

@@ -802,7 +802,7 @@ curl -X POST http://localhost:8080/api/v1/auth/refresh \
   - Dev/test: Continua suportando refresh token no body
   - Produção: Apenas cookie (mais seguro)
   - Migração gradual sem quebrar clientes antigos
-- **Documentação completa:** Ver [COOKIES_IMPLEMENTATION.md](COOKIES_IMPLEMENTATION.md)
+- **Documentação completa:** Ver [COOKIES_IMPLEMENTATION.md](docs/COOKIES_IMPLEMENTATION.md)
 
 ### JWT Authentication Filter (Proteção de Endpoints)
 - **Descrição:** Filtro Spring Security que intercepta todas as requisições e valida tokens JWT
