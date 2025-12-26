@@ -9,17 +9,69 @@ Aplicação de Lista de Compras desenvolvida com Clean Architecture e React Nati
    npm install
    ```
 
-2. **Iniciar o desenvolvimento:**
+2. **Configurar ambiente:**
+   ```bash
+   cp .env.example .env
+   # Edite o arquivo .env com suas configurações
+   ```
+
+3. **Iniciar o desenvolvimento:**
    ```bash
    npm start
    ```
 
-3. **Executar em dispositivos específicos:**
+4. **Executar em dispositivos específicos:**
    ```bash
    npm run android  # Android
    npm run ios      # iOS
    npm run web      # Web
    ```
+
+## ⚙️ Configuração de Ambiente
+
+O projeto usa variáveis de ambiente para configuração:
+
+### **Arquivos de configuração:**
+- `.env.example` - Template com todas as variáveis disponíveis
+- `.env` - Configuração local (não commitada no git)
+- `app.config.js` - Configuração do Expo que carrega as variáveis
+
+### **Variáveis disponíveis:**
+
+```bash
+# API Configuration
+API_URL=http://localhost:3000/api    # URL do backend
+API_TIMEOUT=30000                     # Timeout em ms
+
+# App Configuration  
+APP_NAME=Shopping List                # Nome da aplicação
+APP_ENV=development                   # Ambiente (development/staging/production)
+
+# Feature Flags
+ENABLE_MOCK_API=true                  # Usar API mock
+ENABLE_DEBUG_LOGS=true                # Logs de debug
+```
+
+### **Como usar:**
+
+```typescript
+import { env } from '@/src/infrastructure/config/env';
+
+// Acessar configurações
+console.log(env.apiUrl);              // http://localhost:3000/api
+console.log(env.enableMockApi);       // true
+
+// Helpers de ambiente
+import { isDevelopment, isProduction } from '@/src/infrastructure/config/env';
+
+if (isDevelopment) {
+  console.log('Modo desenvolvimento');
+}
+```
+
+### **Tela de configurações:**
+
+Acesse `/settings` no app para visualizar todas as variáveis de ambiente carregadas.
 
 ## 📋 Scripts Disponíveis
 
@@ -79,10 +131,21 @@ O app possui sistema de autenticação completo com navegação condicional:
 
 ## 🎨 Design System
 
-Sistema completo de Design Tokens para consistência visual:
+Sistema completo de Design Tokens com a **Paleta Fresh Market**:
+
+### **🌿 Paleta Fresh Market**
+Paleta de cores focada em frescor e naturalidade, ideal para marketplace:
+
+- **Primary (Verde suave):** `#2ECC71` - Botões principais e ações positivas
+- **Secondary (Verde forte):** `#27AE60` - Detalhes interativos e hover
+- **Background:** `#F9FAF7` - Fundo confortável e espaçoso
+- **Surface:** `#FFFFFF` - Cards e elementos em destaque
+- **Text:** `#2C3E50` - Textos principais e cabeçalhos
+- **Muted Text:** `#7F8C8D` - Textos secundários e descrições
+- **Error:** `#E74C3C` - Alertas e mensagens de erro
 
 ### **Tokens Disponíveis:**
-- **Cores:** Paleta light/dark (60+ tokens)
+- **Cores:** Paleta Fresh Market light/dark (60+ tokens)
 - **Tipografia:** Inter + fallbacks (14 presets)
 - **Espaçamento:** Escala baseada em 4px (13 níveis)
 - **Bordas:** Border radius (8 variações)

@@ -1,8 +1,8 @@
 /**
  * Design Tokens - Colors
  *
- * Paleta de cores centralizada seguindo design minimalista.
- * Inspirada em sistemas como iOS Human Interface Guidelines.
+ * Paleta Fresh Market - Verde suave e minimalista
+ * Ideal para aplicações de lista de compras e marketplace
  */
 
 // Cores Base (Neutras)
@@ -11,7 +11,14 @@ export const baseColors = {
   white: '#FFFFFF',
   black: '#000000',
 
-  // Escala de Cinzas
+  // Fresh Market Background
+  backgroundLight: '#F9FAF7',
+
+  // Text Colors
+  textDark: '#2C3E50',
+  textMuted: '#7F8C8D',
+
+  // Escala de Cinzas (mantida para compatibilidade)
   gray50: '#F9FAFB',
   gray100: '#F3F4F6',
   gray200: '#E5E7EB',
@@ -24,76 +31,77 @@ export const baseColors = {
   gray900: '#111827',
 };
 
-// Cores Semânticas
+// Cores Semânticas - Fresh Market
 export const semanticColors = {
-  // Primary (Azul - inspirado no iOS)
-  primary50: '#EFF6FF',
-  primary100: '#DBEAFE',
-  primary200: '#BFDBFE',
-  primary300: '#93C5FD',
-  primary400: '#60A5FA',
-  primary500: '#3B82F6', // Cor principal
-  primary600: '#2563EB',
-  primary700: '#1D4ED8',
-  primary800: '#1E40AF',
-  primary900: '#1E3A8A',
+  // Primary (Verde suave - Fresh Market)
+  primary50: '#E8F8F0',
+  primary100: '#D1F2E1',
+  primary200: '#A3E4C3',
+  primary300: '#75D7A5',
+  primary400: '#47C987',
+  primary500: '#2ECC71', // Primary - Verde suave
+  primary600: '#27AE60', // Secondary - Verde mais forte
+  primary700: '#229954',
+  primary800: '#1D8348',
+  primary900: '#186A3B',
 
-  // Success (Verde)
-  success50: '#F0FDF4',
-  success100: '#DCFCE7',
-  success500: '#22C55E',
-  success600: '#16A34A',
+  // Success (Verde - usa o primary)
+  success50: '#E8F8F0',
+  success100: '#D1F2E1',
+  success500: '#2ECC71',
+  success600: '#27AE60',
 
   // Warning (Amarelo)
-  warning50: '#FFFBEB',
-  warning100: '#FEF3C7',
-  warning500: '#F59E0B',
-  warning600: '#D97706',
+  warning50: '#FFF8E1',
+  warning100: '#FFECB3',
+  warning500: '#F39C12',
+  warning600: '#E67E22',
 
-  // Error (Vermelho)
-  error50: '#FEF2F2',
-  error100: '#FEE2E2',
-  error500: '#EF4444',
-  error600: '#DC2626',
+  // Error (Vermelho Fresh Market)
+  error50: '#FDECEA',
+  error100: '#FAD9D5',
+  error500: '#E74C3C',
+  error600: '#C0392B',
 };
 
-// Temas Light/Dark
+// Tema Light - Fresh Market
 export const lightColors = {
-  // Background
-  background: baseColors.white,
-  backgroundSecondary: baseColors.gray50,
-  backgroundTertiary: baseColors.gray100,
+  // Background - Quase branco confortável
+  background: baseColors.backgroundLight, // #F9FAF7
+  backgroundSecondary: baseColors.white,
+  backgroundTertiary: baseColors.gray50,
 
-  // Text
-  text: baseColors.gray900,
-  textSecondary: baseColors.gray600,
-  textTertiary: baseColors.gray500,
+  // Text - Escuro e legível
+  text: baseColors.textDark, // #2C3E50
+  textSecondary: baseColors.textMuted, // #7F8C8D
+  textTertiary: baseColors.gray400,
   textInverted: baseColors.white,
 
-  // Primary
-  primary: semanticColors.primary500,
-  primaryHover: semanticColors.primary600,
+  // Primary - Verde Fresh Market
+  primary: semanticColors.primary500, // #2ECC71
+  primaryHover: semanticColors.primary600, // #27AE60
   primaryActive: semanticColors.primary700,
 
-  // Surface (Cards, Modals)
-  surface: baseColors.white,
-  surfaceSecondary: baseColors.gray50,
+  // Surface - Branco para cards
+  surface: baseColors.white, // #FFFFFF
+  surfaceSecondary: baseColors.backgroundLight,
 
   // Borders
   border: baseColors.gray200,
   borderFocus: semanticColors.primary500,
 
   // States
-  success: semanticColors.success500,
+  success: semanticColors.success500, // #2ECC71
   warning: semanticColors.warning500,
-  error: semanticColors.error500,
+  error: semanticColors.error500, // #E74C3C
 
   // Overlay
-  overlay: 'rgba(0, 0, 0, 0.5)',
+  overlay: 'rgba(44, 62, 80, 0.5)',
 };
 
+// Tema Dark - Fresh Market adaptado
 export const darkColors = {
-  // Background
+  // Background - Escuro
   background: baseColors.gray900,
   backgroundSecondary: baseColors.gray800,
   backgroundTertiary: baseColors.gray700,
@@ -102,9 +110,9 @@ export const darkColors = {
   text: baseColors.white,
   textSecondary: baseColors.gray300,
   textTertiary: baseColors.gray400,
-  textInverted: baseColors.gray900,
+  textInverted: baseColors.textDark,
 
-  // Primary
+  // Primary - Verde Fresh Market (mais claro no dark)
   primary: semanticColors.primary400,
   primaryHover: semanticColors.primary300,
   primaryActive: semanticColors.primary200,

@@ -10,3 +10,4 @@ export * from './modal-screen';
 export * from './playground-screen';
 export * from './login-screen';
 export * from './register-screen';
+export * from './settings-screen';

@@ -4,6 +4,8 @@
  * HTTP client configuration and API service implementations.
  */
 
+import { env } from '../config/env';
+
 export interface HttpClient {
   get<T>(url: string, config?: RequestConfig): Promise<T>;
   post<T>(url: string, data?: any, config?: RequestConfig): Promise<T>;
@@ -18,8 +20,8 @@ export interface RequestConfig {
 }
 
 export class ApiHttpClient implements HttpClient {
-  private baseURL: string;
-  private defaultHeaders: Record<string, string>;
+  private readonly baseURL: string;
+  private readonly defaultHeaders: Record<string, string>;
 
   constructor(baseURL: string) {
     this.baseURL = baseURL;
@@ -36,11 +38,11 @@ export class ApiHttpClient implements HttpClient {
     return this.request<T>('GET', url, undefined, config);
   }
 
-  async post<T>(url: string, data?: any, config?: RequestConfig): Promise<T> {
+  async post<T>(url: string, data?: never, config?: RequestConfig): Promise<T> {
     return this.request<T>('POST', url, data, config);
   }
 
-  async put<T>(url: string, data?: any, config?: RequestConfig): Promise<T> {
+  async put<T>(url: string, data?: never, config?: RequestConfig): Promise<T> {
     return this.request<T>('PUT', url, data, config);
   }
 
@@ -77,3 +79,6 @@ export class ApiHttpClient implements HttpClient {
     }
   }
 }
+
+// Singleton instance usando configuração de ambiente
+export const apiClient = new ApiHttpClient(env.apiUrl);

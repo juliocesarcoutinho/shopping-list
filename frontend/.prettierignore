@@ -5,10 +5,17 @@ dist/
 coverage/
 *.log
 .DS_Store
+
+# Environment files
+.env
+.env.example
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
+
+# Backup files
+*.backup
 android/
 ios/
 web-build/

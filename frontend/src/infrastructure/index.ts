@@ -4,11 +4,14 @@
  * Central export point for all infrastructure layer modules.
  */
 
+// Configuration
+export * from './config';
+
 // HTTP client
 export * from './http';
 
 // Storage services
 export * from './storage';
 
-// External services
+// Services
 export * from './services';
