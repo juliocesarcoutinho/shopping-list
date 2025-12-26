@@ -1,53 +1,188 @@
-# Welcome to your Expo app 👋
+# Shopping List App
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Aplicação de Lista de Compras desenvolvida com Clean Architecture e React Native.
 
-## Get started
+## 🚀 Como Executar
 
-1. Install dependencies
-
+1. **Instalar dependências:**
    ```bash
    npm install
    ```
 
-2. Start the app
-
+2. **Iniciar o desenvolvimento:**
    ```bash
-   npx expo start
+   npm start
    ```
 
-In the output, you'll find options to open the app in a
+3. **Executar em dispositivos específicos:**
+   ```bash
+   npm run android  # Android
+   npm run ios      # iOS
+   npm run web      # Web
+   ```
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+## 📋 Scripts Disponíveis
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+- `npm start` - Iniciar o servidor de desenvolvimento
+- `npm run lint` - Verificar código com ESLint
+- `npm run lint:fix` - Corrigir problemas automaticamente
+- `npm run format` - Formatar código com Prettier
+- `npm run typecheck` - Verificar tipos TypeScript
+- `npm run check-all` - Executar todas as verificações
 
-## Get a fresh project
+## 🏗️ Arquitetura
 
-When you're ready, run:
+Este projeto segue os princípios da **Clean Architecture**, organizando o código em camadas bem definidas:
 
-```bash
-npm run reset-project
+```
+src/
+├── domain/              # 🧠 Regras de Negócio
+│   ├── entities/        # Entidades do domínio
+│   ├── repositories/    # Interfaces de repositório  
+│   └── use-cases/       # Casos de uso
+├── data/                # 📊 Acesso a Dados
+│   ├── models/          # DTOs e modelos de API
+│   ├── data-sources/    # Interfaces de fontes de dados
+│   └── repositories/    # Implementações de repositório
+├── presentation/        # 🎨 Interface do Usuário
+│   ├── screens/         # Telas da aplicação
+│   ├── components/      # Componentes reutilizáveis
+│   ├── contexts/        # Contexts (Auth, etc)
+│   ├── hooks/           # Hooks personalizados
+│   ├── theme/           # Design System
+│   └── navigation/      # Configuração de rotas
+└── infrastructure/      # 🔧 Serviços Externos
+    ├── http/           # Cliente HTTP
+    ├── storage/        # Armazenamento local
+    └── services/       # Implementações de serviços
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## 🔐 Sistema de Autenticação
 
-## Learn more
+O app possui sistema de autenticação completo com navegação condicional:
 
-To learn more about developing your project with Expo, look at the following resources:
+### **Auth Stack (Não autenticado)**
+- `/login` - Tela de login
+- `/register` - Tela de cadastro
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+### **App Stack (Autenticado)**
+- `/(tabs)` - Navegação por abas
+  - `/` - Home
+  - `/explore` - Explorar
+  - `/playground` - Playground de componentes
 
-## Join the community
+### **Como funciona:**
+1. App verifica estado de autenticação no `AuthContext`
+2. Redireciona automaticamente para login se não autenticado
+3. Após login bem-sucedido, navega para área protegida
+4. Botão "Sair" faz logout e retorna para login
 
-Join our community of developers creating universal apps.
+## 🎨 Design System
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+Sistema completo de Design Tokens para consistência visual:
+
+### **Tokens Disponíveis:**
+- **Cores:** Paleta light/dark (60+ tokens)
+- **Tipografia:** Inter + fallbacks (14 presets)
+- **Espaçamento:** Escala baseada em 4px (13 níveis)
+- **Bordas:** Border radius (8 variações)
+- **Sombras:** Depth levels (6 níveis)
+
+### **Como usar:**
+```tsx
+import { useAppTheme } from '@/src/presentation/hooks';
+
+function MeuComponente() {
+  const theme = useAppTheme();
+  
+  return (
+    <View style={{ backgroundColor: theme.colors.background }}>
+      <Text style={{ color: theme.colors.text }}>
+        Texto com tema dinâmico
+      </Text>
+    </View>
+  );
+}
+```
+
+## 🧩 Componentes Reutilizáveis
+
+Componentes prontos para uso com estados e variações:
+
+- **Button** - 3 tamanhos, 2 variantes, loading/disabled
+- **TextField** - 2 variantes, error/focus/disabled
+- **Card** - 3 variantes, clicável opcional
+- **Divider** - horizontal/vertical
+- **Loader** - 3 variações de animação
+
+**Teste no Playground:** Aba 🎮 Playground
+
+## 📱 Tecnologias
+
+- **React Native** - Framework mobile
+- **Expo** - Plataforma de desenvolvimento
+- **TypeScript** - Tipagem estática
+- **Expo Router** - Roteamento baseado em arquivos
+- **AsyncStorage** - Armazenamento local
+- **ESLint + Prettier** - Qualidade do código
+
+## 📖 Documentação Adicional
+
+- `CLEAN_ARCHITECTURE.md` - Guia de arquitetura e convenções
+- `COMPONENTS.md` - Documentação dos componentes
+
+## 🎯 Estrutura de Navegação
+
+```
+app/
+├── _layout.tsx          # Root layout com AuthProvider
+├── login.tsx            # → LoginScreen (Auth)
+├── register.tsx         # → RegisterScreen (Auth)
+├── modal.tsx            # Modal exemplo
+└── (tabs)/             # Área protegida (App)
+    ├── _layout.tsx      # Tab navigation
+    ├── index.tsx        # → HomeScreen
+    ├── explore.tsx      # → ExploreScreen
+    └── playground.tsx   # → PlaygroundScreen
+```
+
+## 🔄 Fluxo de Autenticação
+
+1. **Não autenticado** → Mostra tela de Login
+2. **Login bem-sucedido** → Salva no AsyncStorage → Navega para Home
+3. **App reinicia** → Carrega auth do storage → Mantém autenticado
+4. **Logout** → Remove do storage → Volta para Login
+
+## 🏛️ Padrões e Convenções
+
+### **Clean Architecture:**
+- Domain independente de frameworks
+- Data implementa interfaces do Domain
+- Presentation usa cases do Domain
+- Infrastructure fornece serviços externos
+
+### **Nomenclatura:**
+- **Arquivos:** kebab-case (`home-screen.tsx`)
+- **Componentes:** PascalCase (`HomeScreen`)
+- **Functions:** camelCase (`useAppTheme`)
+- **Constants:** SCREAMING_SNAKE_CASE (`API_URL`)
+
+### **Imports:**
+- Use barrel exports (`@/src/presentation`)
+- Organize imports por origem
+- Evite ciclos de dependência
+
+## 🚧 Próximos Passos
+
+1. Implementar integração com API real
+2. Adicionar testes unitários e E2E
+3. Implementar funcionalidades de lista de compras
+4. Adicionar gerenciamento de estado global
+5. Implementar sincronização offline
+
+---
+
+**Clean Architecture + Design System + Autenticação = Base sólida para escalar! 🏗️✨**
 
 # Shopping List App
 

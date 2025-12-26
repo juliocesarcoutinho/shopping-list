@@ -7,14 +7,24 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 
+import { Button } from '../components';
+import { useAuth } from '../contexts/auth-context';
 import { useAppTheme } from '../hooks';
 
 export function HomeScreen() {
   const theme = useAppTheme();
+  const { user, signOut } = useAuth();
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <Text style={[styles.title, { color: theme.colors.text }]}>Lista de Compras</Text>
+
+      {user && (
+        <Text style={[styles.welcome, { color: theme.colors.textSecondary }]}>
+          Olá, {user.name}!
+        </Text>
+      )}
+
       <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>
         Sua aplicação está pronta para começar!
       </Text>
@@ -26,6 +36,8 @@ export function HomeScreen() {
           componentes{'\n'}• Infrastructure: Serviços externos
         </Text>
       </View>
+
+      <Button title='Sair' onPress={signOut} variant='secondary' size='medium' />
     </View>
   );
 }
@@ -40,6 +52,11 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: 'bold',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  welcome: {
+    fontSize: 18,
     marginBottom: 8,
     textAlign: 'center',
   },

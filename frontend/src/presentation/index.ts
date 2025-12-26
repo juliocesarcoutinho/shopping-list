@@ -7,6 +7,9 @@
 // Theme System
 export * from './theme';
 
+// Contexts
+export * from './contexts/auth-context';
+
 // Components
 export * from './components/index';
 
