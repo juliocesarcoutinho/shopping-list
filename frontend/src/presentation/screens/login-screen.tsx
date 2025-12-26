@@ -3,8 +3,10 @@
  * Tela de autenticação do usuário com validação React Hook Form + Zod
  */
 
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
+import { useForm, Controller } from 'react-hook-form';
 import {
   View,
   Text,
@@ -14,11 +16,9 @@ import {
   TouchableOpacity,
   ScrollView,
 } from 'react-native';
-import { useForm, Controller } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 
-import { Button, TextField, Divider } from '../components';
+import { Button, TextField } from '../components';
 import { useAuth } from '../contexts/auth-context';
 import { useAppTheme } from '../hooks';
 

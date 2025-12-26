@@ -6,6 +6,8 @@
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+export * from './auth-storage';
+
 export interface StorageService {
   setItem(key: string, value: string): Promise<void>;
   getItem(key: string): Promise<string | null>;

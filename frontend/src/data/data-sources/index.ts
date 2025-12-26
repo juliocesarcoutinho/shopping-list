@@ -12,7 +12,9 @@ import {
   CreateShoppingListRequest,
   CreateShoppingItemRequest,
   UpdateShoppingItemRequest,
-} from '../models';
+} from '@/src';
+
+export * from './auth-data-source';
 
 export interface RemoteDataSource {
   // Shopping Lists

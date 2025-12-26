@@ -5,7 +5,15 @@
  * These define what data operations are needed without caring about implementation.
  */
 
-import { ShoppingItem, ShoppingList, User } from '../entities';
+import { ShoppingItem, ShoppingList, User, AuthSession } from '../entities';
+
+export interface AuthRepository {
+  login(email: string, password: string): Promise<AuthSession>;
+  register(name: string, email: string, password: string): Promise<AuthSession>;
+  logout(refreshToken: string): Promise<void>;
+  refreshToken(refreshToken: string): Promise<AuthSession>;
+  getCurrentUser(): Promise<User>;
+}
 
 export interface ShoppingListRepository {
   getAll(): Promise<ShoppingList[]>;

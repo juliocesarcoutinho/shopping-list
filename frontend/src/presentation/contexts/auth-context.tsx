@@ -1,16 +1,12 @@
 /**
  * Auth Context
- * Gerencia estado de autenticação do usuário
+ * Gerencia estado de autenticação do usuário com integração ao backend
  */
 
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
-interface User {
-  id: string;
-  name: string;
-  email: string;
-}
+import { User } from '@/src/domain/entities';
+import { authService } from '@/src/infrastructure/services';
 
 interface AuthContextData {
   user: User | null;
@@ -23,56 +19,39 @@ interface AuthContextData {
 
 const AuthContext = createContext<AuthContextData>({} as AuthContextData);
 
-const AUTH_STORAGE_KEY = '@shopping-list:auth';
-
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    loadStoredAuth();
+    restoreSession();
   }, []);
 
-  async function loadStoredAuth() {
+  async function restoreSession() {
     try {
-      const storedAuth = await AsyncStorage.getItem(AUTH_STORAGE_KEY);
-      if (storedAuth) {
-        const userData = JSON.parse(storedAuth);
-        setUser(userData);
+      const restoredUser = await authService.restoreSession();
+      if (restoredUser) {
+        setUser(restoredUser);
       }
     } catch (error) {
-      console.error('Erro ao carregar autenticação:', error);
+      console.error('Erro ao restaurar sessão:', error);
     } finally {
       setIsLoading(false);
     }
   }
 
-  async function signIn(email: string, _password: string) {
-    // Simulação de login - será substituído por API real
-    const mockUser: User = {
-      id: '1',
-      name: 'Usuário Teste',
-      email,
-    };
-
-    await AsyncStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(mockUser));
-    setUser(mockUser);
+  async function signIn(email: string, password: string) {
+    const session = await authService.login(email, password);
+    setUser(session.user);
   }
 
-  async function signUp(name: string, email: string, _password: string) {
-    // Simulação de registro - será substituído por API real
-    const mockUser: User = {
-      id: Date.now().toString(),
-      name,
-      email,
-    };
-
-    await AsyncStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(mockUser));
-    setUser(mockUser);
+  async function signUp(name: string, email: string, password: string) {
+    const session = await authService.register(name, email, password);
+    setUser(session.user);
   }
 
   async function signOut() {
-    await AsyncStorage.removeItem(AUTH_STORAGE_KEY);
+    await authService.logout();
     setUser(null);
   }
 

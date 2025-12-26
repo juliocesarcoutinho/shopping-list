@@ -6,8 +6,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 
-import { Card, Divider } from '@/src';
-import { useAppTheme } from '@/src';
+import { Card, Divider, useAppTheme } from '@/src';
 import { env, isDevelopment, isProduction } from '@/src/infrastructure/config/env';
 
 export function SettingsScreen() {

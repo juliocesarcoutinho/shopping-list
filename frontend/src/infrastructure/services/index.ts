@@ -16,6 +16,9 @@ import {
 import { HttpClient } from '../http';
 import { CacheService } from '../storage';
 
+export * from './auth-service';
+export * from './auth-service-instance';
+
 export class ApiRemoteDataSource implements RemoteDataSource {
   constructor(private httpClient: HttpClient) {}
 

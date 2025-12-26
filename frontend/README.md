@@ -131,18 +131,30 @@ O app possui sistema de autenticação completo com navegação condicional:
 
 ## 🎨 Design System
 
-Sistema completo de Design Tokens com a **Paleta Fresh Market**:
+rSistema completo de Design Tokens com a **Paleta Fresh Market**:
 
 ### **🌿 Paleta Fresh Market**
-Paleta de cores focada em frescor e naturalidade, ideal para marketplace:
+Design minimalista focado em frescor e naturalidade, ideal para aplicações de marketplace:
 
-- **Primary (Verde suave):** `#2ECC71` - Botões principais e ações positivas
-- **Secondary (Verde forte):** `#27AE60` - Detalhes interativos e hover
-- **Background:** `#F9FAF7` - Fundo confortável e espaçoso
-- **Surface:** `#FFFFFF` - Cards e elementos em destaque
-- **Text:** `#2C3E50` - Textos principais e cabeçalhos
-- **Muted Text:** `#7F8C8D` - Textos secundários e descrições
-- **Error:** `#E74C3C` - Alertas e mensagens de erro
+**Cores Principais:**
+- **Primary (Verde suave):** `#2ECC71` - Botões principais, CTAs e ações positivas
+- **Secondary (Verde forte):** `#27AE60` - Hover states, detalhes interativos e ícones
+- **Background:** `#F9FAF7` - Fundo principal confortável e espaçoso
+- **Surface:** `#FFFFFF` - Cards, modais e elementos em destaque
+
+**Cores de Texto:**
+- **Text Principal:** `#2C3E50` - Títulos, cabeçalhos e textos importantes
+- **Text Muted:** `#7F8C8D` - Textos secundários, descrições e subtítulos
+
+**Estados e Feedback:**
+- **Success:** `#2ECC71` - Confirmações e feedback positivo
+- **Error:** `#E74C3C` - Alertas, erros e avisos importantes
+- **Warning:** `#F39C12` - Avisos e atenções
+
+**Psicologia das Cores:**
+- 🟢 Verde = Natureza, frescor, produtos frescos
+- 🤍 Fundo claro = Limpeza, organização, espaço
+- ⬛ Texto escuro = Legibilidade máxima, profissionalismo
 
 ### **Tokens Disponíveis:**
 - **Cores:** Paleta Fresh Market light/dark (60+ tokens)
@@ -170,24 +182,91 @@ function MeuComponente() {
 
 ## 🧩 Componentes Reutilizáveis
 
-Componentes prontos para uso com estados e variações:
+Sistema completo de componentes com estados, variações e validações:
 
-- **Button** - 3 tamanhos, 2 variantes, loading/disabled
-- **TextField** - 2 variantes, error/focus/disabled
-- **Card** - 3 variantes, clicável opcional
-- **Divider** - horizontal/vertical
-- **Loader** - 3 variações de animação
+### **Componentes Disponíveis:**
+
+- **Button** 
+  - 3 tamanhos (small, medium, large)
+  - 2 variantes (primary Fresh Market, secondary outlined)
+  - Estados: loading, disabled
+  - Cores dinâmicas do tema
+
+- **TextField** 
+  - 2 variantes (outlined, filled)
+  - Estados: error, focus, disabled
+  - Validação com mensagens de erro
+  - Integração com React Hook Form
+  - Suporte a labels e placeholders
+
+- **Card** 
+  - 3 variantes (elevated, outlined, filled)
+  - Clicável opcional
+  - Sombras e bordas do tema
+  - Totalmente customizável
+
+- **Divider** 
+  - Orientações: horizontal/vertical
+  - Espessura e cor customizáveis
+  - Margin configurável
+
+- **Loader** 
+  - 3 variações (spinner, dots, pulse)
+  - 3 tamanhos
+  - Texto opcional
+  - Cor customizável
+
+### **Validação de Formulários:**
+
+**Stack Tecnológico:**
+- `react-hook-form` - Gerenciamento de formulários performático
+- `zod` - Schema validation com TypeScript
+- `@hookform/resolvers` - Integração RHF + Zod
+
+**Exemplo de uso:**
+```tsx
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+
+const schema = z.object({
+  email: z.string().email('Email inválido'),
+  password: z.string().min(8, 'Mínimo 8 caracteres'),
+});
+
+const { control, handleSubmit } = useForm({
+  resolver: zodResolver(schema),
+});
+```
 
 **Teste no Playground:** Aba 🎮 Playground
 
 ## 📱 Tecnologias
 
-- **React Native** - Framework mobile
-- **Expo** - Plataforma de desenvolvimento
-- **TypeScript** - Tipagem estática
+**Core:**
+- **React Native** - Framework mobile multiplataforma
+- **Expo** - Plataforma de desenvolvimento e build
+- **TypeScript** - Tipagem estática e segurança de tipos
 - **Expo Router** - Roteamento baseado em arquivos
-- **AsyncStorage** - Armazenamento local
-- **ESLint + Prettier** - Qualidade do código
+
+**State Management & Storage:**
+- **React Context API** - Gerenciamento de estado global (Auth)
+- **AsyncStorage** - Armazenamento local persistente
+
+**Formulários & Validação:**
+- **React Hook Form** - Gerenciamento de formulários performático
+- **Zod** - Schema validation com inferência de tipos
+- **@hookform/resolvers** - Integração RHF + Zod
+
+**Navegação:**
+- **React Navigation** - Sistema de navegação nativo
+- **Expo Router** - File-based routing
+
+**Developer Experience:**
+- **ESLint** - Linter de código
+- **Prettier** - Formatação automática
+- **TypeScript** - Type checking
+- **dotenv** - Gerenciamento de variáveis de ambiente
 
 ## 📖 Documentação Adicional
 
@@ -211,10 +290,73 @@ app/
 
 ## 🔄 Fluxo de Autenticação
 
-1. **Não autenticado** → Mostra tela de Login
-2. **Login bem-sucedido** → Salva no AsyncStorage → Navega para Home
-3. **App reinicia** → Carrega auth do storage → Mantém autenticado
-4. **Logout** → Remove do storage → Volta para Login
+Sistema completo de autenticação com UI minimalista Fresh Market:
+
+### **Telas Implementadas:**
+
+#### **🔐 Login Screen**
+- Email + Senha com validação React Hook Form + Zod
+- Botão "Entrar com Google" (mock implementado)
+- Link "Esqueceu a senha?"
+- Estados: loading, erro, sucesso
+- Validações:
+  - Email obrigatório e formato válido
+  - Senha mínimo 6 caracteres
+- Banner de erro amigável
+- Navegação automática após login
+
+#### **📝 Register Screen**
+- Nome, Email, Senha e Confirmar Senha
+- Validação forte de senha com Zod:
+  - Mínimo 8 caracteres
+  - Pelo menos uma letra maiúscula
+  - Pelo menos um número
+  - Pelo menos um caractere especial (!@#$%)
+- Card com dicas de senha forte
+- Banner de sucesso após cadastro
+- Validação: senhas devem conferir
+- Navegação automática após registro
+
+### **Fluxo Completo:**
+
+```
+┌──────────────┐
+│ App Inicia   │
+│ Verifica auth│
+└──────┬───────┘
+       │
+       ├─ Não autenticado ──► LoginScreen
+       │                          │
+       │                          ├─ Login email/senha ──► Mock API
+       │                          ├─ Login Google ──────► Mock API
+       │                          └─ "Criar conta" ────► RegisterScreen
+       │                                                      │
+       │                                                      └─ Cadastro ──► Mock API
+       │                                                                          │
+       └─ Autenticado ───────────────────────────────────────────────────────────┘
+                                                                                   │
+                                                                                   ▼
+                                                                            ┌──────────────┐
+                                                                            │ HomeScreen   │
+                                                                            │ (tabs)       │
+                                                                            └──────────────┘
+```
+
+### **Persistência:**
+1. **Login/Registro** → Salva tokens no AsyncStorage + Define token no apiClient
+2. **App reinicia** → Carrega session do storage → Auto-refresh se expirado → Mantém autenticado
+3. **Logout** → Revoga refresh token no backend → Remove do storage → Volta para Login
+
+### **Integração Backend:**
+- **Endpoint Login:** `POST /api/v1/auth/login`
+- **Endpoint Register:** `POST /api/v1/auth/register`
+- **Endpoint Logout:** `POST /api/v1/auth/logout`
+- **Endpoint Refresh:** `POST /api/v1/auth/refresh`
+- **Endpoint User:** `GET /api/v1/users/me`
+- **Tokens:** JWT (Access Token) + UUID (Refresh Token)
+- **Expiração:** Access Token 1h, Refresh Token 7 dias
+- **Storage:** AsyncStorage persiste: accessToken, refreshToken, user
+- **Auto-refresh:** Se token expirado, renova automaticamente na restauração da sessão
 
 ## 🏛️ Padrões e Convenções
 
@@ -235,13 +377,57 @@ app/
 - Organize imports por origem
 - Evite ciclos de dependência
 
-## 🚧 Próximos Passos
+## 🚧 Roadmap e Próximos Passos
 
-1. Implementar integração com API real
-2. Adicionar testes unitários e E2E
-3. Implementar funcionalidades de lista de compras
-4. Adicionar gerenciamento de estado global
-5. Implementar sincronização offline
+### **✅ Implementado:**
+- [x] Clean Architecture com 4 camadas
+- [x] Design System Fresh Market completo
+- [x] Sistema de navegação com autenticação
+- [x] Tela de Login com validação (RHF + Zod)
+- [x] Tela de Register com senha forte
+- [x] Componentes reutilizáveis (Button, TextField, Card, etc)
+- [x] Validação de formulários robusta
+- [x] Configuração de ambiente (.env)
+- [x] Tema claro/escuro automático
+- [x] **Integração com Backend (API REST)**
+- [x] **Sistema de autenticação real (JWT + Refresh Token)**
+- [x] **Persistência de sessão com AsyncStorage**
+- [x] **Auto-refresh de tokens expirados**
+
+### **🚀 Próximas Features:**
+
+**Fase 1 - Backend Integration (✅ CONCLUÍDA):**
+- [x] Integrar API real de autenticação
+- [x] Implementar refresh token
+- [x] Tratamento de erros de rede
+- [x] Persistência de sessão
+
+**Fase 2 - Listas de Compras:**
+- [ ] Criar lista de compras
+- [ ] Adicionar/remover itens
+- [ ] Marcar itens como comprados
+- [ ] Compartilhar listas com outros usuários
+- [ ] Categorias de produtos
+
+**Fase 3 - Features Avançadas:**
+- [ ] Sugestões de produtos
+- [ ] Histórico de compras
+- [ ] Listas favoritas/templates
+- [ ] Notificações push
+- [ ] Modo offline completo
+
+**Fase 4 - Qualidade:**
+- [ ] Testes unitários (Jest)
+- [ ] Testes E2E (Detox)
+- [ ] CI/CD pipeline
+- [ ] Monitoramento de erros (Sentry)
+- [ ] Analytics
+
+**Fase 5 - Otimizações:**
+- [ ] Performance profiling
+- [ ] Lazy loading de telas
+- [ ] Cache de imagens
+- [ ] Otimização de bundle size
 
 ---
 
@@ -335,22 +521,58 @@ src/
 - **Storage**: Serviços de armazenamento local
 - **Services**: Implementações de serviços externos
 
-## 📖 Convenções
+## 📖 Documentação Adicional
 
-Consulte o arquivo `CLEAN_ARCHITECTURE.md` para:
-- Convenções de nomenclatura
-- Regras de dependência entre camadas
-- Exemplos de implementação
-- Boas práticas
+- **`CLEAN_ARCHITECTURE.md`** - Guia completo de arquitetura e convenções
+- **`COMPONENTS.md`** - Documentação detalhada dos componentes
+- **`FRESH_MARKET_PALETTE.md`** - Guia da paleta de cores
 
-## 🎯 Próximos Passos
+## ✨ Features Implementadas
 
-1. **Implementar entidades** em `src/domain/entities/`
-2. **Criar use cases** em `src/domain/use-cases/`
-3. **Desenvolver telas** em `src/presentation/screens/`
-4. **Configurar APIs** em `src/infrastructure/http/`
-5. **Adicionar testes** para cada camada
+### **🎨 Design System**
+- ✅ Paleta Fresh Market (verde minimalista)
+- ✅ Design tokens completos (cores, tipografia, espaçamento)
+- ✅ Tema claro/escuro automático
+- ✅ 60+ tokens de cores
+- ✅ Sistema de componentes reutilizáveis
+
+### **🔐 Autenticação**
+- ✅ Login com email/senha
+- ✅ Login com Google (mock)
+- ✅ Registro com validação forte
+- ✅ Senha segura (8+ chars, maiúscula, número, especial)
+- ✅ Persistência com AsyncStorage
+- ✅ Navegação automática baseada em auth
+- ✅ Mock API funcionando
+
+### **📱 Componentes**
+- ✅ Button (3 tamanhos, loading, disabled)
+- ✅ TextField (validação, error states)
+- ✅ Card (3 variantes)
+- ✅ Loader (3 animações)
+- ✅ Divider (horizontal/vertical)
+
+### **🛠️ Validação**
+- ✅ React Hook Form + Zod
+- ✅ Validação em tempo real
+- ✅ Mensagens de erro customizadas
+- ✅ Type-safe schemas
+
+### **⚙️ Configuração**
+- ✅ Variáveis de ambiente (.env)
+- ✅ Configuração por ambiente (dev/staging/prod)
+- ✅ Tela de settings para debug
+- ✅ API URL configurável
+
+### **🏗️ Arquitetura**
+- ✅ Clean Architecture com 4 camadas
+- ✅ Separação clara de responsabilidades
+- ✅ Barrel exports organizados
+- ✅ TypeScript strict mode
+- ✅ ESLint + Prettier configurados
 
 ---
 
-**Clean Architecture** garante código organizado, testável e escalável! 🏗️
+**🛒 Shopping List App - Base sólida para crescer! 💚✨**
+
+Desenvolvido com Clean Architecture + Design System Fresh Market

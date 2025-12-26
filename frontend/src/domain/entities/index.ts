@@ -5,26 +5,36 @@
  * These are pure TypeScript interfaces/types with business logic.
  */
 
+export interface User {
+  id: string;
+  email: string;
+  name: string;
+  provider: 'LOCAL' | 'GOOGLE';
+  status: 'ACTIVE' | 'INACTIVE';
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface AuthSession {
+  accessToken: string;
+  refreshToken: string;
+  expiresIn: number;
+  user: User;
+}
+
 export interface ShoppingItem {
   id: string;
   name: string;
   quantity: number;
   isCompleted: boolean;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface ShoppingList {
   id: string;
   title: string;
   items: ShoppingItem[];
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface User {
-  id: string;
-  email: string;
-  name: string;
-  createdAt: Date;
+  createdAt: string;
+  updatedAt: string;
 }

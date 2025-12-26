@@ -5,6 +5,57 @@
  * These may differ from domain entities to handle API-specific formats.
  */
 
+// Auth DTOs
+export interface LoginRequestDto {
+  email: string;
+  password: string;
+}
+
+export interface RegisterRequestDto {
+  name: string;
+  email: string;
+  password: string;
+}
+
+export interface LoginResponseDto {
+  accessToken: string;
+  refreshToken: string;
+  expiresIn: number;
+}
+
+export interface RegisterResponseDto {
+  id: number;
+  email: string;
+  name: string;
+  provider: string;
+  status: string;
+  createdAt: string;
+}
+
+export interface RefreshTokenRequestDto {
+  refreshToken: string;
+}
+
+export interface RefreshTokenResponseDto {
+  accessToken: string;
+  refreshToken: string;
+  expiresIn: number;
+}
+
+export interface LogoutRequestDto {
+  refreshToken: string;
+}
+
+export interface UserMeResponseDto {
+  id: number;
+  email: string;
+  name: string;
+  provider: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface ShoppingItemDto {
   id: string;
   name: string;

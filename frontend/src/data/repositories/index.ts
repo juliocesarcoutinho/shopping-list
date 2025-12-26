@@ -5,14 +5,21 @@
  * Handle data mapping, caching, and coordination between data sources.
  */
 
-import { ShoppingList, ShoppingItem, User } from '../../domain/entities';
 import {
   ShoppingListRepository,
   ShoppingItemRepository,
   UserRepository,
-} from '../../domain/repositories';
-import { RemoteDataSource, LocalDataSource } from '../data-sources';
-import { ShoppingListDto, ShoppingItemDto, UserDto } from '../models';
+  RemoteDataSource,
+  LocalDataSource,
+  ShoppingListDto,
+  ShoppingItemDto,
+  UserDto,
+  ShoppingList,
+  ShoppingItem,
+  User,
+} from '@/src';
+
+export * from './auth-repository';
 
 export class ShoppingListRepositoryImpl implements ShoppingListRepository {
   constructor(
@@ -25,7 +32,7 @@ export class ShoppingListRepositoryImpl implements ShoppingListRepository {
       const dtos = await this.remoteDataSource.getShoppingLists();
       await this.localDataSource.cacheShoppingLists(dtos);
       return dtos.map(this.mapDtoToEntity);
-    } catch (error) {
+    } catch (_error) {
       // Fallback to cached data
       const cachedDtos = await this.localDataSource.getCachedShoppingLists();
       return cachedDtos.map(this.mapDtoToEntity);
@@ -36,8 +43,8 @@ export class ShoppingListRepositoryImpl implements ShoppingListRepository {
     try {
       const dto = await this.remoteDataSource.getShoppingList(id);
       return this.mapDtoToEntity(dto);
-    } catch (error) {
-      console.warn('Failed to fetch shopping list from remote:', error);
+    } catch (_error) {
+      console.warn('Failed to fetch shopping list from remote:', _error);
       return null;
     }
   }
@@ -65,8 +72,8 @@ export class ShoppingListRepositoryImpl implements ShoppingListRepository {
       id: dto.id,
       title: dto.title,
       items: dto.items.map(this.mapItemDtoToEntity),
-      createdAt: new Date(dto.created_at),
-      updatedAt: new Date(dto.updated_at),
+      createdAt: dto.created_at,
+      updatedAt: dto.updated_at,
     };
   }
 
@@ -76,8 +83,8 @@ export class ShoppingListRepositoryImpl implements ShoppingListRepository {
       name: dto.name,
       quantity: dto.quantity,
       isCompleted: dto.is_completed,
-      createdAt: new Date(dto.created_at),
-      updatedAt: new Date(dto.updated_at),
+      createdAt: dto.created_at,
+      updatedAt: dto.updated_at,
     };
   }
 }
@@ -115,8 +122,8 @@ export class ShoppingItemRepositoryImpl implements ShoppingItemRepository {
       name: dto.name,
       quantity: dto.quantity,
       isCompleted: dto.is_completed,
-      createdAt: new Date(dto.created_at),
-      updatedAt: new Date(dto.updated_at),
+      createdAt: dto.created_at,
+      updatedAt: dto.updated_at,
     };
   }
 }
@@ -147,7 +154,9 @@ export class UserRepositoryImpl implements UserRepository {
       id: dto.id,
       email: dto.email,
       name: dto.name,
-      createdAt: new Date(dto.created_at),
+      provider: 'LOCAL',
+      status: 'ACTIVE',
+      createdAt: dto.created_at,
     };
   }
 }

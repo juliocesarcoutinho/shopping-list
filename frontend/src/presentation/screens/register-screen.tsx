@@ -1,81 +1,84 @@
 /**
  * Register Screen
- * Tela de cadastro de novo usuário
+ * Tela de cadastro com validação forte e UX consistente
  */
 
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import { useForm, Controller } from 'react-hook-form';
+import {
+  View,
+  Text,
+  StyleSheet,
+  KeyboardAvoidingView,
+  Platform,
+  TouchableOpacity,
+  ScrollView,
+} from 'react-native';
+import { z } from 'zod';
 
 import { Button, TextField } from '../components';
 import { useAuth } from '../contexts/auth-context';
 import { useAppTheme } from '../hooks';
+
+const registerSchema = z
+  .object({
+    name: z.string().min(3, 'Nome deve ter no mínimo 3 caracteres'),
+    email: z.string().min(1, 'Email é obrigatório').email('Email inválido'),
+    password: z
+      .string()
+      .min(8, 'Senha deve ter no mínimo 8 caracteres')
+      .regex(/[A-Z]/, 'Senha deve conter pelo menos uma letra maiúscula')
+      .regex(/[0-9]/, 'Senha deve conter pelo menos um número')
+      .regex(/[^A-Za-z0-9]/, 'Senha deve conter pelo menos um caractere especial'),
+    confirmPassword: z.string().min(1, 'Confirmação de senha é obrigatória'),
+  })
+  .refine(data => data.password === data.confirmPassword, {
+    message: 'Senhas não conferem',
+    path: ['confirmPassword'],
+  });
+
+type RegisterFormData = z.infer<typeof registerSchema>;
 
 export function RegisterScreen() {
   const theme = useAppTheme();
   const router = useRouter();
   const { signUp } = useAuth();
 
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [errors, setErrors] = useState({
-    name: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
+  const [errorMessage, setErrorMessage] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
+
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<RegisterFormData>({
+    resolver: zodResolver(registerSchema),
+    defaultValues: {
+      name: '',
+      email: '',
+      password: '',
+      confirmPassword: '',
+    },
   });
 
-  const validateFields = () => {
-    const newErrors = { name: '', email: '', password: '', confirmPassword: '' };
-    let isValid = true;
-
-    if (!name) {
-      newErrors.name = 'Nome é obrigatório';
-      isValid = false;
-    } else if (name.length < 3) {
-      newErrors.name = 'Nome deve ter no mínimo 3 caracteres';
-      isValid = false;
-    }
-
-    if (!email) {
-      newErrors.email = 'Email é obrigatório';
-      isValid = false;
-    } else if (!/\S+@\S+\.\S+/.test(email)) {
-      newErrors.email = 'Email inválido';
-      isValid = false;
-    }
-
-    if (!password) {
-      newErrors.password = 'Senha é obrigatória';
-      isValid = false;
-    } else if (password.length < 6) {
-      newErrors.password = 'Senha deve ter no mínimo 6 caracteres';
-      isValid = false;
-    }
-
-    if (!confirmPassword) {
-      newErrors.confirmPassword = 'Confirmação de senha é obrigatória';
-      isValid = false;
-    } else if (password !== confirmPassword) {
-      newErrors.confirmPassword = 'Senhas não conferem';
-      isValid = false;
-    }
-
-    setErrors(newErrors);
-    return isValid;
-  };
-
-  const handleRegister = async () => {
-    if (!validateFields()) return;
-
+  const onSubmit = async (data: RegisterFormData) => {
     setIsLoading(true);
+    setErrorMessage('');
+    setSuccessMessage('');
+
     try {
-      await signUp(name, email, password);
+      await signUp(data.name, data.email, data.password);
+      setSuccessMessage('Conta criada com sucesso! Redirecionando...');
+
+      // Pequeno delay para mostrar mensagem de sucesso antes de navegar
+      setTimeout(() => {
+        // Navegação automática será feita pelo AuthContext
+      }, 1500);
     } catch (_error) {
-      Alert.alert('Erro', 'Falha ao criar conta. Tente novamente.');
+      setErrorMessage('Erro ao criar conta. Este email pode já estar em uso.');
     } finally {
       setIsLoading(false);
     }
@@ -90,79 +93,146 @@ export function RegisterScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={[styles.container, { backgroundColor: theme.colors.background }]}
     >
-      <View style={styles.content}>
-        <Text style={[styles.title, { color: theme.colors.text }]}>Criar Conta</Text>
-        <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>
-          Preencha os dados para começar
-        </Text>
+      <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps='handled'>
+        <View style={styles.content}>
+          {/* Header com ícone */}
+          <View style={styles.header}>
+            <View style={[styles.iconContainer, { backgroundColor: theme.colors.primary + '15' }]}>
+              <Text style={styles.icon}>🛒</Text>
+            </View>
+            <Text style={[styles.title, { color: theme.colors.text }]}>Criar Conta</Text>
+            <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>
+              Comece a organizar suas compras hoje
+            </Text>
+          </View>
 
-        <View style={styles.form}>
-          <TextField
-            label='Nome'
-            placeholder='Seu nome completo'
-            value={name}
-            onChangeText={text => {
-              setName(text);
-              if (errors.name) setErrors({ ...errors, name: '' });
-            }}
-            error={errors.name}
-            autoCapitalize='words'
-          />
+          {/* Banner de erro */}
+          {errorMessage ? (
+            <View style={[styles.errorBanner, { backgroundColor: theme.colors.error + '15' }]}>
+              <Text style={[styles.bannerText, { color: theme.colors.error }]}>{errorMessage}</Text>
+            </View>
+          ) : null}
 
-          <TextField
-            label='Email'
-            placeholder='seu@email.com'
-            value={email}
-            onChangeText={text => {
-              setEmail(text);
-              if (errors.email) setErrors({ ...errors, email: '' });
-            }}
-            error={errors.email}
-            keyboardType='email-address'
-            autoCapitalize='none'
-            autoCorrect={false}
-          />
+          {/* Banner de sucesso */}
+          {successMessage ? (
+            <View style={[styles.successBanner, { backgroundColor: theme.colors.success + '15' }]}>
+              <Text style={[styles.bannerText, { color: theme.colors.success }]}>
+                ✓ {successMessage}
+              </Text>
+            </View>
+          ) : null}
 
-          <TextField
-            label='Senha'
-            placeholder='••••••••'
-            value={password}
-            onChangeText={text => {
-              setPassword(text);
-              if (errors.password) setErrors({ ...errors, password: '' });
-            }}
-            error={errors.password}
-            secureTextEntry
-          />
+          {/* Formulário */}
+          <View style={styles.form}>
+            <Controller
+              control={control}
+              name='name'
+              render={({ field: { onChange, onBlur, value } }) => (
+                <TextField
+                  label='Nome completo'
+                  placeholder='João Silva'
+                  value={value}
+                  onChangeText={onChange}
+                  onBlur={onBlur}
+                  error={errors.name?.message}
+                  autoCapitalize='words'
+                  disabled={isLoading}
+                />
+              )}
+            />
 
-          <TextField
-            label='Confirmar Senha'
-            placeholder='••••••••'
-            value={confirmPassword}
-            onChangeText={text => {
-              setConfirmPassword(text);
-              if (errors.confirmPassword) setErrors({ ...errors, confirmPassword: '' });
-            }}
-            error={errors.confirmPassword}
-            secureTextEntry
-          />
+            <Controller
+              control={control}
+              name='email'
+              render={({ field: { onChange, onBlur, value } }) => (
+                <TextField
+                  label='Email'
+                  placeholder='seu@email.com'
+                  value={value}
+                  onChangeText={onChange}
+                  onBlur={onBlur}
+                  error={errors.email?.message}
+                  keyboardType='email-address'
+                  autoCapitalize='none'
+                  autoCorrect={false}
+                  disabled={isLoading}
+                />
+              )}
+            />
 
-          <Button
-            title='Criar Conta'
-            onPress={handleRegister}
-            loading={isLoading}
-            disabled={isLoading}
-            size='large'
-          />
+            <Controller
+              control={control}
+              name='password'
+              render={({ field: { onChange, onBlur, value } }) => (
+                <TextField
+                  label='Senha'
+                  placeholder='••••••••'
+                  value={value}
+                  onChangeText={onChange}
+                  onBlur={onBlur}
+                  error={errors.password?.message}
+                  secureTextEntry
+                  disabled={isLoading}
+                />
+              )}
+            />
 
-          <Button
-            title='Já tenho conta'
-            onPress={handleGoToLogin}
-            variant='secondary'
-            disabled={isLoading}
-          />
+            <Controller
+              control={control}
+              name='confirmPassword'
+              render={({ field: { onChange, onBlur, value } }) => (
+                <TextField
+                  label='Confirmar senha'
+                  placeholder='••••••••'
+                  value={value}
+                  onChangeText={onChange}
+                  onBlur={onBlur}
+                  error={errors.confirmPassword?.message}
+                  secureTextEntry
+                  disabled={isLoading}
+                />
+              )}
+            />
+
+            {/* Dicas de senha forte */}
+            <View style={styles.passwordHints}>
+              <Text style={[styles.passwordHintsTitle, { color: theme.colors.textSecondary }]}>
+                Sua senha deve conter:
+              </Text>
+              <Text style={[styles.passwordHint, { color: theme.colors.textTertiary }]}>
+                • Mínimo 8 caracteres
+              </Text>
+              <Text style={[styles.passwordHint, { color: theme.colors.textTertiary }]}>
+                • Pelo menos uma letra maiúscula
+              </Text>
+              <Text style={[styles.passwordHint, { color: theme.colors.textTertiary }]}>
+                • Pelo menos um número
+              </Text>
+              <Text style={[styles.passwordHint, { color: theme.colors.textTertiary }]}>
+                • Pelo menos um caractere especial (!@#$%)
+              </Text>
+            </View>
+
+            <Button
+              title='Criar Conta'
+              onPress={handleSubmit(onSubmit)}
+              loading={isLoading}
+              disabled={isLoading}
+              size='large'
+            />
+          </View>
+
+          {/* Footer */}
+          <View style={styles.footer}>
+            <Text style={[styles.footerText, { color: theme.colors.textSecondary }]}>
+              Já tem uma conta?{' '}
+            </Text>
+            <TouchableOpacity onPress={handleGoToLogin} disabled={isLoading}>
+              <Text style={[styles.footerLink, { color: theme.colors.primary }]}>Fazer login</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
@@ -171,23 +241,85 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  scrollContent: {
+    flexGrow: 1,
+  },
   content: {
     flex: 1,
     justifyContent: 'center',
     padding: 24,
+    paddingTop: 60,
+  },
+  header: {
+    alignItems: 'center',
+    marginBottom: 32,
+  },
+  iconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  icon: {
+    fontSize: 40,
   },
   title: {
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: 'bold',
     textAlign: 'center',
     marginBottom: 8,
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: 15,
     textAlign: 'center',
-    marginBottom: 32,
+    lineHeight: 22,
+  },
+  errorBanner: {
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 20,
+  },
+  successBanner: {
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 20,
+  },
+  bannerText: {
+    fontSize: 14,
+    textAlign: 'center',
+    fontWeight: '500',
   },
   form: {
     gap: 16,
+  },
+  passwordHints: {
+    backgroundColor: 'rgba(46, 204, 113, 0.08)',
+    padding: 12,
+    borderRadius: 8,
+    marginTop: -8,
+  },
+  passwordHintsTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+    marginBottom: 6,
+  },
+  passwordHint: {
+    fontSize: 12,
+    lineHeight: 18,
+  },
+  footer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 24,
+  },
+  footerText: {
+    fontSize: 14,
+  },
+  footerLink: {
+    fontSize: 14,
+    fontWeight: '600',
   },
 });
