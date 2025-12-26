@@ -1,8 +1,5 @@
 package br.com.shooping.list.infrastructure.security;
 
-import br.com.shooping.list.domain.user.Role;
-import br.com.shooping.list.domain.user.User;
-import br.com.shooping.list.domain.user.UserRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -26,10 +23,14 @@ import java.util.stream.Collectors;
  * Responsabilidades:
  * - Extrair token JWT do header Authorization (formato: "Bearer {token}")
  * - Validar o token usando JwtService
- * - Extrair claims do token (userId, email, etc)
- * - Buscar roles do usuário no banco de dados
+ * - Extrair claims do token (userId, email, roles)
+ * - Converter roles em GrantedAuthority para Spring Security
  * - Criar objeto Authentication e colocar no SecurityContext
  * - Permitir que a requisição continue se o token for válido
+ *
+ * Observação: Roles são extraídas do próprio token (claim "roles") para
+ * evitar consulta ao banco em cada requisição, melhorando performance.
+ *
  * Este filtro é executado UMA VEZ por requisição (OncePerRequestFilter)
  * antes do filtro de autorização do Spring Security.
  */
@@ -43,7 +44,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private static final int BEARER_PREFIX_LENGTH = 7;
 
     private final JwtService jwtService;
-    private final UserRepository userRepository;
 
     /**
      * Método principal do filtro, executado para cada requisição HTTP.
@@ -81,53 +81,45 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             // 4. Validar token (lança exceção se inválido/expirado)
             jwtService.validateToken(token);
 
-            // 5. Extrair informações do usuário do token
+            // 5. Extrair informações do usuário do token (incluindo roles)
             String userId = jwtService.extractUserId(token);
             String email = jwtService.extractEmail(token);
+            List<String> roleNames = jwtService.extractRoles(token);
 
-            log.debug("Token JWT válido para userId={}, email={}", userId, email);
+            log.debug("Token JWT válido para userId={}, email={}, roles={}", userId, email, roleNames);
 
-            // 6. Buscar usuário e suas roles do banco de dados
-            User user = userRepository.findById(Long.parseLong(userId))
-                    .orElseThrow(() -> {
-                        log.warn("Usuário não encontrado no banco: userId={}", userId);
-                        return new IllegalArgumentException("Usuário não encontrado");
-                    });
-
-            // 7. Converter roles do usuário em authorities do Spring Security
-            List<SimpleGrantedAuthority> authorities = user.getRoles().stream()
-                    .map(role -> new SimpleGrantedAuthority(role.getNameWithPrefix()))
+            // 6. Converter roles do token em authorities do Spring Security
+            // Adiciona prefixo ROLE_ conforme convenção do Spring Security
+            List<SimpleGrantedAuthority> authorities = roleNames.stream()
+                    .map(roleName -> new SimpleGrantedAuthority("ROLE_" + roleName))
                     .collect(Collectors.toList());
 
-            log.debug("Roles carregadas para userId={}: {}", userId,
-                    user.getRoles().stream().map(Role::getName).collect(Collectors.toList()));
+            log.debug("Authorities carregadas do token para userId={}: {}", userId,
+                    authorities.stream().map(SimpleGrantedAuthority::getAuthority).collect(Collectors.toList()));
 
-            // 8. Criar objeto Authentication com roles dinâmicas
+            // 7. Criar objeto Authentication com roles do token
             UsernamePasswordAuthenticationToken authentication =
                     new UsernamePasswordAuthenticationToken(
                             userId,        // Principal (identificador do usuário)
                             null,          // Credentials (não precisamos da senha aqui)
-                            authorities    // Authorities/Roles do banco
+                            authorities    // Authorities/Roles extraídas do token
                     );
 
-            // 9. Adicionar detalhes da requisição (IP, session, etc)
+            // 8. Adicionar detalhes da requisição (IP, session, etc)
             authentication.setDetails(
                     new WebAuthenticationDetailsSource().buildDetails(request)
             );
 
-            // 10. Colocar autenticação no contexto do Spring Security
+            // 9. Colocar autenticação no contexto do Spring Security
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
             log.info("Usuário autenticado via JWT: userId={}, email={}, roles={}",
                     userId, email, authorities.stream().map(SimpleGrantedAuthority::getAuthority).collect(Collectors.toList()));
 
-            // 11. Continuar com a cadeia de filtros
+            // 10. Continuar com a cadeia de filtros
             filterChain.doFilter(request, response);
 
         } catch (Exception ex) {
-            // Qualquer exceção (token inválido, expirado, usuário não encontrado) limpa o contexto
-            // e continua o filter chain. O AuthorizationFilter vai detectar que
-            // não há autenticação e o JwtAuthenticationEntryPoint vai tratar.
             log.warn("Erro ao processar token JWT: {}", ex.getMessage());
 
             // Limpa o contexto de segurança se houver erro
@@ -170,9 +162,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
      */
     @Override
     protected boolean shouldNotFilter(@NonNull HttpServletRequest request) {
-        // Executa para todas as requisições
-        // A diferenciação entre público/protegido é feita pela presença do token
-        // e pela configuração do SecurityFilterChain
         return false;
     }
 }

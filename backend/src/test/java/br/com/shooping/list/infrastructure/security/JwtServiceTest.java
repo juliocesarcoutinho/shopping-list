@@ -22,7 +22,6 @@ import java.util.Date;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.lenient;
-import static org.mockito.Mockito.when;
 
 /**
  * Testes unitários para JwtService
@@ -281,6 +280,75 @@ class JwtServiceTest {
                 .isLessThanOrEqualTo(61);
     }
 
+    @Test
+    @DisplayName("Deve incluir roles no token e extrair corretamente")
+    void shouldIncludeRolesInTokenAndExtractCorrectly() {
+        // Given - Adicionar roles ao usuário de teste
+        var userRole = createRole(1L, "USER", "Usuário comum");
+        addRoleToUser(testUser, userRole);
+
+        // When
+        String token = jwtService.generateAccessToken(testUser);
+        var extractedRoles = jwtService.extractRoles(token);
+
+        // Then
+        assertThat(extractedRoles)
+                .isNotNull()
+                .hasSize(1)
+                .contains("USER");
+    }
+
+    @Test
+    @DisplayName("Deve incluir múltiplas roles no token")
+    void shouldIncludeMultipleRolesInToken() {
+        // Given - Adicionar múltiplas roles ao usuário
+        var userRole = createRole(1L, "USER", "Usuário comum");
+        var adminRole = createRole(2L, "ADMIN", "Administrador");
+        addRoleToUser(testUser, userRole);
+        addRoleToUser(testUser, adminRole);
+
+        // When
+        String token = jwtService.generateAccessToken(testUser);
+        var extractedRoles = jwtService.extractRoles(token);
+
+        // Then
+        assertThat(extractedRoles)
+                .isNotNull()
+                .hasSize(2)
+                .containsExactlyInAnyOrder("USER", "ADMIN");
+    }
+
+    @Test
+    @DisplayName("Deve retornar lista vazia quando usuário não tem roles")
+    void shouldReturnEmptyListWhenUserHasNoRoles() {
+        // Given - Usuário sem roles
+
+        // When
+        String token = jwtService.generateAccessToken(testUser);
+        var extractedRoles = jwtService.extractRoles(token);
+
+        // Then
+        assertThat(extractedRoles)
+                .isNotNull()
+                .isEmpty();
+    }
+
+    @Test
+    @DisplayName("Deve validar que claim roles existe no token")
+    void shouldValidateRolesClaimExistsInToken() {
+        // Given
+        var userRole = createRole(1L, "USER", "Usuário comum");
+        addRoleToUser(testUser, userRole);
+
+        // When
+        String token = jwtService.generateAccessToken(testUser);
+        Claims claims = jwtService.extractAllClaims(token);
+
+        // Then
+        assertThat(claims.get("roles")).isNotNull();
+        assertThat(claims.get("roles")).isInstanceOf(java.util.List.class);
+    }
+
     /**
      * Método auxiliar para setar ID via reflection (simulando comportamento do JPA)
      */
@@ -292,6 +360,28 @@ class JwtServiceTest {
         } catch (Exception e) {
             throw new RuntimeException("Erro ao setar ID do usuário", e);
         }
+    }
+
+    /**
+     * Método auxiliar para criar role via reflection
+     */
+    private br.com.shooping.list.domain.user.Role createRole(Long id, String name, String description) {
+        try {
+            var role = br.com.shooping.list.domain.user.Role.create(name, description);
+            var idField = br.com.shooping.list.domain.user.Role.class.getDeclaredField("id");
+            idField.setAccessible(true);
+            idField.set(role, id);
+            return role;
+        } catch (Exception e) {
+            throw new RuntimeException("Erro ao criar role", e);
+        }
+    }
+
+    /**
+     * Método auxiliar para adicionar role ao usuário via reflection
+     */
+    private void addRoleToUser(User user, br.com.shooping.list.domain.user.Role role) {
+        user.getRoles().add(role);
     }
 }
 

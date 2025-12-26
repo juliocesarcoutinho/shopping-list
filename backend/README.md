@@ -948,20 +948,97 @@ curl -X POST http://localhost:8080/api/v1/auth/refresh \
   - Todo usuário registrado via `/api/v1/auth/register` recebe role **USER** automaticamente
   - `RegisterUserUseCase` busca role "USER" do banco e atribui ao usuário
   - Lança exceção se role USER não existir (sistema mal configurado)
-- **JWT Authentication Filter (Atualizado):**
-  - Busca usuário do banco após validar token JWT
-  - Extrai roles do usuário: `user.getRoles()`
-  - Converte roles em authorities do Spring Security: `role.getNameWithPrefix()` → "ROLE_USER"
-  - Cria `Authentication` com authorities dinâmicas do banco
-  - Logs estruturados: "Roles carregadas para userId=1: [USER]"
-- **Fluxo de Autorização:**
-  1. Usuário faz login → JWT gerado
-  2. Cliente envia request com JWT
-  3. JwtAuthenticationFilter valida token
-  4. Filtro busca usuário e suas roles do banco
-  5. Roles são convertidas em authorities ("ROLE_USER", "ROLE_ADMIN")
+- **JWT Service (Atualizado - Roles no Token):**
+  - **Geração de Token**: Inclui claim `roles` no JWT com lista de nomes das roles
+  - **Método**: `generateAccessToken(User user)` extrai roles do usuário e adiciona ao token
+  - **Claim "roles"**: Array JSON com nomes das roles (ex: `["USER"]`, `["USER", "ADMIN"]`)
+  - **Extração de Roles**: Novo método `extractRoles(String token)` retorna `List<String>`
+  - **Benefícios**: Evita consulta ao banco em cada requisição (melhor performance)
+  - **Logs**: "Access token gerado. Roles incluídas: [USER]"
+- **JWT Authentication Filter (Atualizado - Roles do Token):**
+  - **Antes**: Buscava usuário do banco para obter roles
+  - **Agora**: Extrai roles diretamente do token JWT (claim "roles")
+  - **Performance**: Sem consulta ao banco em cada requisição
+  - **Conversão**: Roles do token → authorities Spring Security ("USER" → "ROLE_USER")
+  - **Prefixo ROLE_**: Adicionado automaticamente conforme convenção do Spring Security
+  - **Logs**: "Token JWT válido para userId=1, email=user@email.com, roles=[USER]"
+- **Method Security (Autorização Granular):**
+  - **Configuração**: `@EnableMethodSecurity(securedEnabled = true)` habilitado no SecurityConfig
+  - **Suporte a anotações**:
+    - `@PreAuthorize("hasRole('USER')")` - Executa ANTES do método
+    - `@PostAuthorize("...")` - Executa DEPOIS do método
+    - `@Secured("ROLE_ADMIN")` - Versão simplificada
+  - **Uso em Controllers**: Protege endpoints específicos com roles
+  - **Exemplo prático**: Endpoint `/api/v1/users/test-authorization` requer role USER
+- **Fluxo de Autorização (Completo):**
+  1. Usuário faz login → JWT gerado **com claim roles incluída**
+  2. Cliente envia request com JWT no header Authorization
+  3. JwtAuthenticationFilter valida token e **extrai roles do próprio token**
+  4. Roles são convertidas em authorities ("ROLE_USER", "ROLE_ADMIN")
+  5. Authentication com authorities é colocado no SecurityContext
   6. Spring Security autoriza requisição baseado nas authorities
-  7. Controller pode verificar roles com `@PreAuthorize("hasRole('ADMIN')")`
+  7. Controllers verificam roles com `@PreAuthorize("hasRole('USER')")`
+- **Exemplo de Token JWT Decodificado:**
+  ```json
+  {
+    "sub": "1",
+    "email": "user@email.com",
+    "name": "Usuario",
+    "provider": "LOCAL",
+    "roles": ["USER"],
+    "iss": "shopping-list-api",
+    "iat": 1735207200,
+    "exp": 1735210800
+  }
+  ```
+- **Exemplo de Uso (Endpoint com @PreAuthorize):**
+  ```bash
+  # 1. Fazer login para obter token
+  curl -X POST http://localhost:8080/api/v1/auth/login \
+    -H "Content-Type: application/json" \
+    -d '{"email":"user@email.com","password":"senha@123"}'
+  
+  # Response: {"accessToken":"eyJhbG...", "refreshToken":"...", "expiresIn":3600}
+  
+  # 2. Testar endpoint protegido com @PreAuthorize("hasRole('USER')")
+  curl -X GET http://localhost:8080/api/v1/users/test-authorization \
+    -H "Authorization: Bearer {accessToken}"
+  
+  # Response (200 OK):
+  # "Autorização validada com sucesso! UserId: 1, Authorities: [ROLE_USER]"
+  
+  # 3. Tentar acessar sem token (401 Unauthorized)
+  curl -X GET http://localhost:8080/api/v1/users/test-authorization
+  
+  # Response (401):
+  # {"path":"/api/v1/users/test-authorization","error":"Unauthorized",...}
+  
+  # 4. Logs da aplicação mostram roles extraídas do token:
+  # INFO - Usuário autenticado via JWT: userId=1, email=user@email.com, roles=[ROLE_USER]
+  # DEBUG - Token JWT válido para userId=1, email=user@email.com, roles=[USER]
+  # DEBUG - Authorities carregadas do token: [ROLE_USER]
+  ```
+- **Testes Unitários (JwtService):**
+  - Total: 17 testes (100% passando)
+  - Testes novos para roles:
+    - ✅ Deve incluir roles no token e extrair corretamente
+    - ✅ Deve incluir múltiplas roles no token
+    - ✅ Deve retornar lista vazia quando usuário não tem roles
+    - ✅ Deve validar que claim roles existe no token
+  - Cenários cobertos:
+    - Geração de token com uma role (USER)
+    - Geração de token com múltiplas roles (USER, ADMIN)
+    - Extração correta de roles do token JWT
+    - Validação da estrutura do claim "roles" (List<String>)
+    - Usuário sem roles (retorna lista vazia)
+  - Técnica: Uso de reflection para criar roles e adicionar ao usuário de teste
+- **Segurança e Performance:**
+  - **Stateless**: Roles no token eliminam necessidade de consultar banco
+  - **Performance**: Filtro JWT não acessa banco para obter roles
+  - **Trade-off**: Mudanças de roles exigem novo login para refletir no token
+  - **Renovação**: Refresh token gera novo access token com roles atualizadas
+  - **Validação**: Token é validado em cada requisição (assinatura + expiração)
+  - **Auditoria**: Logs estruturados com roles em cada autenticação
 - **Exemplo de Uso:**
   ```bash
   # 1. Registrar usuário (recebe role USER automaticamente)
@@ -996,11 +1073,16 @@ curl -X POST http://localhost:8080/api/v1/auth/refresh \
   -- Resultado:
   -- email: user@email.com, role: USER
   ```
-- **Futuro - Autorização Granular:**
-  - Uso de `@PreAuthorize` em controllers
-  - Exemplo: `@PreAuthorize("hasRole('ADMIN')")` para endpoints administrativos
-  - Exemplo: `@PreAuthorize("hasAnyRole('USER', 'ADMIN')")` para acesso geral
-  - Roles customizadas por funcionalidade (ex: MODERATOR, VIEWER)
+- **Autorização Granular com @PreAuthorize:**
+  - **Implementado**: Method Security habilitado no SecurityConfig
+  - **Uso em Controllers**: Protege métodos específicos com anotações
+  - **Endpoint de Teste**: `GET /api/v1/users/test-authorization` requer role USER
+  - **Exemplos de anotações**:
+    - `@PreAuthorize("hasRole('USER')")` - Apenas usuários com role USER
+    - `@PreAuthorize("hasRole('ADMIN')")` - Apenas administradores
+    - `@PreAuthorize("hasAnyRole('USER', 'ADMIN')")` - Usuários OU admins
+    - `@PreAuthorize("isAuthenticated()")` - Qualquer usuário autenticado
+  - **Futuro**: Roles customizadas por funcionalidade (ex: MODERATOR, VIEWER)
 - **Benefícios:**
   - Autorização dinâmica (mudanças de role refletem imediatamente)
   - Flexibilidade (usuário pode ter múltiplas roles)
@@ -1149,15 +1231,19 @@ curl -X POST http://localhost:8080/api/v1/auth/refresh \
   - ✅ **Hash SHA-256** para refresh tokens (nunca armazenado em texto puro)
   - ✅ **Global Exception Handler** com respostas padronizadas
   - ✅ **Bean Validation** com validações declarativas nos DTOs
-  - ✅ **Flyway Migrations** para versionamento de schema (6 migrations)
+  - ✅ **Flyway Migrations** para versionamento de schema (6 migrations: users, refresh_tokens, roles, user_roles, seed roles)
   - ✅ **Metadata de Sessão** (User-Agent, IP) para auditoria e segurança
   - ✅ **Vinculação de Tokens** (replacedByTokenId) para rastreabilidade
   - ✅ **Perfis de Configuração** (dev/test/prod) com níveis de segurança diferentes
+  - ✅ **Sistema de Roles** (tb_role, tb_user_role) com roles padrão (USER, ADMIN)
+  - ✅ **Autorização RBAC** centralizada no SecurityFilterChain
+  - ✅ **Propagação de Roles** do banco → JWT → SecurityContext
+  - ✅ **Access Denied Handler** para tratamento de erros 403
 - **Testes implementados:**
   - ✅ Testes unitários (use cases, services) - 45 testes
-  - ✅ Testes de integração (controllers end-to-end) - 38 testes
+  - ✅ Testes de integração (controllers end-to-end) - 45 testes (incluindo 7 de RBAC)
   - ✅ Coverage de casos de sucesso e falha
-  - ✅ Total: 83 testes | 83 passing (100%)
+  - ✅ Total: 90 testes | 90 passing (100%)
 - **Funcionalidades de Autenticação e Autorização:**
   - ✅ **Registro** de usuário LOCAL (POST /api/v1/auth/register)
   - ✅ **Login** de usuário com JWT + Refresh Token (POST /api/v1/auth/login)
@@ -1166,7 +1252,9 @@ curl -X POST http://localhost:8080/api/v1/auth/refresh \
   - ✅ **Cookies HttpOnly** - Refresh token via cookie seguro (configurável por perfil)
   - ✅ **JWT Authentication Filter** - Interceptação e validação de requests via Bearer token
   - ✅ **Roles e Autorização** - Sistema RBAC com roles USER e ADMIN
+  - ✅ **Proteção de Endpoints** - Autorização baseada em roles (ex: /api/v1/admin/** requer ADMIN)
   - ✅ **Endpoint Protegido** - GET /api/v1/users/me (dados do usuário autenticado)
+  - ✅ **Endpoint Admin** - GET /api/v1/admin/ping (validação de autorização ADMIN)
   - 🔜 **OAuth2 com Google** - Login social
 - O foco continua sendo **build verde**, **startup limpo**, **testes passando** e **base arquitetural sólida**.
 
@@ -1174,4 +1262,4 @@ curl -X POST http://localhost:8080/api/v1/auth/refresh \
 
 ## 📝 Licença
 
-Este projeto é de uso educacional e pessoal.
+Este projeto é de uso pessoal.

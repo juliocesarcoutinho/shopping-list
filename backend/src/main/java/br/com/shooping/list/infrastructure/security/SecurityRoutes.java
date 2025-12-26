@@ -97,6 +97,45 @@ public final class SecurityRoutes {
                 throw new UnsupportedOperationException("Utility class");
             }
         }
+
+        /**
+         * Rotas administrativas - requerem autenticação JWT e role ADMIN.
+         */
+        public static final class Admin {
+
+            /**
+             * Base para todas as rotas administrativas.
+             * /api/v1/admin/**
+             */
+            public static final String ADMIN_BASE = "/api/v1/admin/**";
+
+            /**
+             * Endpoint de teste para validar autorização ADMIN.
+             * GET /api/v1/admin/ping - Retorna pong se usuário for ADMIN
+             */
+            public static final String ADMIN_PING = "/api/v1/admin/ping";
+
+            /**
+             * Gerenciamento de usuários (futuro).
+             * GET /api/v1/admin/users - Listar todos os usuários
+             * GET /api/v1/admin/users/{id} - Buscar usuário por ID
+             * PUT /api/v1/admin/users/{id}/role - Alterar role de usuário
+             * DELETE /api/v1/admin/users/{id} - Deletar usuário
+             */
+            public static final String ADMIN_USERS = "/api/v1/admin/users/**";
+
+            /**
+             * Métricas e monitoramento (futuro).
+             * GET /api/v1/admin/metrics - Métricas da aplicação
+             * GET /api/v1/admin/health/detailed - Health check detalhado
+             */
+            public static final String ADMIN_METRICS = "/api/v1/admin/metrics";
+            public static final String ADMIN_HEALTH = "/api/v1/admin/health/**";
+
+            private Admin() {
+                throw new UnsupportedOperationException("Utility class");
+            }
+        }
     }
 }
 

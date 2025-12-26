@@ -2,6 +2,7 @@ package br.com.shooping.list.infrastructure.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -25,20 +26,27 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
  * - CORS configurado para desenvolvimento
  * - Rotas públicas e protegidas
  * - Filtro JWT para autenticação via Bearer token
+ * - Method Security habilitado para @PreAuthorize, @PostAuthorize, @Secured
+ * - RBAC (Role-Based Access Control): rotas /admin/** exigem role ADMIN
+ * - Handlers customizados para 401 (não autenticado) e 403 (sem permissão)
  */
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity(securedEnabled = true)
 public class SecurityConfig {
 
     private final JwtAuthenticationEntryPoint authenticationEntryPoint;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final JwtAccessDeniedHandler accessDeniedHandler;
 
     public SecurityConfig(
             JwtAuthenticationEntryPoint authenticationEntryPoint,
-            JwtAuthenticationFilter jwtAuthenticationFilter
+            JwtAuthenticationFilter jwtAuthenticationFilter,
+            JwtAccessDeniedHandler accessDeniedHandler
     ) {
         this.authenticationEntryPoint = authenticationEntryPoint;
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+        this.accessDeniedHandler = accessDeniedHandler;
     }
 
     private static final String[] PUBLIC_ENDPOINTS = {
@@ -71,7 +79,9 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // Rotas públicas
                         .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
-                        // Todas as outras requisições precisam autenticação
+                        // Rotas administrativas - exigem role ADMIN
+                        .requestMatchers(SecurityRoutes.Public.Admin.ADMIN_BASE).hasRole("ADMIN")
+                        // Todas as outras requisições precisam apenas autenticação
                         .anyRequest().authenticated()
                 )
 
@@ -84,9 +94,10 @@ public class SecurityConfig {
                         .frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin)
                 )
 
-                // Configura tratamento de exceções de autenticação
+                // Configura tratamento de exceções de autenticação e autorização
                 .exceptionHandling(exceptions -> exceptions
-                        .authenticationEntryPoint(authenticationEntryPoint)
+                        .authenticationEntryPoint(authenticationEntryPoint)  // 401 - Não autenticado
+                        .accessDeniedHandler(accessDeniedHandler)            // 403 - Sem permissão
                 );
 
         return http.build();

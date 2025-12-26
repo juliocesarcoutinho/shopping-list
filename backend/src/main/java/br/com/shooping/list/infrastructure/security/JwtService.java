@@ -1,5 +1,7 @@
 package br.com.shooping.list.infrastructure.security;
 
+import br.com.shooping.list.domain.user.Role;
+import br.com.shooping.list.domain.user.User;
 import br.com.shooping.list.domain.user.User;
 import br.com.shooping.list.infrastructure.exception.ExpiredJwtException;
 import br.com.shooping.list.infrastructure.exception.InvalidJwtException;
@@ -15,6 +17,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -30,6 +33,7 @@ public class JwtService {
 
     /**
      * Gera um access token JWT para o usuário autenticado
+     * Inclui roles como claim para evitar consulta ao banco em cada requisição
      *
      * @param user usuário autenticado
      * @return token JWT assinado
@@ -41,6 +45,13 @@ public class JwtService {
         claims.put("email", user.getEmail());
         claims.put("name", user.getName());
         claims.put("provider", user.getProvider().name());
+
+        // Inclui roles no token para propagação no SecurityContext
+        // Converte Set<Role> para List<String> com apenas os nomes
+        var roleNames = user.getRoles().stream()
+                .map(Role::getName)
+                .toList();
+        claims.put("roles", roleNames);
 
         Instant now = Instant.now();
         Instant expiration = now.plus(jwtProperties.getAccessToken().getExpiration());
@@ -54,7 +65,7 @@ public class JwtService {
                 .signWith(getSigningKey())
                 .compact();
 
-        log.debug("Access token gerado com sucesso. Expira em: {}", expiration);
+        log.debug("Access token gerado com sucesso. Expira em: {}. Roles incluídas: {}", expiration, roleNames);
         return token;
     }
 
@@ -86,6 +97,34 @@ public class JwtService {
      */
     public String extractName(String token) {
         return extractAllClaims(token).get("name", String.class);
+    }
+
+    /**
+     * Extrai as roles do token JWT
+     * Retorna lista de nomes das roles (ex: ["USER", "ADMIN"])
+     *
+     * @param token token JWT
+     * @return lista de nomes das roles
+     */
+    @SuppressWarnings("unchecked")
+    public List<String> extractRoles(String token) {
+        Claims claims = extractAllClaims(token);
+        Object rolesObj = claims.get("roles");
+
+        // Se não houver roles no token, retorna lista vazia
+        if (rolesObj == null) {
+            log.warn("Token não contém claim 'roles'. Retornando lista vazia.");
+            return List.of();
+        }
+
+        // JJWT deserializa arrays JSON como List<String>
+        if (rolesObj instanceof List) {
+            return (List<String>) rolesObj;
+        }
+
+        log.warn("Claim 'roles' não é uma lista. Tipo: {}. Retornando lista vazia.",
+                rolesObj.getClass().getSimpleName());
+        return List.of();
     }
 
     /**
