@@ -1,5 +1,6 @@
 package br.com.shooping.list.interfaces.rest.v1;
 
+import br.com.shooping.list.application.dto.auth.GoogleLoginRequest;
 import br.com.shooping.list.application.dto.auth.LoginRequest;
 import br.com.shooping.list.application.dto.auth.LoginResponse;
 import br.com.shooping.list.application.dto.auth.LogoutRequest;
@@ -7,6 +8,7 @@ import br.com.shooping.list.application.dto.auth.RefreshTokenRequest;
 import br.com.shooping.list.application.dto.auth.RefreshTokenResponse;
 import br.com.shooping.list.application.dto.auth.RegisterRequest;
 import br.com.shooping.list.application.dto.auth.RegisterResponse;
+import br.com.shooping.list.application.usecase.GoogleLoginUseCase;
 import br.com.shooping.list.application.usecase.LoginUserUseCase;
 import br.com.shooping.list.application.usecase.LogoutUseCase;
 import br.com.shooping.list.application.usecase.RefreshTokenUseCase;
@@ -35,6 +37,7 @@ public class AuthController {
 
     private final RegisterUserUseCase registerUserUseCase;
     private final LoginUserUseCase loginUserUseCase;
+    private final GoogleLoginUseCase googleLoginUseCase;
     private final RefreshTokenUseCase refreshTokenUseCase;
     private final LogoutUseCase logoutUseCase;
     private final CookieService cookieService;
@@ -94,8 +97,33 @@ public class AuthController {
     }
 
     /**
-     * Endpoint para renovação de access token via refresh token
-     * Aceita refresh token via cookie (preferencial) ou body (dev/test)
+     * Endpoint para login via Google OAuth2
+     *
+     * @param request ID Token emitido pelo Google
+     * @param httpRequest requisição HTTP para extrair metadata
+     * @param httpResponse resposta HTTP para adicionar cookie
+     * @return tokens de acesso e refresh (refresh também vai no cookie)
+     */
+    @PostMapping("/google")
+    public ResponseEntity<LoginResponse> googleLogin(
+            @Valid @RequestBody GoogleLoginRequest request,
+            HttpServletRequest httpRequest,
+            HttpServletResponse httpResponse
+    ) {
+        log.info("Requisição de login via Google OAuth2 recebida");
+
+        var response = googleLoginUseCase.execute(request.getIdToken(), httpRequest);
+
+        // Adiciona refresh token no cookie HttpOnly
+        cookieService.addRefreshTokenCookie(httpResponse, response.getRefreshToken());
+
+        log.info("Login via Google realizado com sucesso");
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Endpoint para renovar access token usando refresh token
+     *
      *
      * @param request refresh token a ser validado e rotacionado (opcional se vier no cookie)
      * @param httpRequest requisição HTTP para extrair metadata e cookie

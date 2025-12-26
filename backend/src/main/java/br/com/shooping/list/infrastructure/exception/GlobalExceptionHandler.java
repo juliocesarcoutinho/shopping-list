@@ -307,6 +307,28 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * Trata erros de validação de token do Google OAuth2.
+     * <p>
+     * Retorna 401 Unauthorized.
+     */
+    @ExceptionHandler(br.com.shooping.list.infrastructure.security.GoogleTokenValidationException.class)
+    public ResponseEntity<ErrorResponse> handleGoogleTokenValidationException(
+            br.com.shooping.list.infrastructure.security.GoogleTokenValidationException ex,
+            HttpServletRequest request
+    ) {
+        log.warn("Google token validation error on path: {}", request.getRequestURI());
+
+        var error = ErrorResponse.of(
+                HttpStatus.UNAUTHORIZED.value(),
+                "Unauthorized",
+                "Token do Google inválido: " + ex.getMessage(),
+                request.getRequestURI()
+        );
+
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
+    }
+
+    /**
      * Trata todas as outras exceções não mapeadas.
      * <p>
      * Retorna 500 Internal Server Error.

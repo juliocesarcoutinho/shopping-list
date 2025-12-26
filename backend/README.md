@@ -25,6 +25,7 @@ Backend da aplicação **Shopping List**, desenvolvido com **Java LTS** e **Spri
 - **Flyway** (Database Migrations)
 - **BCrypt** (Password Hashing)
 - **JWT (JSON Web Token)** - jjwt-api, jjwt-impl, jjwt-jackson
+- **Google API Client** - Validação de tokens OAuth2
 - **Spring Dotenv** - Carregamento automático de variáveis .env
 
 ---
@@ -831,9 +832,7 @@ curl -X POST http://localhost:8080/api/v1/auth/refresh \
   - `/api/v1/auth/**` - Registro, login, refresh, logout
   - `/actuator/health` - Health check
   - `/h2-console/**` - Console H2 (dev apenas)
-- **Rotas Protegidas (requerem JWT):**
-  - `/api/v1/users/me` - Dados do usuário autenticado
-  - Todas as outras rotas da API (futuras)
+- **Rotas Protegidas:** Todas as demais rotas requerem autenticação JWT
 - **Endpoint GET /api/v1/users/me:**
   - **Descrição**: Retorna dados do usuário autenticado
   - **Autenticação**: Requer JWT válido no header Authorization
@@ -846,8 +845,6 @@ curl -X POST http://localhost:8080/api/v1/auth/refresh \
   curl -X POST http://localhost:8080/api/v1/auth/login \
     -H "Content-Type: application/json" \
     -d '{"email":"teste@email.com","password":"senha@123"}'
-  
-  # Response: {"accessToken":"eyJhbG...", "refreshToken":"...", "expiresIn":3600}
   
   # 2. Copiar o accessToken e usar para acessar endpoint protegido
   curl -X GET http://localhost:8080/api/v1/users/me \
@@ -908,358 +905,75 @@ curl -X POST http://localhost:8080/api/v1/auth/refresh \
     - ✅ Bearer malformado → 401 Unauthorized
     - ✅ Bearer vazio → 401 Unauthorized
     - ✅ Rotas públicas continuam funcionando sem JWT
-    - ✅ UserID extraído corretamente do JWT
-  - Status: ✅ 100% passando
-- **Segurança:**
-  - Token JWT nunca armazenado no servidor (stateless)
-  - Validação de assinatura e expiração em cada requisição
-  - Contexto de segurança limpo em caso de erro
-  - Logs estruturados para auditoria
-  - Proteção contra ataques de replay (token expira)
-  - Proteção contra token theft (revogação via refresh token)
-
-### Roles e Autorização (RBAC - Role-Based Access Control)
-- **Descrição:** Sistema de controle de acesso baseado em papéis (roles) para gerenciar permissões de usuários
-- **Implementação:** Relacionamento Many-to-Many entre User e Role com suporte a autorização dinâmica
-- **Modelo de Dados:**
-  - **Tabela `tb_role`**: Armazena roles do sistema
-    - Campos: id, name (UNIQUE), description, created_at, updated_at
-    - Roles padrão: USER (usuário comum), ADMIN (administrador)
-  - **Tabela `tb_user_role`**: Relacionamento Many-to-Many
-    - Campos: user_id (FK), role_id (FK), created_at
-    - PK composta (user_id, role_id)
-    - Cascade DELETE: ao deletar usuário, remove relacionamentos
-- **Migrations Flyway:**
-  - `V3__create_roles.sql`: Cria tabela tb_role com constraints
-  - `V4__create_user_roles.sql`: Cria tabela de relacionamento tb_user_role
-  - `V5__seed_roles.sql`: Insere roles padrão (USER e ADMIN)
-  - `V6__assign_user_role_to_existing_users.sql`: Atribui role USER a usuários existentes
-- **Entidade Role (Domínio):**
-  - Campos: id, name, description, createdAt, updatedAt
-  - Validações: nome obrigatório, UPPERCASE, único, max 50 caracteres
-  - Métodos: `getNameWithPrefix()` retorna "ROLE_USER", `isAdmin()`, `isUser()`
-  - Factory method: `Role.create(name, description)`
-- **Entidade User (Atualizada):**
-  - Relacionamento: `@ManyToMany` com Role via `@JoinTable` (tb_user_role)
-  - Campo: `Set<Role> roles` com FetchType.EAGER
-  - Métodos novos: `addRole()`, `removeRole()`, `hasRole()`, `isAdmin()`
-  - Usuário pode ter múltiplas roles simultaneamente
-- **Atribuição Automática de Role:**
-  - Todo usuário registrado via `/api/v1/auth/register` recebe role **USER** automaticamente
-  - `RegisterUserUseCase` busca role "USER" do banco e atribui ao usuário
-  - Lança exceção se role USER não existir (sistema mal configurado)
-- **JWT Service (Atualizado - Roles no Token):**
-  - **Geração de Token**: Inclui claim `roles` no JWT com lista de nomes das roles
-  - **Método**: `generateAccessToken(User user)` extrai roles do usuário e adiciona ao token
-  - **Claim "roles"**: Array JSON com nomes das roles (ex: `["USER"]`, `["USER", "ADMIN"]`)
-  - **Extração de Roles**: Novo método `extractRoles(String token)` retorna `List<String>`
-  - **Benefícios**: Evita consulta ao banco em cada requisição (melhor performance)
-  - **Logs**: "Access token gerado. Roles incluídas: [USER]"
-- **JWT Authentication Filter (Atualizado - Roles do Token):**
-  - **Antes**: Buscava usuário do banco para obter roles
-  - **Agora**: Extrai roles diretamente do token JWT (claim "roles")
-  - **Performance**: Sem consulta ao banco em cada requisição
-  - **Conversão**: Roles do token → authorities Spring Security ("USER" → "ROLE_USER")
-  - **Prefixo ROLE_**: Adicionado automaticamente conforme convenção do Spring Security
-  - **Logs**: "Token JWT válido para userId=1, email=user@email.com, roles=[USER]"
-- **Method Security (Autorização Granular):**
-  - **Configuração**: `@EnableMethodSecurity(securedEnabled = true)` habilitado no SecurityConfig
-  - **Suporte a anotações**:
-    - `@PreAuthorize("hasRole('USER')")` - Executa ANTES do método
-    - `@PostAuthorize("...")` - Executa DEPOIS do método
-    - `@Secured("ROLE_ADMIN")` - Versão simplificada
-  - **Uso em Controllers**: Protege endpoints específicos com roles
-  - **Exemplo prático**: Endpoint `/api/v1/users/test-authorization` requer role USER
-- **Fluxo de Autorização (Completo):**
-  1. Usuário faz login → JWT gerado **com claim roles incluída**
-  2. Cliente envia request com JWT no header Authorization
-  3. JwtAuthenticationFilter valida token e **extrai roles do próprio token**
-  4. Roles são convertidas em authorities ("ROLE_USER", "ROLE_ADMIN")
-  5. Authentication com authorities é colocado no SecurityContext
-  6. Spring Security autoriza requisição baseado nas authorities
-  7. Controllers verificam roles com `@PreAuthorize("hasRole('USER')")`
-- **Exemplo de Token JWT Decodificado:**
-  ```json
-  {
-    "sub": "1",
-    "email": "user@email.com",
-    "name": "Usuario",
-    "provider": "LOCAL",
-    "roles": ["USER"],
-    "iss": "shopping-list-api",
-    "iat": 1735207200,
-    "exp": 1735210800
-  }
-  ```
-- **Exemplo de Uso (Endpoint com @PreAuthorize):**
-  ```bash
-  # 1. Fazer login para obter token
-  curl -X POST http://localhost:8080/api/v1/auth/login \
-    -H "Content-Type: application/json" \
-    -d '{"email":"user@email.com","password":"senha@123"}'
-  
-  # Response: {"accessToken":"eyJhbG...", "refreshToken":"...", "expiresIn":3600}
-  
-  # 2. Testar endpoint protegido com @PreAuthorize("hasRole('USER')")
-  curl -X GET http://localhost:8080/api/v1/users/test-authorization \
-    -H "Authorization: Bearer {accessToken}"
-  
-  # Response (200 OK):
-  # "Autorização validada com sucesso! UserId: 1, Authorities: [ROLE_USER]"
-  
-  # 3. Tentar acessar sem token (401 Unauthorized)
-  curl -X GET http://localhost:8080/api/v1/users/test-authorization
-  
-  # Response (401):
-  # {"path":"/api/v1/users/test-authorization","error":"Unauthorized",...}
-  
-  # 4. Logs da aplicação mostram roles extraídas do token:
-  # INFO - Usuário autenticado via JWT: userId=1, email=user@email.com, roles=[ROLE_USER]
-  # DEBUG - Token JWT válido para userId=1, email=user@email.com, roles=[USER]
-  # DEBUG - Authorities carregadas do token: [ROLE_USER]
-  ```
-- **Testes Unitários (JwtService):**
-  - Total: 17 testes (100% passando)
-  - Testes novos para roles:
-    - ✅ Deve incluir roles no token e extrair corretamente
-    - ✅ Deve incluir múltiplas roles no token
-    - ✅ Deve retornar lista vazia quando usuário não tem roles
-    - ✅ Deve validar que claim roles existe no token
-  - Cenários cobertos:
-    - Geração de token com uma role (USER)
-    - Geração de token com múltiplas roles (USER, ADMIN)
-    - Extração correta de roles do token JWT
-    - Validação da estrutura do claim "roles" (List<String>)
-    - Usuário sem roles (retorna lista vazia)
-  - Técnica: Uso de reflection para criar roles e adicionar ao usuário de teste
-- **Segurança e Performance:**
-  - **Stateless**: Roles no token eliminam necessidade de consultar banco
-  - **Performance**: Filtro JWT não acessa banco para obter roles
-  - **Trade-off**: Mudanças de roles exigem novo login para refletir no token
-  - **Renovação**: Refresh token gera novo access token com roles atualizadas
-  - **Validação**: Token é validado em cada requisição (assinatura + expiração)
-  - **Auditoria**: Logs estruturados com roles em cada autenticação
-- **Exemplo de Uso:**
-  ```bash
-  # 1. Registrar usuário (recebe role USER automaticamente)
-  curl -X POST http://localhost:8080/api/v1/auth/register \
-    -H "Content-Type: application/json" \
-    -d '{"email":"user@email.com","name":"Usuario","password":"senha@123"}'
-  
-  # 2. Fazer login
-  curl -X POST http://localhost:8080/api/v1/auth/login \
-    -H "Content-Type: application/json" \
-    -d '{"email":"user@email.com","password":"senha@123"}'
-  
-  # Response: {"accessToken":"...", "refreshToken":"...", "expiresIn":3600}
-  
-  # 3. Acessar endpoint protegido (JWT contém roles)
-  curl -X GET http://localhost:8080/api/v1/users/me \
-    -H "Authorization: Bearer {token}"
-  
-  # 4. Logs da aplicação mostram roles carregadas:
-  # INFO - Usuário autenticado via JWT: userId=1, email=user@email.com, roles=[ROLE_USER]
-  # DEBUG - Roles carregadas para userId=1: [USER]
-  ```
-- **Consultar Roles no Banco:**
-  ```sql
-  -- Ver roles do usuário
-  SELECT u.email, r.name as role
-  FROM tb_user u
-  JOIN tb_user_role ur ON u.id = ur.user_id
-  JOIN tb_role r ON ur.role_id = r.id
-  WHERE u.email = 'user@email.com';
-  
-  -- Resultado:
-  -- email: user@email.com, role: USER
-  ```
-- **Autorização Granular com @PreAuthorize:**
-  - **Implementado**: Method Security habilitado no SecurityConfig
-  - **Uso em Controllers**: Protege métodos específicos com anotações
-  - **Endpoint de Teste**: `GET /api/v1/users/test-authorization` requer role USER
-  - **Exemplos de anotações**:
-    - `@PreAuthorize("hasRole('USER')")` - Apenas usuários com role USER
-    - `@PreAuthorize("hasRole('ADMIN')")` - Apenas administradores
-    - `@PreAuthorize("hasAnyRole('USER', 'ADMIN')")` - Usuários OU admins
-    - `@PreAuthorize("isAuthenticated()")` - Qualquer usuário autenticado
-  - **Futuro**: Roles customizadas por funcionalidade (ex: MODERATOR, VIEWER)
-- **Benefícios:**
-  - Autorização dinâmica (mudanças de role refletem imediatamente)
-  - Flexibilidade (usuário pode ter múltiplas roles)
-  - Escalável (fácil adicionar novas roles)
-  - Seguro (roles validadas em cada requisição)
-  - Auditável (histórico de roles na tabela tb_user_role)
-- **Testes:**
-  - Testes unitários: RegisterUserUseCase atribui role USER
-  - Testes de integração: Usuário criado tem role no banco
-  - JWT Filter carrega roles corretamente
-  - TestDataSetup cria roles automaticamente em testes
-  - Status: ✅ 83/83 testes passando (100%)
-
-### Banco de Dados MySQL
-- **Container:** MySQL 9 via Docker Compose
-- **Configuração:** Credenciais via arquivo `.env`
-- **Volume persistente:** Dados mantidos em volume Docker (`mysql-data`)
-- **Health Check:** Verificação automática de disponibilidade do banco
-- **Porta:** 3306 (configurável via `MYSQL_PORT`)
-- **Database inicial:** `shoppinglist_db` criado automaticamente
-- **Migrations:** Gerenciadas via Flyway (versionamento de schema)
-  - `V1__create_users.sql`: Tabela de usuários com suporte LOCAL/GOOGLE
-  - `V2__create_refresh_tokens.sql`: Tabela de refresh tokens com rotação e revogação
-  - `V3__create_roles.sql`: Tabela de roles (papéis) do sistema
-  - `V4__create_user_roles.sql`: Relacionamento Many-to-Many entre User e Role
-  - `V5__seed_roles.sql`: Seed de roles padrão (USER e ADMIN)
-  - `V6__assign_user_role_to_existing_users.sql`: Atribui role USER a usuários existentes
-
-### Datasource e Persistência (Profile Dev)
-- **Driver:** MySQL Connector/J
-- **Connection Pool:** HikariCP com configuração otimizada
-  - 10 conexões máximas
-  - 5 conexões ociosas mínimas
-  - Timeout de 30 segundos
-- **JPA/Hibernate:**
-  - Gerenciamento automático de schema (`ddl-auto: update`)
-  - SQL logging habilitado com formatação
-  - Dialect otimizado para MySQL
-- **Integração:** Conecta automaticamente ao container Docker via variáveis de ambiente
-
-### H2 Database para Testes (Profile Test)
-- **Banco em memória:** Não requer instalação ou Docker
-- **Modo MySQL:** Emula comportamento do MySQL para compatibilidade
-- **Schema automático:** `ddl-auto: create-drop` (recria a cada execução)
-- **Isolamento total:** Cada execução de teste tem banco limpo
-- **Performance:** Muito mais rápido que banco persistente
-- **CI/CD:** Funciona em qualquer ambiente sem configuração adicional
-- **Console H2:** Disponível em `/h2-console` para debug
-- **Credenciais:** `sa` / senha vazia
-
-### Spring Security (Configuração Base)
-- **Arquitetura:** Stateless (sem sessão no servidor)
-- **CSRF:** Desabilitado (API REST stateless)
-- **CORS:** Configurado para desenvolvimento (localhost:3000, 4200, 8080)
-- **Rotas Públicas:**
-  - `/api/v1/health` - Health check
-  - `/api/v1/auth/**` - Endpoints de autenticação (login, register, refresh)
-  - `/actuator/health` - Actuator health check
-  - `/h2-console/**` - Console H2 (dev)
-- **Rotas Protegidas:** Todas as demais rotas requerem autenticação JWT
-- **Senha:** BCrypt com 10 rounds
-- **HTTP 401:** Resposta customizada para requisições não autenticadas
-- **Preparado para JWT:** Filtros e providers serão implementados nas próximas stories
-
-### JWT Service (JSON Web Token)
-- **Biblioteca:** jjwt (io.jsonwebtoken) versão 0.12.6
-- **Algoritmo:** HS256 (HMAC SHA-256)
-- **Secret Key:** 256 bits mínimo, configurável via `application.yml`
-- **Access Token:**
-  - **Tempo de expiração:** 15 minutos (configurável por profile)
-  - **Claims incluídas:** userId (subject), email, name, provider, iat, exp, iss
-- **Issuer:** `shopping-list-api` (identificador da aplicação)
-- **Funcionalidades:**
-  - Geração de access token para usuário autenticado
-  - Validação de token (assinatura, expiração, estrutura)
-  - Extração de claims (userId, email, name, provider)
-  - Exceções customizadas (`ExpiredJwtException`, `InvalidJwtException`)
-- **Testes:** 13 testes unitários validando geração, validação e casos de erro
-- **Segurança:**
-  - Secret key externalizado (não commitado)
-  - Tokens assinados e verificados
-  - Logs de segurança para tentativas inválidas
-
-### Domínio User, Role e RefreshToken (DDD)
-- **Agregado User:**
-  - Suporte a provedores: `LOCAL` (email/senha) e `GOOGLE` (OAuth2)
-  - Status: `ACTIVE` ou `DISABLED`
-  - Relacionamento: Many-to-Many com `Role` (autorização)
-  - Factory methods: `createLocalUser()`, `createGoogleUser()`
-  - Regras de negócio: passwordHash obrigatório apenas para LOCAL
-  - Métodos: `disable()`, `activate()`, `updatePassword()`, `updateName()`
-  - Métodos de roles: `addRole()`, `removeRole()`, `hasRole()`, `isAdmin()`
-- **Entidade Role:**
-  - Campos: id, name (UNIQUE), description, createdAt, updatedAt
-  - Validações: nome obrigatório, UPPERCASE, max 50 caracteres
-  - Roles padrão: USER, ADMIN
-  - Métodos: `getNameWithPrefix()`, `isAdmin()`, `isUser()`, `updateDescription()`
-  - Factory method: `Role.create(name, description)`
-- **Entidade RefreshToken:**
-  - Relacionamento com User (many-to-one)
-  - Suporte a rotação de tokens (`replacedByTokenId`)
-  - Revogação explícita (`revokedAt`)
-  - Metadata: `userAgent`, `ip`, `lastUsedAt`
-  - Apenas hash do token armazenado (nunca o token em texto puro)
-- **Repository Pattern:**
-  - `UserRepository`: Port (interface no domínio)
-  - `RoleRepository`: Port (interface no domínio)
-  - `JpaUserRepository`: Adapter (implementação Spring Data JPA)
-  - Métodos: `save()`, `findByEmail()`, `existsByEmail()`, `findById()`, `deleteAll()`
-- **Migrations Flyway:**
-  - Schema versionado e rastreável
-  - Constraints e índices essenciais
-  - Suporte a rollback e auditoria
-
-> 📖 **Documentação detalhada:** Veja [SECURITY.md](SECURITY.md) para guia completo de segurança
 
 ---
 
-## 📌 Observações
+## 🔐 Google OAuth2 Authentication
 
-- Este projeto está em desenvolvimento ativo.
-- **Estratégia de banco por perfil:**
-  - **dev**: MySQL via Docker para desenvolvimento local
-  - **test**: H2 em memória para testes automatizados (sem Docker)
-- **Schema gerenciado por:**
-  - **Flyway** no perfil `dev` (migrations versionadas)
-  - **Hibernate** (`ddl-auto: create-drop`) no perfil `test`
-- **Credenciais sensíveis** devem ser mantidas no arquivo `.env` (não versionado):
-  - Credenciais MySQL
-  - JWT Secret (mínimo 256 bits / 32 caracteres para HS256)
-  - **Importante:** Use `openssl rand -base64 32` para gerar secret seguro
-- **Carregamento de .env:**
-  - Biblioteca `spring-dotenv` carrega automaticamente o arquivo `.env` no startup
-  - Variáveis disponíveis via `${NOME_VARIAVEL}` no `application.yml`
-- **Arquitetura implementada:**
-  - ✅ **Clean Architecture** com separação em 4 camadas
-  - ✅ **DDD** (Domain-Driven Design) com agregados User, Role e RefreshToken
-  - ✅ **Repository Pattern** com ports e adapters
-  - ✅ **Use Cases** na camada application (orquestração transacional)
-  - ✅ **JWT Service** para geração e validação de tokens
-  - ✅ **JWT Authentication Filter** para proteção de endpoints via Bearer token
-  - ✅ **Roles e Autorização (RBAC)** - Sistema de controle de acesso baseado em papéis
-  - ✅ **Refresh Token com Rotação Automática** (one-time use, token revogado após uso)
-  - ✅ **Cookies HttpOnly + Secure + SameSite** (estratégia híbrida por perfil)
-  - ✅ **Detecção de Reuso de Tokens** (alerta de segurança para possíveis ataques)
-  - ✅ **Hash SHA-256** para refresh tokens (nunca armazenado em texto puro)
-  - ✅ **Global Exception Handler** com respostas padronizadas
-  - ✅ **Bean Validation** com validações declarativas nos DTOs
-  - ✅ **Flyway Migrations** para versionamento de schema (6 migrations: users, refresh_tokens, roles, user_roles, seed roles)
-  - ✅ **Metadata de Sessão** (User-Agent, IP) para auditoria e segurança
-  - ✅ **Vinculação de Tokens** (replacedByTokenId) para rastreabilidade
-  - ✅ **Perfis de Configuração** (dev/test/prod) com níveis de segurança diferentes
-  - ✅ **Sistema de Roles** (tb_role, tb_user_role) com roles padrão (USER, ADMIN)
-  - ✅ **Autorização RBAC** centralizada no SecurityFilterChain
-  - ✅ **Propagação de Roles** do banco → JWT → SecurityContext
-  - ✅ **Access Denied Handler** para tratamento de erros 403
-- **Testes implementados:**
-  - ✅ Testes unitários (use cases, services) - 45 testes
-  - ✅ Testes de integração (controllers end-to-end) - 45 testes (incluindo 7 de RBAC)
-  - ✅ Coverage de casos de sucesso e falha
-  - ✅ Total: 90 testes | 90 passing (100%)
-- **Funcionalidades de Autenticação e Autorização:**
-  - ✅ **Registro** de usuário LOCAL (POST /api/v1/auth/register)
-  - ✅ **Login** de usuário com JWT + Refresh Token (POST /api/v1/auth/login)
-  - ✅ **Refresh Token** - Renovação automática com rotação (POST /api/v1/auth/refresh)
-  - ✅ **Logout** - Revogação explícita de refresh tokens (POST /api/v1/auth/logout)
-  - ✅ **Cookies HttpOnly** - Refresh token via cookie seguro (configurável por perfil)
-  - ✅ **JWT Authentication Filter** - Interceptação e validação de requests via Bearer token
-  - ✅ **Roles e Autorização** - Sistema RBAC com roles USER e ADMIN
-  - ✅ **Proteção de Endpoints** - Autorização baseada em roles (ex: /api/v1/admin/** requer ADMIN)
-  - ✅ **Endpoint Protegido** - GET /api/v1/users/me (dados do usuário autenticado)
-  - ✅ **Endpoint Admin** - GET /api/v1/admin/ping (validação de autorização ADMIN)
-  - 🔜 **OAuth2 com Google** - Login social
-- O foco continua sendo **build verde**, **startup limpo**, **testes passando** e **base arquitetural sólida**.
+A aplicação suporta autenticação via Google OAuth2, permitindo que usuários façam login com suas contas Google.
 
----
+### **Configuração**
 
-## 📝 Licença
+1. **Obter Google Client ID:**
+   - Acesse: https://console.cloud.google.com/
+   - Crie um projeto (ou selecione existente)
+   - Vá para "APIs & Services" > "Credentials"
+   - Crie um "OAuth 2.0 Client ID" do tipo "Web application"
 
-Este projeto é de uso pessoal.
+2. **Configurar no Backend:**
+   
+   Adicione ao arquivo `.env`:
+   ```bash
+   GOOGLE_CLIENT_ID=seu-client-id.apps.googleusercontent.com
+   ```
+
+3. **Reinicie a aplicação** para carregar a nova configuração.
+
+### **Como Funciona**
+
+1. **Frontend:** Usuário faz login com Google e obtém um `id_token`
+2. **Frontend:** Envia o `id_token` para `POST /api/v1/auth/google`
+3. **Backend:** Valida o token com Google
+4. **Backend:** Cria usuário se não existir (provisionamento automático)
+5. **Backend:** Retorna `accessToken` e `refreshToken` da API
+
+### **Endpoint**
+
+```bash
+POST /api/v1/auth/google
+Content-Type: application/json
+
+{
+  "idToken": "eyJhbGciOiJSUzI1NiIs..."
+}
+```
+
+**Resposta (200 OK):**
+```json
+{
+  "accessToken": "eyJhbGciOiJIUzI1NiJ9...",
+  "refreshToken": "550e8400-e29b-41d4-a716-446655440000",
+  "expiresIn": 3600
+}
+```
+
+### **Características**
+
+- ✅ **Validação do ID Token** com Google API Client
+- ✅ **Provisionamento automático** de usuários novos
+- ✅ **Email verificado** obrigatório
+- ✅ **Role USER** atribuída automaticamente
+- ✅ **Sem senha armazenada** (provider=GOOGLE, passwordHash=NULL)
+- ✅ **Mesmos tokens JWT** do login tradicional
+- ✅ **Refresh token** com rotação habilitada
+
+### **Teste Rápido**
+
+Para testar rapidamente sem frontend:
+
+1. Acesse: https://developers.google.com/oauthplayground/
+2. Autorize os scopes: `email`, `profile`, `openid`
+3. Obtenha o `id_token`
+4. Use no Postman/cURL
+
+**Documentação detalhada:** Veja `GOOGLE_OAUTH_TESTING.md` na raiz do projeto.

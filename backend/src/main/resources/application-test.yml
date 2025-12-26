@@ -33,4 +33,5 @@ app:
         same-site: Lax
         max-age: 86400 # 1 dia (mesmo do token no test)
         cookie-only: false # Retorna no body também (facilita testes)
-
+  google:
+    client-id: test-google-client-id
