@@ -22,9 +22,10 @@ import { Button, TextField } from '../components';
 import { useAuth } from '../contexts/auth-context';
 import { useAppTheme } from '../hooks';
 
+// Validação apenas para UX básica (campos vazios)
 const loginSchema = z.object({
-  email: z.string().min(1, 'Email é obrigatório').email('Email inválido'),
-  password: z.string().min(6, 'Senha deve ter no mínimo 6 caracteres'),
+  email: z.string().min(1, 'Campo obrigatório'),
+  password: z.string().min(1, 'Campo obrigatório'),
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;
@@ -55,8 +56,11 @@ export function LoginScreen() {
 
     try {
       await signIn(data.email, data.password);
-    } catch (_error) {
-      setErrorMessage('Email ou senha incorretos. Tente novamente.');
+    } catch (error: unknown) {
+      // Captura mensagem de erro da API
+      const apiError = error as { message?: string; data?: { message?: string } };
+      const apiMessage = apiError?.message || apiError?.data?.message;
+      setErrorMessage(apiMessage || 'Erro ao fazer login. Tente novamente.');
     } finally {
       setIsLoading(false);
     }
@@ -70,8 +74,10 @@ export function LoginScreen() {
       // Simulo login com Google por enquanto
       await new Promise(resolve => setTimeout(resolve, 1500));
       await signIn('google@example.com', 'mock-password');
-    } catch (_error) {
-      setErrorMessage('Falha ao fazer login com Google. Tente novamente.');
+    } catch (error: any) {
+      // Captura mensagem de erro da API
+      const apiMessage = error?.message || error?.data?.message;
+      setErrorMessage(apiMessage || 'Erro ao fazer login com Google. Tente novamente.');
     } finally {
       setIsLoading(false);
     }

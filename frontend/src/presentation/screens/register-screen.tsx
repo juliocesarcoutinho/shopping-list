@@ -22,22 +22,13 @@ import { Button, TextField } from '../components';
 import { useAuth } from '../contexts/auth-context';
 import { useAppTheme } from '../hooks';
 
-const registerSchema = z
-  .object({
-    name: z.string().min(3, 'Nome deve ter no mínimo 3 caracteres'),
-    email: z.string().min(1, 'Email é obrigatório').email('Email inválido'),
-    password: z
-      .string()
-      .min(8, 'Senha deve ter no mínimo 8 caracteres')
-      .regex(/[A-Z]/, 'Senha deve conter pelo menos uma letra maiúscula')
-      .regex(/[0-9]/, 'Senha deve conter pelo menos um número')
-      .regex(/[^A-Za-z0-9]/, 'Senha deve conter pelo menos um caractere especial'),
-    confirmPassword: z.string().min(1, 'Confirmação de senha é obrigatória'),
-  })
-  .refine(data => data.password === data.confirmPassword, {
-    message: 'Senhas não conferem',
-    path: ['confirmPassword'],
-  });
+// Validação apenas para UX básica (campos vazios)
+const registerSchema = z.object({
+  name: z.string().min(1, 'Campo obrigatório'),
+  email: z.string().min(1, 'Campo obrigatório'),
+  password: z.string().min(1, 'Campo obrigatório'),
+  confirmPassword: z.string().min(1, 'Campo obrigatório'),
+});
 
 type RegisterFormData = z.infer<typeof registerSchema>;
 
@@ -69,6 +60,13 @@ export function RegisterScreen() {
     setErrorMessage('');
     setSuccessMessage('');
 
+    // Validação de UX: senhas devem conferir (antes de enviar para API)
+    if (data.password !== data.confirmPassword) {
+      setErrorMessage('As senhas não conferem');
+      setIsLoading(false);
+      return;
+    }
+
     try {
       await signUp(data.name, data.email, data.password);
       setSuccessMessage('Conta criada com sucesso! Redirecionando...');
@@ -77,8 +75,10 @@ export function RegisterScreen() {
       setTimeout(() => {
         // Navegação automática será feita pelo AuthContext
       }, 1500);
-    } catch (_error) {
-      setErrorMessage('Erro ao criar conta. Este email pode já estar em uso.');
+    } catch (error: any) {
+      // Captura mensagem de erro da API
+      const apiMessage = error?.message || error?.data?.message;
+      setErrorMessage(apiMessage || 'Erro ao criar conta. Tente novamente.');
     } finally {
       setIsLoading(false);
     }
