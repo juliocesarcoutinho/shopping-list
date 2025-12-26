@@ -7,3 +7,4 @@
 export * from './home-screen';
 export * from './explore-screen';
 export * from './modal-screen';
+export * from './playground-screen';

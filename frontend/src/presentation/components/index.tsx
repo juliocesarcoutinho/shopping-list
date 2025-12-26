@@ -4,145 +4,448 @@
  * Componentes básicos reutilizáveis para a aplicação.
  */
 
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  ActivityIndicator,
+  TextInput,
+  TextInputProps,
+} from 'react-native';
 
-// Button Component
+import { useAppTheme } from '../hooks';
+
+// Button Component (melhorado com loading state)
 export interface ButtonProps {
   title: string;
   onPress: () => void;
   variant?: 'primary' | 'secondary';
   disabled?: boolean;
+  loading?: boolean;
+  size?: 'small' | 'medium' | 'large';
 }
 
-export function Button({ title, onPress, variant = 'primary', disabled = false }: ButtonProps) {
+export function Button({
+  title,
+  onPress,
+  variant = 'primary',
+  disabled = false,
+  loading = false,
+  size = 'medium',
+}: ButtonProps) {
+  const theme = useAppTheme();
+
+  const getButtonStyle = () => {
+    const sizeStyles = {
+      small: { paddingHorizontal: 12, paddingVertical: 8 },
+      medium: { paddingHorizontal: 20, paddingVertical: 12 },
+      large: { paddingHorizontal: 24, paddingVertical: 16 },
+    };
+
+    const baseStyle = {
+      ...sizeStyles[size],
+      borderRadius: theme.radius.base,
+      alignItems: 'center' as const,
+      justifyContent: 'center' as const,
+    };
+
+    if (disabled || loading) {
+      return {
+        ...baseStyle,
+        backgroundColor: theme.colors.textTertiary,
+        opacity: theme.opacity[60],
+      };
+    }
+
+    return variant === 'primary'
+      ? {
+          ...baseStyle,
+          backgroundColor: theme.colors.primary,
+        }
+      : {
+          ...baseStyle,
+          backgroundColor: 'transparent',
+          borderWidth: 1,
+          borderColor: theme.colors.primary,
+        };
+  };
+
+  const getTextStyle = () => {
+    const sizeStyles = {
+      small: { fontSize: 14 },
+      medium: { fontSize: 16 },
+      large: { fontSize: 18 },
+    };
+
+    if (disabled || loading) return { ...sizeStyles[size], color: theme.colors.textInverted };
+    return variant === 'primary'
+      ? { ...sizeStyles[size], color: theme.colors.textInverted }
+      : { ...sizeStyles[size], color: theme.colors.primary };
+  };
+
   return (
     <TouchableOpacity
-      style={[
-        styles.button,
-        variant === 'primary' ? styles.primaryButton : styles.secondaryButton,
-        disabled && styles.disabledButton,
-      ]}
+      style={getButtonStyle()}
       onPress={onPress}
-      disabled={disabled}
+      disabled={disabled || loading}
+      activeOpacity={0.8}
     >
-      <Text
-        style={[
-          styles.buttonText,
-          variant === 'primary' ? styles.primaryButtonText : styles.secondaryButtonText,
-          disabled && styles.disabledButtonText,
-        ]}
-      >
-        {title}
-      </Text>
+      {loading ? (
+        <ActivityIndicator
+          size='small'
+          color={variant === 'primary' ? theme.colors.textInverted : theme.colors.primary}
+        />
+      ) : (
+        <Text style={[{ fontWeight: '600' }, getTextStyle()]}>{title}</Text>
+      )}
     </TouchableOpacity>
   );
 }
 
-// Card Component
+// TextField Component
+export interface TextFieldProps extends Omit<TextInputProps, 'style'> {
+  label?: string;
+  error?: string;
+  disabled?: boolean;
+  variant?: 'outlined' | 'filled';
+}
+
+export function TextField({
+  label,
+  error,
+  disabled = false,
+  variant = 'outlined',
+  ...textInputProps
+}: TextFieldProps) {
+  const theme = useAppTheme();
+  const [isFocused, setIsFocused] = useState(false);
+
+  const getContainerStyle = () => {
+    const baseStyle = {
+      borderRadius: theme.radius.base,
+      paddingHorizontal: theme.spacing[4],
+      paddingVertical: theme.spacing[3],
+      minHeight: 48,
+    };
+
+    if (variant === 'filled') {
+      return {
+        ...baseStyle,
+        backgroundColor: theme.colors.backgroundSecondary,
+        borderWidth: 0,
+      };
+    }
+
+    // Outlined variant
+    const borderColor = error
+      ? theme.colors.error
+      : isFocused
+        ? theme.colors.borderFocus
+        : theme.colors.border;
+
+    return {
+      ...baseStyle,
+      backgroundColor: disabled ? theme.colors.backgroundSecondary : theme.colors.background,
+      borderWidth: 1,
+      borderColor,
+    };
+  };
+
+  return (
+    <View style={styles.textFieldContainer}>
+      {label && (
+        <Text
+          style={[
+            styles.textFieldLabel,
+            {
+              color: error ? theme.colors.error : theme.colors.text,
+              marginBottom: theme.spacing[2],
+            },
+          ]}
+        >
+          {label}
+        </Text>
+      )}
+
+      <TextInput
+        style={[
+          getContainerStyle(),
+          {
+            color: disabled ? theme.colors.textTertiary : theme.colors.text,
+            fontFamily: theme.typography.body.fontFamily,
+            fontSize: theme.typography.body.fontSize,
+            lineHeight: theme.typography.body.lineHeight,
+          },
+        ]}
+        placeholderTextColor={theme.colors.textTertiary}
+        editable={!disabled}
+        onFocus={() => setIsFocused(true)}
+        onBlur={() => setIsFocused(false)}
+        {...textInputProps}
+      />
+
+      {error && (
+        <Text
+          style={[
+            styles.textFieldError,
+            {
+              color: theme.colors.error,
+              marginTop: theme.spacing[1],
+            },
+          ]}
+        >
+          {error}
+        </Text>
+      )}
+    </View>
+  );
+}
+
+// Card Component (já existente, mantido)
 export interface CardProps {
   children: React.ReactNode;
   onPress?: () => void;
+  variant?: 'elevated' | 'outlined' | 'filled';
 }
 
-export function Card({ children, onPress }: CardProps) {
+export function Card({ children, onPress, variant = 'elevated' }: CardProps) {
+  const theme = useAppTheme();
   const Component = onPress ? TouchableOpacity : View;
 
+  const getCardStyle = () => {
+    const baseStyle = {
+      borderRadius: theme.radius.md,
+      padding: theme.spacing[4],
+      marginBottom: theme.spacing[3],
+    };
+
+    switch (variant) {
+      case 'outlined':
+        return {
+          ...baseStyle,
+          backgroundColor: theme.colors.background,
+          borderWidth: 1,
+          borderColor: theme.colors.border,
+        };
+      case 'filled':
+        return {
+          ...baseStyle,
+          backgroundColor: theme.colors.backgroundSecondary,
+        };
+      default: // elevated
+        return {
+          ...baseStyle,
+          backgroundColor: theme.colors.surface,
+          ...theme.shadows.base,
+        };
+    }
+  };
+
   return (
-    <Component style={styles.card} onPress={onPress}>
+    <Component style={getCardStyle()} onPress={onPress} activeOpacity={onPress ? 0.8 : 1}>
       {children}
     </Component>
   );
 }
 
-// Loading Spinner
+// Divider Component
+export interface DividerProps {
+  orientation?: 'horizontal' | 'vertical';
+  thickness?: number;
+  color?: string;
+  margin?: number;
+}
+
+export function Divider({
+  orientation = 'horizontal',
+  thickness = 1,
+  color,
+  margin,
+}: DividerProps) {
+  const theme = useAppTheme();
+  const dividerColor = color || theme.colors.border;
+  const dividerMargin = margin ?? theme.spacing[4];
+
+  const style =
+    orientation === 'horizontal'
+      ? {
+          height: thickness,
+          backgroundColor: dividerColor,
+          marginVertical: dividerMargin,
+        }
+      : {
+          width: thickness,
+          backgroundColor: dividerColor,
+          marginHorizontal: dividerMargin,
+          alignSelf: 'stretch' as const,
+        };
+
+  return <View style={style} />;
+}
+
+// Loader Component (variações do loading spinner)
+export interface LoaderProps {
+  variant?: 'spinner' | 'dots' | 'pulse';
+  size?: 'small' | 'medium' | 'large';
+  color?: string;
+  text?: string;
+}
+
+export function Loader({ variant = 'spinner', size = 'medium', color, text }: LoaderProps) {
+  const theme = useAppTheme();
+  const loaderColor = color || theme.colors.primary;
+
+  const getSizeValue = () => {
+    switch (size) {
+      case 'small':
+        return 20;
+      case 'large':
+        return 40;
+      default:
+        return 30;
+    }
+  };
+
+  const renderLoader = () => {
+    switch (variant) {
+      case 'dots':
+        return (
+          <View style={styles.dotsContainer}>
+            {[0, 1, 2].map(index => (
+              <View
+                key={index}
+                style={[
+                  styles.dot,
+                  {
+                    backgroundColor: loaderColor,
+                    width: getSizeValue() / 3,
+                    height: getSizeValue() / 3,
+                  },
+                ]}
+              />
+            ))}
+          </View>
+        );
+      case 'pulse':
+        return (
+          <View
+            style={[
+              styles.pulse,
+              {
+                backgroundColor: loaderColor,
+                width: getSizeValue(),
+                height: getSizeValue(),
+                borderRadius: getSizeValue() / 2,
+              },
+            ]}
+          />
+        );
+      default:
+        return <ActivityIndicator size={size === 'medium' ? 'large' : size} color={loaderColor} />;
+    }
+  };
+
+  return (
+    <View style={styles.loaderContainer}>
+      {renderLoader()}
+      {text && (
+        <Text
+          style={[
+            styles.loaderText,
+            {
+              color: theme.colors.textSecondary,
+              marginTop: theme.spacing[2],
+            },
+          ]}
+        >
+          {text}
+        </Text>
+      )}
+    </View>
+  );
+}
+
+// Loading Spinner (mantido para compatibilidade)
 export interface LoadingSpinnerProps {
   size?: 'small' | 'large';
   color?: string;
 }
 
-export function LoadingSpinner({ size = 'large', color = '#007AFF' }: LoadingSpinnerProps) {
+export function LoadingSpinner({ size = 'large', color }: LoadingSpinnerProps) {
+  const theme = useAppTheme();
+  const spinnerColor = color || theme.colors.primary;
+
   return (
-    <View style={styles.loadingContainer}>
-      <ActivityIndicator size={size} color={color} />
+    <View style={[styles.loadingContainer, { backgroundColor: theme.colors.background }]}>
+      <ActivityIndicator size={size} color={spinnerColor} />
     </View>
   );
 }
 
-// Error Message
+// Error Message (mantido)
 export interface ErrorMessageProps {
   message: string;
   onRetry?: () => void;
 }
 
 export function ErrorMessage({ message, onRetry }: ErrorMessageProps) {
+  const theme = useAppTheme();
+
   return (
-    <View style={styles.errorContainer}>
-      <Text style={styles.errorText}>{message}</Text>
+    <View style={[styles.errorContainer, { backgroundColor: theme.colors.background }]}>
+      <Text style={[styles.errorText, { color: theme.colors.error }]}>{message}</Text>
       {onRetry && <Button title='Tentar Novamente' onPress={onRetry} variant='secondary' />}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  // Button Styles
-  button: {
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 8,
+  // TextField Styles
+  textFieldContainer: {
+    marginBottom: 16,
+  },
+  textFieldLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  textFieldError: {
+    fontSize: 12,
+  },
+
+  // Card Styles (simplificado, estilos dinâmicos aplicados via theme)
+
+  // Loader Styles
+  loaderContainer: {
     alignItems: 'center',
     justifyContent: 'center',
+    padding: 20,
   },
-  primaryButton: {
-    backgroundColor: '#007AFF',
+  loaderText: {
+    fontSize: 14,
+    textAlign: 'center',
   },
-  secondaryButton: {
-    backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderColor: '#007AFF',
+  dotsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: 40,
   },
-  disabledButton: {
-    backgroundColor: '#E5E5E7',
-    borderColor: '#E5E5E7',
+  dot: {
+    borderRadius: 10,
   },
-  buttonText: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  primaryButtonText: {
-    color: '#FFFFFF',
-  },
-  secondaryButtonText: {
-    color: '#007AFF',
-  },
-  disabledButtonText: {
-    color: '#8E8E93',
+  pulse: {
+    // Animation would be added here with Animated API
   },
 
-  // Card Styles
-  card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
-    marginBottom: 12,
-  },
-
-  // Loading Styles
+  // Loading Styles (mantido)
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
 
-  // Error Styles
+  // Error Styles (mantido)
   errorContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -153,6 +456,5 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: 'center',
     marginBottom: 20,
-    color: '#FF3B30',
   },
 });

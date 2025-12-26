@@ -6,7 +6,18 @@
 
 import { useColorScheme } from 'react-native';
 
-// Hook para tema da aplicação
+import { lightTheme, darkTheme, type Theme } from '../theme';
+
+// Hook para tema da aplicação (atualizado para usar design tokens)
+export function useAppTheme(): Theme {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
+  return isDark ? darkTheme : lightTheme;
+}
+
+// Legacy interface para compatibilidade (deprecated)
+/** @deprecated Use useAppTheme() directly for full theme access */
 export interface UseThemeResult {
   isDark: boolean;
   colors: {
@@ -19,19 +30,20 @@ export interface UseThemeResult {
   };
 }
 
-export function useAppTheme(): UseThemeResult {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+// Legacy hook para compatibilidade (deprecated)
+/** @deprecated Use useAppTheme() instead */
+export function useLegacyTheme(): UseThemeResult {
+  const theme = useAppTheme();
 
   return {
-    isDark,
+    isDark: theme === darkTheme,
     colors: {
-      background: isDark ? '#000000' : '#FFFFFF',
-      text: isDark ? '#FFFFFF' : '#000000',
-      primary: '#007AFF',
-      secondary: '#8E8E93',
-      card: isDark ? '#1C1C1E' : '#F2F2F7',
-      border: isDark ? '#38383A' : '#E5E5E7',
+      background: theme.colors.background,
+      text: theme.colors.text,
+      primary: theme.colors.primary,
+      secondary: theme.colors.textSecondary,
+      card: theme.colors.surface,
+      border: theme.colors.border,
     },
   };
 }

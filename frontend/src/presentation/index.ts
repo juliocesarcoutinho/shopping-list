@@ -4,6 +4,9 @@
  * Central export point for all presentation layer modules.
  */
 
+// Theme System
+export * from './theme';
+
 // Components
 export * from './components/index';
 
