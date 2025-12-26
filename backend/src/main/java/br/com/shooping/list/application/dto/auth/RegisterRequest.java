@@ -1,5 +1,7 @@
 package br.com.shooping.list.application.dto.auth;
 
+import br.com.shooping.list.infrastructure.security.LogSanitizer;
+import br.com.shooping.list.infrastructure.security.Sensitive;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -24,8 +26,14 @@ public class RegisterRequest {
     @Size(min = 3, max = 150, message = "Nome deve ter entre 3 e 150 caracteres")
     private String name;
 
+    @Sensitive
     @NotBlank(message = "Senha é obrigatória")
     @Size(min = 8, max = 100, message = "Senha deve ter entre 8 e 100 caracteres")
     private String password;
+
+    @Override
+    public String toString() {
+        return LogSanitizer.sanitize(this);
+    }
 }
 

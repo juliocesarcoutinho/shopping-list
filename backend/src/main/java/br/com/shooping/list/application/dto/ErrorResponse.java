@@ -3,6 +3,7 @@ package br.com.shooping.list.application.dto;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Builder;
 import lombok.Getter;
+import org.slf4j.MDC;
 
 import java.time.Instant;
 import java.util.List;
@@ -52,10 +53,11 @@ public class ErrorResponse {
     private final List<ValidationError> details;
 
     /**
-     * Trace ID para rastreamento (opcional).
-     * Útil em ambientes de produção para correlacionar logs.
+     * Correlation ID para rastreamento distribuído.
+     * Permite correlacionar logs e requisições através de toda a stack.
+     * Útil em ambientes de produção para debugging e auditoria.
      */
-    private final String traceId;
+    private final String correlationId;
 
     /**
      * Representa um erro de validação de campo específico.
@@ -91,6 +93,7 @@ public class ErrorResponse {
                 .error(error)
                 .message(message)
                 .path(path)
+                .correlationId(MDC.get("correlationId"))
                 .build();
     }
 
@@ -111,6 +114,7 @@ public class ErrorResponse {
                 .message(message)
                 .path(path)
                 .details(details)
+                .correlationId(MDC.get("correlationId"))
                 .build();
     }
 }

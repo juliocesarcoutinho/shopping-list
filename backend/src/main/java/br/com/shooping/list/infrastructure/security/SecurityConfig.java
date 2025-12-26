@@ -12,6 +12,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
+import org.springframework.security.web.header.writers.XXssProtectionHeaderWriter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -89,9 +91,18 @@ public class SecurityConfig {
                 // Isso garante que o JWT seja processado ANTES da autorização
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
 
-                // Desabilita frame options para H2 Console (apenas dev)
+                // Configura headers de segurança
                 .headers(headers -> headers
+                        // Permite frames do mesmo domínio (necessário para H2 Console em dev)
                         .frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin)
+                        // Previne MIME type sniffing
+                        .contentTypeOptions(HeadersConfigurer.ContentTypeOptionsConfig::disable)
+                        // Habilita proteção XSS do navegador
+                        .xssProtection(xss -> xss.headerValue(XXssProtectionHeaderWriter.HeaderValue.ENABLED_MODE_BLOCK))
+                        // Cache control (não cachear respostas sensíveis)
+                        .cacheControl(HeadersConfigurer.CacheControlConfig::disable)
+                        // Referrer Policy (protege informações de navegação)
+                        .referrerPolicy(referrer -> referrer.policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN))
                 )
 
                 // Configura tratamento de exceções de autenticação e autorização
