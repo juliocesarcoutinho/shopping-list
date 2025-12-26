@@ -1,58 +1,77 @@
 /**
  * Login Screen
- * Tela de autenticação do usuário
+ * Tela de autenticação do usuário com validação React Hook Form + Zod
  */
 
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  KeyboardAvoidingView,
+  Platform,
+  TouchableOpacity,
+  ScrollView,
+} from 'react-native';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 
-import { Button, TextField } from '../components';
+import { Button, TextField, Divider } from '../components';
 import { useAuth } from '../contexts/auth-context';
 import { useAppTheme } from '../hooks';
+
+const loginSchema = z.object({
+  email: z.string().min(1, 'Email é obrigatório').email('Email inválido'),
+  password: z.string().min(6, 'Senha deve ter no mínimo 6 caracteres'),
+});
+
+type LoginFormData = z.infer<typeof loginSchema>;
 
 export function LoginScreen() {
   const theme = useAppTheme();
   const router = useRouter();
   const { signIn } = useAuth();
 
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [errors, setErrors] = useState({ email: '', password: '' });
+  const [errorMessage, setErrorMessage] = useState('');
 
-  const validateFields = () => {
-    const newErrors = { email: '', password: '' };
-    let isValid = true;
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<LoginFormData>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      email: '',
+      password: '',
+    },
+  });
 
-    if (!email) {
-      newErrors.email = 'Email é obrigatório';
-      isValid = false;
-    } else if (!/\S+@\S+\.\S+/.test(email)) {
-      newErrors.email = 'Email inválido';
-      isValid = false;
+  const onSubmit = async (data: LoginFormData) => {
+    setIsLoading(true);
+    setErrorMessage('');
+
+    try {
+      await signIn(data.email, data.password);
+    } catch (_error) {
+      setErrorMessage('Email ou senha incorretos. Tente novamente.');
+    } finally {
+      setIsLoading(false);
     }
-
-    if (!password) {
-      newErrors.password = 'Senha é obrigatória';
-      isValid = false;
-    } else if (password.length < 6) {
-      newErrors.password = 'Senha deve ter no mínimo 6 caracteres';
-      isValid = false;
-    }
-
-    setErrors(newErrors);
-    return isValid;
   };
 
-  const handleLogin = async () => {
-    if (!validateFields()) return;
-
+  const handleGoogleLogin = async () => {
     setIsLoading(true);
+    setErrorMessage('');
+
     try {
-      await signIn(email, password);
+      // Simulo login com Google por enquanto
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      await signIn('google@example.com', 'mock-password');
     } catch (_error) {
-      Alert.alert('Erro', 'Falha ao fazer login. Tente novamente.');
+      setErrorMessage('Falha ao fazer login com Google. Tente novamente.');
     } finally {
       setIsLoading(false);
     }
@@ -67,55 +86,119 @@ export function LoginScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={[styles.container, { backgroundColor: theme.colors.background }]}
     >
-      <View style={styles.content}>
-        <Text style={[styles.title, { color: theme.colors.text }]}>Bem-vindo!</Text>
-        <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>
-          Faça login para continuar
-        </Text>
+      <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps='handled'>
+        <View style={styles.content}>
+          {/* Header com ícone */}
+          <View style={styles.header}>
+            <View style={[styles.iconContainer, { backgroundColor: theme.colors.primary + '15' }]}>
+              <Text style={styles.icon}>🛒</Text>
+            </View>
+            <Text style={[styles.title, { color: theme.colors.text }]}>Shopping List</Text>
+            <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>
+              Organize suas compras de forma simples
+            </Text>
+          </View>
 
-        <View style={styles.form}>
-          <TextField
-            label='Email'
-            placeholder='seu@email.com'
-            value={email}
-            onChangeText={text => {
-              setEmail(text);
-              if (errors.email) setErrors({ ...errors, email: '' });
-            }}
-            error={errors.email}
-            keyboardType='email-address'
-            autoCapitalize='none'
-            autoCorrect={false}
-          />
+          {/* Mensagem de erro global */}
+          {errorMessage ? (
+            <View style={[styles.errorBanner, { backgroundColor: theme.colors.error + '15' }]}>
+              <Text style={[styles.errorBannerText, { color: theme.colors.error }]}>
+                {errorMessage}
+              </Text>
+            </View>
+          ) : null}
 
-          <TextField
-            label='Senha'
-            placeholder='••••••••'
-            value={password}
-            onChangeText={text => {
-              setPassword(text);
-              if (errors.password) setErrors({ ...errors, password: '' });
-            }}
-            error={errors.password}
-            secureTextEntry
-          />
+          {/* Formulário */}
+          <View style={styles.form}>
+            <Controller
+              control={control}
+              name='email'
+              render={({ field: { onChange, onBlur, value } }) => (
+                <TextField
+                  label='Email'
+                  placeholder='seu@email.com'
+                  value={value}
+                  onChangeText={onChange}
+                  onBlur={onBlur}
+                  error={errors.email?.message}
+                  keyboardType='email-address'
+                  autoCapitalize='none'
+                  autoCorrect={false}
+                  disabled={isLoading}
+                />
+              )}
+            />
 
-          <Button
-            title='Entrar'
-            onPress={handleLogin}
-            loading={isLoading}
+            <Controller
+              control={control}
+              name='password'
+              render={({ field: { onChange, onBlur, value } }) => (
+                <TextField
+                  label='Senha'
+                  placeholder='••••••••'
+                  value={value}
+                  onChangeText={onChange}
+                  onBlur={onBlur}
+                  error={errors.password?.message}
+                  secureTextEntry
+                  disabled={isLoading}
+                />
+              )}
+            />
+
+            <TouchableOpacity style={styles.forgotPassword} onPress={() => {}} disabled={isLoading}>
+              <Text style={[styles.forgotPasswordText, { color: theme.colors.primary }]}>
+                Esqueceu a senha?
+              </Text>
+            </TouchableOpacity>
+
+            <Button
+              title='Entrar'
+              onPress={handleSubmit(onSubmit)}
+              loading={isLoading}
+              disabled={isLoading}
+              size='large'
+            />
+          </View>
+
+          {/* Divider com texto */}
+          <View style={styles.dividerContainer}>
+            <View style={[styles.dividerLine, { backgroundColor: theme.colors.border }]} />
+            <Text style={[styles.dividerText, { color: theme.colors.textSecondary }]}>
+              ou continue com
+            </Text>
+            <View style={[styles.dividerLine, { backgroundColor: theme.colors.border }]} />
+          </View>
+
+          {/* Botão Google */}
+          <TouchableOpacity
+            style={[
+              styles.googleButton,
+              {
+                backgroundColor: theme.colors.surface,
+                borderColor: theme.colors.border,
+              },
+            ]}
+            onPress={handleGoogleLogin}
             disabled={isLoading}
-            size='large'
-          />
+          >
+            <Text style={styles.googleIcon}>G</Text>
+            <Text style={[styles.googleButtonText, { color: theme.colors.text }]}>
+              {isLoading ? 'Autenticando...' : 'Entrar com Google'}
+            </Text>
+          </TouchableOpacity>
 
-          <Button
-            title='Criar conta'
-            onPress={handleGoToRegister}
-            variant='secondary'
-            disabled={isLoading}
-          />
+          {/* Link para registro */}
+          <View style={styles.footer}>
+            <Text style={[styles.footerText, { color: theme.colors.textSecondary }]}>
+              Não tem uma conta?{' '}
+            </Text>
+            <TouchableOpacity onPress={handleGoToRegister} disabled={isLoading}>
+              <Text style={[styles.footerLink, { color: theme.colors.primary }]}>Criar conta</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
@@ -124,23 +207,105 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  scrollContent: {
+    flexGrow: 1,
+  },
   content: {
     flex: 1,
     justifyContent: 'center',
     padding: 24,
+    paddingTop: 60,
+  },
+  header: {
+    alignItems: 'center',
+    marginBottom: 40,
+  },
+  iconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  icon: {
+    fontSize: 40,
   },
   title: {
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: 'bold',
     textAlign: 'center',
     marginBottom: 8,
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: 15,
     textAlign: 'center',
-    marginBottom: 48,
+    lineHeight: 22,
+  },
+  errorBanner: {
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 20,
+  },
+  errorBannerText: {
+    fontSize: 14,
+    textAlign: 'center',
+    fontWeight: '500',
   },
   form: {
     gap: 16,
+  },
+  forgotPassword: {
+    alignSelf: 'flex-end',
+    marginTop: -8,
+  },
+  forgotPasswordText: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  dividerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 32,
+    gap: 16,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+  },
+  dividerText: {
+    fontSize: 13,
+    textTransform: 'lowercase',
+  },
+  googleButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 12,
+  },
+  googleIcon: {
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  googleButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  footer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 24,
+  },
+  footerText: {
+    fontSize: 14,
+  },
+  footerLink: {
+    fontSize: 14,
+    fontWeight: '600',
   },
 });

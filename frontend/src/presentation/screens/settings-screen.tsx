@@ -10,7 +10,6 @@ import { Card, Divider } from '@/src';
 import { useAppTheme } from '@/src';
 import { env, isDevelopment, isProduction } from '@/src/infrastructure/config/env';
 
-
 export function SettingsScreen() {
   const theme = useAppTheme();
 
