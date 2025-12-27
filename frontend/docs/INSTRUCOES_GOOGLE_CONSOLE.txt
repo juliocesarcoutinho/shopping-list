@@ -1,0 +1,42 @@
+===============================================
+🔧 INSTRUÇÕES CORRIGIDAS - GOOGLE CONSOLE
+===============================================
+❌ ERRO IDENTIFICADO:
+   "shoppinglist://" sozinho é INVÁLIDO
+   O Google não aceita URIs vazias depois de "://"
+✅ SOLUÇÃO:
+1. ACESSE:
+   https://console.cloud.google.com/apis/credentials
+2. ENCONTRE SEU CLIENT ID:
+   407408718192.apps.googleusercontent.com
+3. CLIQUE EM EDITAR (ícone de lápis)
+4. REMOVA AS URIs COM ERRO:
+   ❌ DELETE: shoppinglist:// (URI 1)
+   ❌ DELETE: shoppinglist:// (URI 4)
+5. MANTENHA/CORRIJA ESTAS URIs:
+   ✅ URI 1:
+   http://localhost:8080/login/oauth2/code/google
+   ✅ URI 2:
+   https://auth.expo.io/@anonymous/shopping-list
+   ✅ URI 3:
+   https://auth.expo.io/@your-expo-username/shopping-list
+6. CLIQUE EM "SAVE"
+7. AGUARDE 2-3 MINUTOS ⏰
+8. REINICIE O APP:
+   Ctrl+C (parar)
+   npm start --clear
+9. ABRA O APP E VEJA O CONSOLE
+10. PROCURE PELA LINHA:
+    🔗 Google OAuth Redirect URI: <URL>
+11. SE A URL FOR DIFERENTE, ADICIONE NO GOOGLE CONSOLE
+12. TESTE LOGIN COM GOOGLE ✅
+===============================================
+💡 EXPLICAÇÃO:
+Para Expo Go, você NÃO precisa de "shoppinglist://"
+O Expo usa automaticamente "auth.expo.io/@anonymous/..."
+===============================================
+IMPORTANTE:
+- NÃO adicione "shoppinglist://" vazio
+- Use apenas URIs completas válidas
+- auth.expo.io é o correto para Expo Go
+===============================================

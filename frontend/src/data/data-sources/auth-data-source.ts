@@ -14,11 +14,14 @@ import {
   RegisterRequestDto,
   RegisterResponseDto,
   UserMeResponseDto,
+  GoogleLoginRequestDto,
+  GoogleLoginResponseDto,
 } from '../models';
 
 export interface AuthDataSource {
   login(request: LoginRequestDto): Promise<LoginResponseDto>;
   register(request: RegisterRequestDto): Promise<RegisterResponseDto>;
+  loginWithGoogle(request: GoogleLoginRequestDto): Promise<GoogleLoginResponseDto>;
   logout(request: LogoutRequestDto): Promise<void>;
   refreshToken(request: RefreshTokenRequestDto): Promise<RefreshTokenResponseDto>;
   getCurrentUser(): Promise<UserMeResponseDto>;
@@ -33,6 +36,10 @@ export class AuthApiDataSource implements AuthDataSource {
 
   async register(request: RegisterRequestDto): Promise<RegisterResponseDto> {
     return this.httpClient.post<RegisterResponseDto>('/auth/register', request);
+  }
+
+  async loginWithGoogle(request: GoogleLoginRequestDto): Promise<GoogleLoginResponseDto> {
+    return this.httpClient.post<GoogleLoginResponseDto>('/auth/google', request);
   }
 
   async logout(request: LogoutRequestDto): Promise<void> {

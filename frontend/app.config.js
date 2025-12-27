@@ -3,11 +3,11 @@ require('dotenv').config();
 module.exports = {
   expo: {
     name: 'Shopping List',
-    slug: 'Shopping List',
+    slug: 'shopping-list',
     version: '1.0.0',
     orientation: 'portrait',
     icon: './assets/images/splash-screen.png',
-    scheme: 'frontend',
+    scheme: 'shoppinglist',
     userInterfaceStyle: 'automatic',
     newArchEnabled: true,
     ios: {
@@ -60,6 +60,7 @@ module.exports = {
       APP_ENV: process.env.APP_ENV || 'development',
       ENABLE_MOCK_API: process.env.ENABLE_MOCK_API || 'true',
       ENABLE_DEBUG_LOGS: process.env.ENABLE_DEBUG_LOGS || 'false',
+      GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID || '',
     },
   },
 };

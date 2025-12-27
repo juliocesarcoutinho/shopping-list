@@ -46,6 +46,16 @@ export interface LogoutRequestDto {
   refreshToken: string;
 }
 
+export interface GoogleLoginRequestDto {
+  idToken: string;
+}
+
+export interface GoogleLoginResponseDto {
+  accessToken: string;
+  refreshToken: string;
+  expiresIn: number;
+}
+
 export interface UserMeResponseDto {
   id: number;
   email: string;

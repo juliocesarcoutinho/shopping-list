@@ -18,6 +18,7 @@ import { CacheService } from '../storage';
 
 export * from './auth-service';
 export * from './auth-service-instance';
+export * from './google-auth-service';
 
 export class ApiRemoteDataSource implements RemoteDataSource {
   constructor(private httpClient: HttpClient) {}

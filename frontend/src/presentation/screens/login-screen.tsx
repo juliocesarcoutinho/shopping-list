@@ -33,7 +33,7 @@ type LoginFormData = z.infer<typeof loginSchema>;
 export function LoginScreen() {
   const theme = useAppTheme();
   const router = useRouter();
-  const { signIn } = useAuth();
+  const { signIn, signInWithGoogle } = useAuth();
 
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
@@ -71,11 +71,10 @@ export function LoginScreen() {
     setErrorMessage('');
 
     try {
-      // Simulo login com Google por enquanto
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      await signIn('google@example.com', 'mock-password');
+      await signInWithGoogle();
+      // Navegação é feita automaticamente pelo _layout.tsx
     } catch (error: any) {
-      // Captura mensagem de erro da API
+      // Captura mensagem de erro (Google OAuth ou API)
       const apiMessage = error?.message || error?.data?.message;
       setErrorMessage(apiMessage || 'Erro ao fazer login com Google. Tente novamente.');
     } finally {

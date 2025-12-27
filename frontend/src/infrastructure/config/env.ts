@@ -12,6 +12,7 @@ interface EnvConfig {
   appEnv: 'development' | 'staging' | 'production';
   enableMockApi: boolean;
   enableDebugLogs: boolean;
+  googleClientId: string;
 }
 
 function getEnvVar(key: string, defaultValue?: string): string {
@@ -45,6 +46,7 @@ export const env: EnvConfig = {
   appEnv: getEnvVar('APP_ENV', 'development') as EnvConfig['appEnv'],
   enableMockApi: getBooleanEnvVar('ENABLE_MOCK_API', true),
   enableDebugLogs: getBooleanEnvVar('ENABLE_DEBUG_LOGS', false),
+  googleClientId: getEnvVar('GOOGLE_CLIENT_ID', ''),
 };
 
 export const isDevelopment = env.appEnv === 'development';

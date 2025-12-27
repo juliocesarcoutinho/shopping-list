@@ -27,6 +27,12 @@ export class AuthService {
     return session;
   }
 
+  async loginWithGoogle(idToken: string): Promise<AuthSession> {
+    const session = await this.repository.loginWithGoogle(idToken);
+    await this.storage.saveSession(session);
+    return session;
+  }
+
   async logout(): Promise<void> {
     const refreshToken = await this.storage.getRefreshToken();
 

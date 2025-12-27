@@ -6,7 +6,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 import { User } from '@/src/domain/entities';
-import { authService } from '@/src/infrastructure/services';
+import { authService, googleAuthService } from '@/src/infrastructure/services';
 
 interface AuthContextData {
   user: User | null;
@@ -14,6 +14,7 @@ interface AuthContextData {
   isAuthenticated: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (name: string, email: string, password: string) => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -50,6 +51,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(session.user);
   }
 
+  async function signInWithGoogle() {
+    // Inicio fluxo OAuth2 com Google
+    const result = await googleAuthService.signIn();
+
+    // Verifico se o usuário cancelou
+    if (result.cancelled) {
+      throw new Error('Login cancelado pelo usuário');
+    }
+
+    // Verifico se houve erro no OAuth
+    if (result.error) {
+      throw new Error(result.error);
+    }
+
+    // Envio o idToken para o backend
+    const session = await authService.loginWithGoogle(result.idToken);
+    setUser(session.user);
+  }
+
   async function signOut() {
     await authService.logout();
     setUser(null);
@@ -63,6 +83,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isAuthenticated: !!user,
         signIn,
         signUp,
+        signInWithGoogle,
         signOut,
       }}
     >

@@ -46,6 +46,33 @@ export class AuthRepositoryImpl implements AuthRepository {
     return this.login(email, password);
   }
 
+  async loginWithGoogle(idToken: string): Promise<AuthSession> {
+    const response = await this.dataSource.loginWithGoogle({ idToken });
+
+    // Define token no apiClient para requisições futuras
+    getApiClient().setAuthToken(response.accessToken);
+
+    // Busco dados do usuário após login
+    const userResponse = await this.dataSource.getCurrentUser();
+
+    const user: User = {
+      id: userResponse.id.toString(),
+      email: userResponse.email,
+      name: userResponse.name,
+      provider: userResponse.provider as 'LOCAL' | 'GOOGLE',
+      status: userResponse.status as 'ACTIVE' | 'INACTIVE',
+      createdAt: userResponse.createdAt,
+      updatedAt: userResponse.updatedAt,
+    };
+
+    return {
+      accessToken: response.accessToken,
+      refreshToken: response.refreshToken,
+      expiresIn: response.expiresIn,
+      user,
+    };
+  }
+
   async logout(refreshToken: string): Promise<void> {
     try {
       await this.dataSource.logout({ refreshToken });
