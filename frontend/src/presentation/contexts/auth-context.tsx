@@ -3,7 +3,7 @@
  * Gerencia estado de autenticação do usuário com integração ao backend
  */
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 
 import { User } from '@/src/domain/entities';
 import { authService, googleAuthService } from '@/src/infrastructure/services';
@@ -33,46 +33,77 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const restoredUser = await authService.restoreSession();
       if (restoredUser) {
         setUser(restoredUser);
+        console.log('[AuthContext] Sessão restaurada com sucesso:', restoredUser.email);
+      } else {
+        console.log('[AuthContext] Nenhuma sessão válida encontrada');
       }
     } catch (error) {
-      console.error('Erro ao restaurar sessão:', error);
+      console.error('[AuthContext] Erro ao restaurar sessão:', error);
+      // Limpo estado do usuário em caso de erro
+      setUser(null);
     } finally {
       setIsLoading(false);
     }
   }
 
   async function signIn(email: string, password: string) {
-    const session = await authService.login(email, password);
-    setUser(session.user);
+    try {
+      const session = await authService.login(email, password);
+      setUser(session.user);
+      console.log('[AuthContext] Login realizado com sucesso:', session.user.email);
+    } catch (error) {
+      console.error('[AuthContext] Erro ao fazer login:', error);
+      throw error;
+    }
   }
 
   async function signUp(name: string, email: string, password: string) {
-    const session = await authService.register(name, email, password);
-    setUser(session.user);
+    try {
+      const session = await authService.register(name, email, password);
+      setUser(session.user);
+      console.log('[AuthContext] Registro realizado com sucesso:', session.user.email);
+    } catch (error) {
+      console.error('[AuthContext] Erro ao fazer registro:', error);
+      throw error;
+    }
   }
 
   async function signInWithGoogle() {
-    // Inicio fluxo OAuth2 com Google
-    const result = await googleAuthService.signIn();
+    try {
+      // Inicio fluxo OAuth2 com Google
+      const result = await googleAuthService.signIn();
 
-    // Verifico se o usuário cancelou
-    if (result.cancelled) {
-      throw new Error('Login cancelado pelo usuário');
+      // Verifico se o usuário cancelou
+      if (result.cancelled) {
+        throw new Error('Login cancelado pelo usuário');
+      }
+
+      // Verifico se houve erro no OAuth
+      if (result.error) {
+        throw new Error(result.error);
+      }
+
+      // Envio o idToken para o backend
+      const session = await authService.loginWithGoogle(result.idToken);
+      setUser(session.user);
+      console.log('[AuthContext] Login com Google realizado com sucesso:', session.user.email);
+    } catch (error) {
+      console.error('[AuthContext] Erro ao fazer login com Google:', error);
+      throw error;
     }
-
-    // Verifico se houve erro no OAuth
-    if (result.error) {
-      throw new Error(result.error);
-    }
-
-    // Envio o idToken para o backend
-    const session = await authService.loginWithGoogle(result.idToken);
-    setUser(session.user);
   }
 
   async function signOut() {
-    await authService.logout();
-    setUser(null);
+    try {
+      await authService.logout();
+      setUser(null);
+      console.log('[AuthContext] Logout realizado com sucesso');
+    } catch (error) {
+      console.error('[AuthContext] Erro ao fazer logout:', error);
+      // Limpo usuário mesmo com erro no backend
+      setUser(null);
+      throw error;
+    }
   }
 
   return (

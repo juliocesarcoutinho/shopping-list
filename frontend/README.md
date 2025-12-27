@@ -40,17 +40,26 @@ O projeto usa variáveis de ambiente para configuração:
 
 ```bash
 # API Configuration
-API_URL=http://localhost:3000/api    # URL do backend
-API_TIMEOUT=30000                     # Timeout em ms
+API_URL=http://192.168.x.x:8080/api/v1  # URL do backend (use IP da máquina, não localhost)
+API_TIMEOUT=30000                        # Timeout em ms
 
 # App Configuration  
-APP_NAME=Shopping List                # Nome da aplicação
-APP_ENV=development                   # Ambiente (development/staging/production)
+APP_NAME=Shopping List                   # Nome da aplicação
+APP_ENV=development                      # Ambiente (development/staging/production)
+
+# Google OAuth2
+GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com  # Client ID do Google Console
 
 # Feature Flags
-ENABLE_MOCK_API=true                  # Usar API mock
-ENABLE_DEBUG_LOGS=true                # Logs de debug
+ENABLE_MOCK_API=false                    # Usar API mock (false para API real)
+ENABLE_DEBUG_LOGS=true                   # Logs de debug
 ```
+
+**Importante:**
+- `API_URL` deve usar o **IP da máquina** (não `localhost`) para funcionar em dispositivos físicos/emuladores
+- Descobrir IP: `hostname -I` ou `ip -4 addr show`
+- Exemplo: `API_URL=http://192.168.10.2:8080/api/v1`
+- Backend deve estar com `server.address=0.0.0.0` e porta 8080 liberada no firewall
 
 ### **Como usar:**
 
@@ -296,7 +305,7 @@ Sistema completo de autenticação com UI minimalista Fresh Market:
 
 #### **🔐 Login Screen**
 - Email + Senha com validação React Hook Form + Zod
-- Botão "Entrar com Google" (mock implementado)
+- Botão "Entrar com Google" (OAuth2 integrado)
 - Link "Esqueceu a senha?"
 - Estados: loading, erro, sucesso
 - Validações:
@@ -304,6 +313,7 @@ Sistema completo de autenticação com UI minimalista Fresh Market:
   - Senha mínimo 6 caracteres
 - Banner de erro amigável
 - Navegação automática após login
+- Tratamento de erros de rede
 
 #### **📝 Register Screen**
 - Nome, Email, Senha e Confirmar Senha
@@ -342,10 +352,22 @@ Sistema completo de autenticação com UI minimalista Fresh Market:
                                                                             └──────────────┘
 ```
 
-### **Persistência:**
+### **Persistência e Restauração de Sessão:**
 1. **Login/Registro** → Salva tokens no AsyncStorage + Define token no apiClient
-2. **App reinicia** → Carrega session do storage → Auto-refresh se expirado → Mantém autenticado
+2. **App reinicia** → Restaura sessão automaticamente:
+   - Carrega accessToken, refreshToken e user do AsyncStorage
+   - Valida accessToken chamando `GET /api/v1/users/me`
+   - Se token inválido/expirado → Tenta refresh automático
+   - Se refresh falhar → Limpa storage e redireciona para login
+   - Se válido → Mantém usuário logado e entra direto na home
 3. **Logout** → Revoga refresh token no backend → Remove do storage → Volta para Login
+
+**Guard de Rotas:**
+- Loading screen exibido durante verificação de sessão
+- Redirecionamento automático baseado em autenticação:
+  - Não autenticado + tentando acessar área protegida → Login
+  - Autenticado + na tela de login/register → Home (tabs)
+- Validação de sessão executada uma única vez no startup
 
 ### **Integração Backend:**
 - **Endpoint Login:** `POST /api/v1/auth/login`
@@ -356,7 +378,47 @@ Sistema completo de autenticação com UI minimalista Fresh Market:
 - **Tokens:** JWT (Access Token) + UUID (Refresh Token)
 - **Expiração:** Access Token 1h, Refresh Token 7 dias
 - **Storage:** AsyncStorage persiste: accessToken, refreshToken, user
+
+### **Refresh Automático de Token:**
+Sistema inteligente que renova tokens expirados sem interromper a navegação do usuário:
+
+**Interceptor Axios (401):**
+- Detecta automaticamente quando access token expira (HTTP 401)
+- Pausa todos os requests em andamento e coloca em fila
+- Tenta refresh do token usando refresh token salvo
+- Se sucesso: atualiza token, refaz requests automaticamente
+- Se falha: limpa sessão e redireciona para login
+
+**Controle de Concorrência:**
+- Flag `isRefreshing` previne múltiplos refreshes simultâneos
+- Fila de promises aguarda o refresh e é processada em lote
+- Cada request só tenta refresh uma vez (previne loops)
+
+**Fluxo:**
+```
+Request → 401 → Já refreshing? 
+                  ├─ Sim → Aguarda na fila
+                  └─ Não → Inicia refresh
+                            ↓
+                      Refresh bem-sucedido?
+                      ├─ Sim → Atualiza token, refaz requests
+                      └─ Não → Limpa sessão, logout
+```
+
+**Benefícios:**
+- Usuário não precisa relogar durante uso normal
+- Múltiplos requests simultâneos com token expirado são tratados de forma eficiente
+- UX transparente: aplicação continua funcionando sem interrupção
 - **Auto-refresh:** Se token expirado, renova automaticamente na restauração da sessão
+
+### **Google OAuth2:**
+- **Endpoint:** `POST /api/v1/auth/google`
+- **Fluxo:** Frontend obtém idToken via expo-auth-session → Envia para backend → Backend valida com Google API → Retorna JWT
+- **Configuração:** Requer `GOOGLE_CLIENT_ID` no `.env` (Android/iOS separados)
+- **Client IDs:**
+  - Desenvolvimento: Android Client ID com package `host.exp.exponent` e SHA-1 do debug.keystore
+  - Produção: Android/iOS Client IDs com packages de produção e keystores de release
+- **Documentação:** Ver `docs/GOOGLE_OAUTH_SETUP.md` e `docs/FIX_GOOGLE_OAUTH_ERROR.md`
 
 ## 🏛️ Padrões e Convenções
 
@@ -392,15 +454,21 @@ Sistema completo de autenticação com UI minimalista Fresh Market:
 - [x] **Integração com Backend (API REST)**
 - [x] **Sistema de autenticação real (JWT + Refresh Token)**
 - [x] **Persistência de sessão com AsyncStorage**
-- [x] **Auto-refresh de tokens expirados**
+- [x] **Auto-refresh de tokens expirados no startup**
+- [x] **Interceptor HTTP com refresh automático em 401**
+- [x] **Fila de requests durante refresh**
+- [x] **Google OAuth2 integrado (Android/iOS)**
 
 ### **🚀 Próximas Features:**
 
-**Fase 1 - Backend Integration (✅ CONCLUÍDA):**
+**Fase 1 - Autenticação (✅ CONCLUÍDA):**
 - [x] Integrar API real de autenticação
-- [x] Implementar refresh token
+- [x] Implementar refresh token com rotação
 - [x] Tratamento de erros de rede
 - [x] Persistência de sessão
+- [x] Guard de rotas
+- [x] Interceptor automático para renovação de token
+- [x] Google OAuth2
 
 **Fase 2 - Listas de Compras:**
 - [ ] Criar lista de compras

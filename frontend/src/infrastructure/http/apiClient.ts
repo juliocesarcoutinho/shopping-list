@@ -34,6 +34,11 @@ export interface ApiError {
 export class ApiHttpClient implements HttpClient {
   private readonly axiosInstance: AxiosInstance;
   private authToken: string | null = null;
+  private isRefreshing: boolean = false;
+  private failedQueue: Array<{
+    resolve: (token: string) => void;
+    reject: (error: unknown) => void;
+  }> = [];
 
   constructor(baseURL: string, timeout: number = 30000) {
     this.axiosInstance = axios.create({
@@ -46,6 +51,20 @@ export class ApiHttpClient implements HttpClient {
     });
 
     this.setupInterceptors();
+  }
+
+  private processQueue(error: unknown, token: string | null = null): void {
+    // Processo todos os requests que estavam aguardando o refresh
+    this.failedQueue.forEach(promise => {
+      if (error) {
+        promise.reject(error);
+      } else if (token) {
+        promise.resolve(token);
+      }
+    });
+
+    // Limpo a fila após processar
+    this.failedQueue = [];
   }
 
   private setupInterceptors(): void {
@@ -82,48 +101,114 @@ export class ApiHttpClient implements HttpClient {
         return response;
       },
       async (error: AxiosError) => {
+        const originalRequest = error.config as AxiosRequestConfig & { _retry?: boolean };
+
         // Log de erro em desenvolvimento
         if (env.enableDebugLogs) {
           console.error(`${error.response?.status} ${error.config?.url}`);
         }
 
-        // Tratamento de erros específicos
+        // Tratamento específico para 401 Unauthorized
+        if (error.response?.status === 401 && !originalRequest._retry) {
+          // Se já estou tentando fazer refresh, coloco este request na fila
+          if (this.isRefreshing) {
+            console.log('[ApiClient] Request aguardando refresh em andamento');
+            return new Promise((resolve, reject) => {
+              this.failedQueue.push({
+                resolve: (token: string) => {
+                  // Atualizo o header com o novo token e refaço o request
+                  if (originalRequest.headers) {
+                    originalRequest.headers.Authorization = `Bearer ${token}`;
+                  }
+                  resolve(this.axiosInstance(originalRequest));
+                },
+                reject: (err: unknown) => {
+                  reject(err);
+                },
+              });
+            });
+          }
+
+          // Marco que já tentei fazer refresh deste request para evitar loop infinito
+          originalRequest._retry = true;
+          this.isRefreshing = true;
+
+          try {
+            console.log('[ApiClient] Token expirado, tentando refresh');
+            
+            // Importo dinamicamente para evitar dependência circular
+            const { authService } = await import('../services/auth-service-instance');
+            const newSession = await authService.refreshToken();
+
+            if (newSession) {
+              console.log('[ApiClient] Refresh bem-sucedido, refazendo requests');
+              
+              // Atualizo o token no cliente
+              this.setAuthToken(newSession.accessToken);
+
+              // Processo a fila de requests que estavam aguardando
+              this.processQueue(null, newSession.accessToken);
+
+              // Atualizo o header do request original e refaço
+              if (originalRequest.headers) {
+                originalRequest.headers.Authorization = `Bearer ${newSession.accessToken}`;
+              }
+              
+              return this.axiosInstance(originalRequest);
+            } else {
+              // Refresh retornou null, significa que não havia refresh token válido
+              console.warn('[ApiClient] Refresh falhou: nenhum refresh token disponível');
+              this.processQueue(new Error('Sessão expirada'), null);
+              this.removeAuthToken();
+              
+              // TODO: Disparar evento de logout global aqui se necessário
+              return Promise.reject(error);
+            }
+          } catch (refreshError) {
+            console.error('[ApiClient] Erro ao fazer refresh:', refreshError);
+            
+            // Processo a fila rejeitando todos os requests
+            this.processQueue(refreshError, null);
+            this.removeAuthToken();
+            
+            // TODO: Disparar evento de logout global aqui se necessário
+            return Promise.reject(refreshError);
+          } finally {
+            this.isRefreshing = false;
+          }
+        }
+
+        // Tratamento de outros erros HTTP
         if (error.response) {
           const status = error.response.status;
 
           switch (status) {
-            case 401:
-              // TODO: Implementar refresh token aqui
-              console.warn('Unauthorized - Token expirado ou inválido');
-              // Possível logout automático ou refresh token
-              break;
-
             case 403:
-              console.warn('Forbidden - Sem permissão para acessar este recurso');
+              console.warn('[ApiClient] Forbidden - Sem permissão para acessar este recurso');
               break;
 
             case 404:
-              console.warn('Not Found - Recurso não encontrado');
+              console.warn('[ApiClient] Not Found - Recurso não encontrado');
               break;
 
             case 429:
-              console.warn('Too Many Requests - Rate limit excedido');
+              console.warn('[ApiClient] Too Many Requests - Rate limit excedido');
               break;
 
             case 500:
-              console.error('Server Error - Erro interno do servidor');
+              console.error('[ApiClient] Server Error - Erro interno do servidor');
               break;
 
             case 503:
-              console.error('Service Unavailable - Serviço temporariamente indisponível');
+              console.error('[ApiClient] Service Unavailable - Serviço temporariamente indisponível');
               break;
           }
         } else if (error.request) {
           // Requisição foi feita mas sem resposta (timeout, sem conexão)
-          console.error('Network Error - Sem resposta do servidor');
+          console.error('[ApiClient] Network Error - Sem resposta do servidor');
         } else {
           // Erro ao configurar a requisição
-          console.error('Request Setup Error:', error.message);
+          console.error('[ApiClient] Request Setup Error:', error.message);
         }
 
         return Promise.reject(this.normalizeError(error));

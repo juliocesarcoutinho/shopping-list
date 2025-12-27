@@ -52,29 +52,40 @@ export class AuthService {
     const accessToken = await this.storage.getAccessToken();
     const user = await this.storage.getUser();
 
+    // Se não tenho token ou dados do usuário salvos, não há sessão para restaurar
     if (!accessToken || !user) {
+      console.log('[AuthService] Nenhuma sessão salva encontrada');
       return null;
     }
 
-    // Configuro token no apiClient
+    // Configuro o token no cliente HTTP para usar nas próximas requisições
     getApiClient().setAuthToken(accessToken);
 
     try {
-      // Verifico se o token ainda é válido buscando dados do usuário
+      // Valido o access token fazendo uma chamada ao backend
+      // Se o token for válido, recebo os dados atualizados do usuário
+      console.log('[AuthService] Validando access token existente');
       return await this.repository.getCurrentUser();
     } catch (_error) {
-      // Token inválido ou expirado, tento refresh
+      // Access token inválido ou expirado, vou tentar renovar usando refresh token
+      console.log('[AuthService] Access token inválido, tentando refresh');
       const refreshToken = await this.storage.getRefreshToken();
+      
       if (!refreshToken) {
+        console.log('[AuthService] Nenhum refresh token disponível, limpando sessão');
         await this.storage.clearSession();
         return null;
       }
 
       try {
+        // Tento renovar a sessão usando o refresh token
         const newSession = await this.repository.refreshToken(refreshToken);
         await this.storage.saveSession(newSession);
+        console.log('[AuthService] Sessão renovada com sucesso via refresh token');
         return newSession.user;
       } catch (_refreshError) {
+        // Refresh token também inválido, não há como recuperar a sessão
+        console.log('[AuthService] Refresh token inválido, limpando sessão');
         await this.storage.clearSession();
         return null;
       }

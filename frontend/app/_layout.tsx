@@ -14,17 +14,24 @@ function NavigationContent() {
   const router = useRouter();
 
   useEffect(() => {
+    // Aguardo o carregamento da sessão antes de decidir navegação
     if (isLoading) return;
 
-    const inAuthGroup = segments[0] === '(tabs)';
+    // Verifico se estou na área protegida (tabs) ou na área pública (login/register)
+    const inProtectedArea = segments[0] === '(tabs)';
 
-    if (!isAuthenticated && inAuthGroup) {
+    // Se não estou autenticado mas tentando acessar área protegida, redireciono para login
+    if (!isAuthenticated && inProtectedArea) {
       router.replace('/login' as never);
-    } else if (isAuthenticated && !inAuthGroup) {
+    }
+    
+    // Se estou autenticado mas na área de login/register, redireciono para home
+    if (isAuthenticated && !inProtectedArea && segments[0] !== undefined) {
       router.replace('/(tabs)' as never);
     }
   }, [isAuthenticated, isLoading, router, segments]);
 
+  // Exibo loader enquanto verifico se existe sessão salva
   if (isLoading) {
     return <Loader variant='spinner' size='large' text='Carregando...' />;
   }
