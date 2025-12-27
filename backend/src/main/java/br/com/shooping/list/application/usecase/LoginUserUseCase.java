@@ -49,13 +49,13 @@ public class LoginUserUseCase {
         var user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> {
                     log.warn("Login falhou: usuário não encontrado para email={}", request.getEmail());
-                    return new InvalidCredentialsException("Credenciais inválidas");
+                    return new InvalidCredentialsException("Email ou senha não conferem");
                 });
 
         // Validar senha
         if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
             log.warn("Login falhou: senha incorreta para email={}", request.getEmail());
-            throw new InvalidCredentialsException("Credenciais inválidas");
+            throw new InvalidCredentialsException("Email ou senha não conferem");
         }
 
         // Validar status ACTIVE

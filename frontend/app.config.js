@@ -2,11 +2,11 @@ require('dotenv').config();
 
 module.exports = {
   expo: {
-    name: 'frontend',
-    slug: 'frontend',
+    name: 'Shopping List',
+    slug: 'Shopping List',
     version: '1.0.0',
     orientation: 'portrait',
-    icon: './assets/images/icon.png',
+    icon: './assets/images/splash-screen.png',
     scheme: 'frontend',
     userInterfaceStyle: 'automatic',
     newArchEnabled: true,
@@ -14,6 +14,7 @@ module.exports = {
       supportsTablet: true,
     },
     android: {
+      package: 'com.shoppinglist.app',
       adaptiveIcon: {
         backgroundColor: '#E6F4FE',
         foregroundImage: './assets/images/android-icon-foreground.png',
@@ -27,17 +28,23 @@ module.exports = {
       output: 'static',
       favicon: './assets/images/favicon.png',
     },
+    splash: {
+      image: './assets/images/splash-screen.png',
+      resizeMode: 'contain',
+      backgroundColor: '#E6F4FE',
+    },
     plugins: [
       'expo-router',
       [
         'expo-splash-screen',
         {
-          image: './assets/images/splash-icon.png',
-          imageWidth: 200,
+          image: './assets/images/splash-screen.png',
           resizeMode: 'contain',
-          backgroundColor: '#ffffff',
+          backgroundColor: '#E6F4FE',
           dark: {
-            backgroundColor: '#000000',
+            image: './assets/images/splash-screen.png',
+            resizeMode: 'contain',
+            backgroundColor: '#1A1A1A',
           },
         },
       ],
