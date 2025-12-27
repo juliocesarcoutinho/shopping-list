@@ -4,7 +4,7 @@
  * Configuração do Axios com interceptors, timeout e tratamento de erros
  */
 
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosError } from 'axios';
+import axios, { AxiosError, AxiosInstance, AxiosRequestConfig } from 'axios';
 
 import { env } from '../config/env';
 
@@ -59,14 +59,14 @@ export class ApiHttpClient implements HttpClient {
 
         // Log de debug em desenvolvimento
         if (env.enableDebugLogs) {
-          console.log(`📤 ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`);
+          console.log(`${config.method?.toUpperCase()} ${config.baseURL}${config.url}`);
         }
 
         return config;
       },
       error => {
         if (env.enableDebugLogs) {
-          console.error('❌ Request Error:', error);
+          console.error('Request Error:', error);
         }
         return Promise.reject(error);
       }
@@ -77,14 +77,14 @@ export class ApiHttpClient implements HttpClient {
       response => {
         // Log de sucesso em desenvolvimento
         if (env.enableDebugLogs) {
-          console.log(`✅ ${response.status} ${response.config.url}`);
+          console.log(`${response.status} ${response.config.url}`);
         }
         return response;
       },
       async (error: AxiosError) => {
         // Log de erro em desenvolvimento
         if (env.enableDebugLogs) {
-          console.error(`❌ ${error.response?.status} ${error.config?.url}`);
+          console.error(`${error.response?.status} ${error.config?.url}`);
         }
 
         // Tratamento de erros específicos
@@ -94,36 +94,36 @@ export class ApiHttpClient implements HttpClient {
           switch (status) {
             case 401:
               // TODO: Implementar refresh token aqui
-              console.warn('⚠️ Unauthorized - Token expirado ou inválido');
+              console.warn('Unauthorized - Token expirado ou inválido');
               // Possível logout automático ou refresh token
               break;
 
             case 403:
-              console.warn('⚠️ Forbidden - Sem permissão para acessar este recurso');
+              console.warn('Forbidden - Sem permissão para acessar este recurso');
               break;
 
             case 404:
-              console.warn('⚠️ Not Found - Recurso não encontrado');
+              console.warn('Not Found - Recurso não encontrado');
               break;
 
             case 429:
-              console.warn('⚠️ Too Many Requests - Rate limit excedido');
+              console.warn('Too Many Requests - Rate limit excedido');
               break;
 
             case 500:
-              console.error('❌ Server Error - Erro interno do servidor');
+              console.error('Server Error - Erro interno do servidor');
               break;
 
             case 503:
-              console.error('❌ Service Unavailable - Serviço temporariamente indisponível');
+              console.error('Service Unavailable - Serviço temporariamente indisponível');
               break;
           }
         } else if (error.request) {
           // Requisição foi feita mas sem resposta (timeout, sem conexão)
-          console.error('❌ Network Error - Sem resposta do servidor');
+          console.error('Network Error - Sem resposta do servidor');
         } else {
           // Erro ao configurar a requisição
-          console.error('❌ Request Setup Error:', error.message);
+          console.error('Request Setup Error:', error.message);
         }
 
         return Promise.reject(this.normalizeError(error));

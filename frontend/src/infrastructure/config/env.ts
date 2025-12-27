@@ -55,7 +55,7 @@ export const isStaging = env.appEnv === 'staging';
 
 // Log de configuração em desenvolvimento
 if (isDevelopment && env.enableDebugLogs) {
-  console.log('🔧 Environment Configuration:', {
+  console.log('Environment Configuration:', {
     apiUrl: env.apiUrl,
     appEnv: env.appEnv,
     enableMockApi: env.enableMockApi,

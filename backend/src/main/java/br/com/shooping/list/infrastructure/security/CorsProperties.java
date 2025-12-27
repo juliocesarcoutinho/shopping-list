@@ -34,6 +34,7 @@ public final class CorsProperties {
         /** Própria API (para testes) */
         public static final String SELF = "http://localhost:8080";
 
+
         /**
          * Lista de todas as origens permitidas.
          * <p>

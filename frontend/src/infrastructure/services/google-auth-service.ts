@@ -31,12 +31,12 @@ export class GoogleAuthService {
     this.clientId = env.googleClientId || '';
 
     if (!this.clientId) {
-      console.warn('⚠️ GOOGLE_CLIENT_ID não configurado no .env');
+      console.warn('GOOGLE_CLIENT_ID não configurado no .env');
     }
 
     // Log para debug do redirect URI
-    console.log('🔗 Google OAuth Redirect URI:', this.redirectUri);
-    console.log('🔑 Google Client ID:', this.clientId ? '✅ Configurado' : '❌ Faltando');
+    console.log('Google OAuth Redirect URI:', this.redirectUri);
+    console.log('Google Client ID:', this.clientId ? 'Configurado' : 'Faltando');
   }
 
   /**
@@ -104,7 +104,7 @@ export class GoogleAuthService {
         error: result.type === 'error' ? result.error?.message : 'Autenticação cancelada',
       };
     } catch (error) {
-      console.error('❌ Erro no fluxo Google OAuth:', error);
+      console.error('Erro no fluxo Google OAuth:', error);
       return {
         idToken: '',
         cancelled: false,
