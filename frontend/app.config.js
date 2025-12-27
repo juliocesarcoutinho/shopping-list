@@ -61,6 +61,7 @@ module.exports = {
       ENABLE_MOCK_API: process.env.ENABLE_MOCK_API || 'true',
       ENABLE_DEBUG_LOGS: process.env.ENABLE_DEBUG_LOGS || 'false',
       GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID || '',
+      GOOGLE_REDIRECT_URI: process.env.GOOGLE_REDIRECT_URI || 'exp://192.168.10.5:8081',
     },
   },
 };
