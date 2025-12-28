@@ -666,7 +666,7 @@ Quando `ENABLE_DEBUG_LOGS=true` no `.env`:
 
 ## 👤 Tela de Conta - UserService
 
-Sistema para exibir dados reais do usuário autenticado após login:
+Sistema para exibir dados reais do usuário autenticado após login com design elegante e responsivo:
 
 ### **UserService**
 Serviço centralizado para operações de usuário:
@@ -692,10 +692,10 @@ export class UserService {
 - Tipagem forte com interface `User` do domínio
 - Tratamento de erro automático via `ApiClient` com normalização
 
-### **AccountScreen**
-Tela dedicada para exibir perfil do usuário com estados:
+### **AccountScreen - Design Premium**
+Tela dedicada para exibir perfil do usuário com design elegante Fresh Market:
 
-**Fluxo:**
+**Fluxo de Dados:**
 ```
 AccountScreen renderiza
         ↓
@@ -706,27 +706,90 @@ Loading (ActivityIndicator)
         └─ Erro → Exibe banner de erro com retry
 ```
 
-**Dados Exibidos:**
-- 👤 Avatar visual
-- 📛 Nome do usuário
-- 📧 Email
-- 🔐 Método de autenticação (Email/Google)
-- ✓ Status (Ativo/Inativo)
-- 📅 Data de cadastro (Membro desde)
+**Design Visual:**
+- 🎯 **Avatar Premium**: 100x100px com borda verde (tema primary) e fundo semi-transparente
+- 📝 **Nome em Destaque**: Exibido abaixo do avatar com tipografia grande (18px)
+- 📋 **Card de Dados**: Com dividers entre campos para separação clara
+- 🏷️ **Labels Stylizados**: Uppercase com letter-spacing, ícones integrados
+- 🎨 **Badges com Ícones**: Para método de autenticação (📧 Email/🔐 Google) e status (✓ Ativo)
+- 💬 **Espaçamento Respirado**: Padding generoso (56px top, 16px lateral) para não sobrepor câmera/status bar
+- 📱 **ScrollView Responsivo**: Suporta telas pequenas e grandes sem problemas
+- ✨ **Sombra Sofisticada**: elevation 4 e shadow blur para profundidade
 
-**Componentes:**
-- Loading state com spinner
-- Error boundary com mensagem customizada
-- Card elegante com design Fresh Market
-- Botões: "Recarregar Dados" e "Sair"
+**Dados Exibidos com Ícones:**
+- 👤 Avatar visual (emoji)
+- 📛 Nome do usuário (campo)
+- 📧 Email (campo)
+- 🔐 Método de autenticação (badge)
+- ✓ Status (badge com ícone)
+- 📅 Data de cadastro (campo)
+
+**Componentes UI:**
+| Componente | Descrição | Estado |
+|-----------|-----------|--------|
+| Avatar | Círculo com borda, 100x100 | Sempre visível |
+| Card | Container com dividers | Sucesso |
+| Badge | Pill com ícone e texto | Autenticação e Status |
+| Loading | ActivityIndicator + texto | Carregando |
+| Error | Card com aviso e retry | Erro |
+| Buttons | Recarregar + Sair | Sempre |
 
 **Estados e Tratamento:**
 | Estado | UI | Ação |
 |--------|-----|------|
-| Loading | ActivityIndicator + texto | Aguarda dados |
-| Sucesso | Card com dados | Exibe informações |
-| Erro | Error card + botão retry | Tenta novamente |
-| Logout | Redireciona | Via signOut() |
+| Loading | ActivityIndicator + "Carregando dados..." | Aguarda dados |
+| Sucesso | Card com dados + Botões | Exibe informações completas |
+| Erro | Error card com mensagem + Retry | Tenta novamente |
+| Logout | Redireciona para login | Via signOut() |
+
+**Paleta de Cores Fresh Market:**
+- Avatar border: `theme.colors.primary` (verde)
+- Avatar background: `primary + 20%` opacity
+- Card background: `theme.colors.surface` (branco)
+- Card border: `theme.colors.border` (cinza suave)
+- Badges: `primary + 15%` background, `primary` text
+- Dividers: `theme.colors.border`
+- Labels: `theme.colors.textSecondary` (muted)
+
+**Layout Responsivo:**
+```
+┌─────────────────────────────┐
+│  Minha Conta (32px, bold)   │  ← paddingTop: 56px (respeita camera)
+│                             │
+│         👤                  │  ← Avatar 100x100
+│                             │
+│  Miriam Aquino Coutinho     │  ← Nome 18px
+│                             │
+│  ┌───────────────────────┐  │
+│  │ 📛 NOME               │  │
+│  │ Miriam Aquino...      │  │
+│  │ ─────────────────     │  │
+│  │ 📧 EMAIL              │  │
+│  │ miriaaquicout@g...    │  │
+│  │ ─────────────────     │  │
+│  │ 🔐 AUTENTICAÇÃO       │  │
+│  │ [📧 Email/Senha]      │  │ ← Badge com borda
+│  │ ─────────────────     │  │
+│  │ ✓ STATUS              │  │
+│  │ [✓ Ativo]             │  │ ← Badge com borda
+│  │ ─────────────────     │  │
+│  │ 📅 MEMBRO DESDE       │  │
+│  │ 27/12/2025            │  │
+│  └───────────────────────┘  │
+│                             │
+│  [Recarregar Dados - verde] │
+│  [Sair - outlined]          │
+│                             │
+└─────────────────────────────┘
+```
+
+**Tipografia Refinada:**
+- Título: 32px, weight 700, letter-spacing 0.5
+- Nome: 18px, weight 600, letter-spacing 0.3
+- Labels: 11px, weight 700, uppercase, letter-spacing 1
+- Valores: 16px, weight 500, line-height 22
+- Badges: 13px, weight 600, letter-spacing 0.2
+
 
 ---
 
