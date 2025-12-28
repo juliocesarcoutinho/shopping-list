@@ -9,10 +9,8 @@ export function SplashScreen() {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      navigation.reset({
-        index: 0,
-        routes: [{ name: 'login' as never }],
-      });
+      // Substitui a rota atual pela tela de Login sem warnings
+      navigation.replace('login' as never);
     }, 2500);
 
     return () => clearTimeout(timer);

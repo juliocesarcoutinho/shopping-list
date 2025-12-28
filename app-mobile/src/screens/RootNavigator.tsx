@@ -19,6 +19,7 @@ export function RootNavigator() {
   return (
     <NavigationContainer>
       <Stack.Navigator
+        initialRouteName={isAuthenticated ? 'dashboard' : 'splash'}
         screenOptions={{
           headerShown: false,
           contentStyle: {
