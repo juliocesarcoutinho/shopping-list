@@ -29,9 +29,9 @@ export function ForgotPasswordScreen() {
         style={{
           flex: 1,
           paddingHorizontal: 24,
-          paddingTop: 24,
-          paddingBottom: 24,
+          paddingVertical: 24,
           justifyContent: 'center',
+          alignItems: 'center',
         }}
       >
         {/* Back Button */}
@@ -57,21 +57,24 @@ export function ForgotPasswordScreen() {
         </TouchableOpacity>
 
         {/* Header */}
-        <View style={{ marginBottom: 48 }}>
+        <View style={{ marginBottom: 48, width: '100%' }}>
           <Text
             style={{
-              fontSize: 28,
-              fontWeight: '600',
+              fontSize: 32,
+              fontWeight: '700',
               color: colors.foreground,
               marginBottom: 8,
+              textAlign: 'center',
             }}
           >
             Redefinir senha
           </Text>
           <Text
             style={{
-              fontSize: 16,
+              fontSize: 14,
               color: colors.mutedForeground,
+              lineHeight: 20,
+              textAlign: 'center',
             }}
           >
             Digite seu email e enviaremos um link para redefinir sua senha
@@ -79,24 +82,24 @@ export function ForgotPasswordScreen() {
         </View>
 
         {/* Form */}
-        <View style={{ gap: 20 }}>
+        <View style={{ gap: 20, width: '100%' }}>
           {/* Email */}
           <View>
             <Label>Email</Label>
-            <View style={{ position: 'relative' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', position: 'relative' }}>
               <Mail
                 size={20}
                 color={colors.mutedForeground}
-                style={{ position: 'absolute', left: 16, top: 18, zIndex: 1 }}
+                style={{ position: 'absolute', left: 16, zIndex: 10 }}
               />
               <Input
                 placeholder="Digite seu email"
                 value={email}
                 onChangeText={setEmail}
                 keyboardType="email-address"
-                placeholderTextColor={colors.mutedForeground}
                 style={{
                   paddingLeft: 48,
+                  flex: 1,
                 }}
               />
             </View>

@@ -1,29 +1,28 @@
+import { useNavigation, useRoute } from '@react-navigation/native';
 import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  SafeAreaView,
-  FlatList,
-  Modal,
-  TextInput,
-} from 'react-native';
-import { useRoute, useNavigation } from '@react-navigation/native';
-import {
-  ArrowLeft,
-  Plus,
-  Trash2,
-  MoreVertical,
-  Edit2,
-  DollarSign,
-  Hash,
+    ArrowLeft,
+    DollarSign,
+    Edit2,
+    Hash,
+    MoreVertical,
+    Plus,
+    Trash2,
 } from 'lucide-react-native';
 import { useState } from 'react';
+import {
+    FlatList,
+    Modal,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
 import { Label } from '../components/Label';
-import { colors } from '../styles/colors';
 import { useListStore } from '../store/useListStore';
+import { colors } from '../styles/colors';
 import { ListItem } from '../types';
 
 export function ListDetailsScreen() {

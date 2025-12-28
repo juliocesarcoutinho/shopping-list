@@ -18,11 +18,9 @@ export function Input({ variant = 'default', style, ...props }: InputProps) {
           borderRadius: 12,
           fontSize: 16,
           color: colors.foreground,
-          backgroundColor:
-            variant === 'outline' ? colors.card : colors.background,
+          backgroundColor: colors.card,
           borderWidth: 1,
-          borderColor:
-            variant === 'outline' ? colors.border : colors.background,
+          borderColor: colors.border,
         },
         style,
       ]}

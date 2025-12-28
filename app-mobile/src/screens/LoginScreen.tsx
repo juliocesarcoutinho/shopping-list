@@ -38,27 +38,30 @@ export function LoginScreen() {
         style={{
           flex: 1,
           paddingHorizontal: 24,
-          paddingTop: 48,
-          paddingBottom: 24,
+          paddingVertical: 24,
           justifyContent: 'center',
+          alignItems: 'center',
         }}
       >
         {/* Header */}
-        <View style={{ marginBottom: 48 }}>
+        <View style={{ marginBottom: 48, width: '100%' }}>
           <Text
             style={{
-              fontSize: 28,
-              fontWeight: '600',
+              fontSize: 32,
+              fontWeight: '700',
               color: colors.foreground,
               marginBottom: 8,
+              textAlign: 'center',
             }}
           >
             Bem-vindo
           </Text>
           <Text
             style={{
-              fontSize: 16,
+              fontSize: 14,
               color: colors.mutedForeground,
+              lineHeight: 20,
+              textAlign: 'center',
             }}
           >
             Entre para acessar suas listas
@@ -66,24 +69,25 @@ export function LoginScreen() {
         </View>
 
         {/* Form */}
-        <View style={{ gap: 20 }}>
+        <View style={{ gap: 20, width: '100%' }}>
           {/* Email */}
           <View>
             <Label>E-mail</Label>
-            <View style={{ position: 'relative' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', position: 'relative' }}>
               <Mail
                 size={20}
                 color={colors.mutedForeground}
-                style={{ position: 'absolute', left: 16, top: 18, zIndex: 1 }}
+                style={{ position: 'absolute', left: 16, zIndex: 10 }}
               />
               <Input
                 placeholder="Digite seu e-mail"
                 value={email}
                 onChangeText={setEmail}
                 keyboardType="email-address"
-                placeholderTextColor={colors.mutedForeground}
+                editable
                 style={{
                   paddingLeft: 48,
+                  flex: 1,
                 }}
               />
             </View>
@@ -92,20 +96,20 @@ export function LoginScreen() {
           {/* Password */}
           <View>
             <Label>Senha</Label>
-            <View style={{ position: 'relative' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', position: 'relative' }}>
               <Lock
                 size={20}
                 color={colors.mutedForeground}
-                style={{ position: 'absolute', left: 16, top: 18, zIndex: 1 }}
+                style={{ position: 'absolute', left: 16, zIndex: 10 }}
               />
               <Input
                 placeholder="Digite sua senha"
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry
-                placeholderTextColor={colors.mutedForeground}
                 style={{
                   paddingLeft: 48,
+                  flex: 1,
                 }}
               />
             </View>
@@ -141,6 +145,7 @@ export function LoginScreen() {
             gap: 8,
             flexDirection: 'row',
             justifyContent: 'center',
+            width: '100%',
           }}
         >
           <Text

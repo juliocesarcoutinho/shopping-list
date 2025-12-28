@@ -44,27 +44,30 @@ export function SignUpScreen() {
         style={{
           flex: 1,
           paddingHorizontal: 24,
-          paddingTop: 48,
-          paddingBottom: 24,
+          paddingVertical: 24,
           justifyContent: 'center',
+          alignItems: 'center',
         }}
       >
         {/* Header */}
-        <View style={{ marginBottom: 48 }}>
+        <View style={{ marginBottom: 48, width: '100%' }}>
           <Text
             style={{
-              fontSize: 28,
-              fontWeight: '600',
+              fontSize: 32,
+              fontWeight: '700',
               color: colors.foreground,
               marginBottom: 8,
+              textAlign: 'center',
             }}
           >
             Criar Conta
           </Text>
           <Text
             style={{
-              fontSize: 16,
+              fontSize: 14,
               color: colors.mutedForeground,
+              lineHeight: 20,
+              textAlign: 'center',
             }}
           >
             Comece a usar a Lista de Compras
@@ -72,23 +75,23 @@ export function SignUpScreen() {
         </View>
 
         {/* Form */}
-        <View style={{ gap: 20 }}>
+        <View style={{ gap: 20, width: '100%' }}>
           {/* Name */}
           <View>
             <Label>Nome</Label>
-            <View style={{ position: 'relative' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', position: 'relative' }}>
               <User
                 size={20}
                 color={colors.mutedForeground}
-                style={{ position: 'absolute', left: 16, top: 18, zIndex: 1 }}
+                style={{ position: 'absolute', left: 16, zIndex: 10 }}
               />
               <Input
                 placeholder="Digite seu nome"
                 value={name}
                 onChangeText={setName}
-                placeholderTextColor={colors.mutedForeground}
                 style={{
                   paddingLeft: 48,
+                  flex: 1,
                 }}
               />
             </View>
@@ -97,20 +100,20 @@ export function SignUpScreen() {
           {/* Email */}
           <View>
             <Label>Email</Label>
-            <View style={{ position: 'relative' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', position: 'relative' }}>
               <Mail
                 size={20}
                 color={colors.mutedForeground}
-                style={{ position: 'absolute', left: 16, top: 18, zIndex: 1 }}
+                style={{ position: 'absolute', left: 16, zIndex: 10 }}
               />
               <Input
                 placeholder="Digite seu email"
                 value={email}
                 onChangeText={setEmail}
                 keyboardType="email-address"
-                placeholderTextColor={colors.mutedForeground}
                 style={{
                   paddingLeft: 48,
+                  flex: 1,
                 }}
               />
             </View>
@@ -119,20 +122,20 @@ export function SignUpScreen() {
           {/* Password */}
           <View>
             <Label>Senha</Label>
-            <View style={{ position: 'relative' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', position: 'relative' }}>
               <Lock
                 size={20}
                 color={colors.mutedForeground}
-                style={{ position: 'absolute', left: 16, top: 18, zIndex: 1 }}
+                style={{ position: 'absolute', left: 16, zIndex: 10 }}
               />
               <Input
                 placeholder="Crie uma senha"
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry
-                placeholderTextColor={colors.mutedForeground}
                 style={{
                   paddingLeft: 48,
+                  flex: 1,
                 }}
               />
             </View>
@@ -141,20 +144,20 @@ export function SignUpScreen() {
           {/* Confirm Password */}
           <View>
             <Label>Confirmar Senha</Label>
-            <View style={{ position: 'relative' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', position: 'relative' }}>
               <Lock
                 size={20}
                 color={colors.mutedForeground}
-                style={{ position: 'absolute', left: 16, top: 18, zIndex: 1 }}
+                style={{ position: 'absolute', left: 16, zIndex: 10 }}
               />
               <Input
                 placeholder="Confirme sua senha"
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}
                 secureTextEntry
-                placeholderTextColor={colors.mutedForeground}
                 style={{
                   paddingLeft: 48,
+                  flex: 1,
                 }}
               />
             </View>
@@ -172,6 +175,7 @@ export function SignUpScreen() {
             gap: 8,
             flexDirection: 'row',
             justifyContent: 'center',
+            width: '100%',
           }}
         >
           <Text

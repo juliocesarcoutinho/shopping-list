@@ -8,11 +8,11 @@ import {
 } from 'lucide-react-native';
 import {
     FlatList,
-    SafeAreaView,
     Text,
     TouchableOpacity,
     View
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Card } from '../components/Card';
 import { useAuthStore } from '../store/useAuthStore';
 import { useListStore } from '../store/useListStore';
