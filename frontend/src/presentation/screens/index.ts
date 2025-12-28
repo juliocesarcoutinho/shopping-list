@@ -11,3 +11,4 @@ export * from './playground-screen';
 export * from './login-screen';
 export * from './register-screen';
 export * from './settings-screen';
+export * from './account-screen';

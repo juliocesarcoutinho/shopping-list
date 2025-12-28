@@ -294,6 +294,7 @@ app/
     ├── _layout.tsx      # Tab navigation
     ├── index.tsx        # → HomeScreen
     ├── explore.tsx      # → ExploreScreen
+    ├── account.tsx      # → AccountScreen (👤 Conta)
     └── playground.tsx   # → PlaygroundScreen
 ```
 
@@ -331,7 +332,19 @@ Sistema completo de autenticação com UI minimalista Fresh Market:
 - Exibe dados do usuário autenticado
 - Botão "Sair" para logout seguro
 - Informações sobre Clean Architecture
-- Acesso às outras abas (Explore, Playground)
+- Acesso às outras abas (Explore, Conta, Playground)
+
+#### **👤 Account Screen**
+- Exibe dados detalhados do usuário: Nome, Email, Provider
+- Integração com `/api/v1/users/me` para dados reais
+- Estados de loading durante carregamento
+- Tratamento robusto de erros com mensagens específicas
+- Botão "Recarregar Dados" para atualizar informações
+- Botão "Sair" para logout direto da tela
+- Badges visuais para método de autenticação (Email/Google)
+- Status do usuário (Ativo/Inativo)
+- Data de cadastro (Membro desde)
+- Design card com avatar visual
 
 ### **Fluxo Completo:**
 
@@ -651,7 +664,71 @@ Quando `ENABLE_DEBUG_LOGS=true` no `.env`:
 
 ---
 
+## 👤 Tela de Conta - UserService
 
+Sistema para exibir dados reais do usuário autenticado após login:
+
+### **UserService**
+Serviço centralizado para operações de usuário:
+
+```typescript
+// user-service.ts
+export class UserService {
+  constructor(private readonly repository: AuthRepository) {}
+
+  /**
+   * Busca dados do usuário autenticado
+   * GET /api/v1/users/me
+   */
+  async getMe(): Promise<User> {
+    return this.repository.getCurrentUser();
+  }
+}
+```
+
+**Características:**
+- Reutiliza `AuthRepository.getCurrentUser()` que chama `/api/v1/users/me`
+- Retorna dados completos do usuário (id, name, email, provider, status, createdAt)
+- Tipagem forte com interface `User` do domínio
+- Tratamento de erro automático via `ApiClient` com normalização
+
+### **AccountScreen**
+Tela dedicada para exibir perfil do usuário com estados:
+
+**Fluxo:**
+```
+AccountScreen renderiza
+        ↓
+useEffect → userService.getMe()
+        ↓
+Loading (ActivityIndicator)
+        ├─ Sucesso → Exibe card com dados
+        └─ Erro → Exibe banner de erro com retry
+```
+
+**Dados Exibidos:**
+- 👤 Avatar visual
+- 📛 Nome do usuário
+- 📧 Email
+- 🔐 Método de autenticação (Email/Google)
+- ✓ Status (Ativo/Inativo)
+- 📅 Data de cadastro (Membro desde)
+
+**Componentes:**
+- Loading state com spinner
+- Error boundary com mensagem customizada
+- Card elegante com design Fresh Market
+- Botões: "Recarregar Dados" e "Sair"
+
+**Estados e Tratamento:**
+| Estado | UI | Ação |
+|--------|-----|------|
+| Loading | ActivityIndicator + texto | Aguarda dados |
+| Sucesso | Card com dados | Exibe informações |
+| Erro | Error card + botão retry | Tenta novamente |
+| Logout | Redireciona | Via signOut() |
+
+---
 
 ## 🏛️ Padrões e Convenções
 
@@ -695,6 +772,10 @@ Quando `ENABLE_DEBUG_LOGS=true` no `.env`:
 - [x] **Tratamento de erros com mensagens específicas do backend**
 - [x] **Normalização de erros padronizada**
 - [x] **Logging de debug para erros HTTP**
+- [x] **UserService.getMe() - Buscar dados do usuário**
+- [x] **AccountScreen - Tela de perfil do usuário**
+- [x] **Loading + Erro tratados na AccountScreen**
+- [x] **Exibição de dados reais: nome, email, provider**
 
 ### **🚀 Próximas Features:**
 
@@ -727,4 +808,4 @@ Quando `ENABLE_DEBUG_LOGS=true` no `.env`:
 
 ---
 
-**Clean Architecture + Design System + Autenticação Completa = Base sólida para escalar! 🏗️✨**
+**Clean Architecture + Design System + Autenticação Completa + Dados Reais = Base sólida para escalar! 🏗️✨**

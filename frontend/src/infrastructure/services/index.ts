@@ -4,14 +4,14 @@
  * Concrete implementations of data sources using infrastructure components.
  */
 
-import { RemoteDataSource, LocalDataSource } from '../../data/data-sources';
+import { LocalDataSource, RemoteDataSource } from '../../data/data-sources';
 import {
-  ShoppingListDto,
-  ShoppingItemDto,
-  UserDto,
-  CreateShoppingListRequest,
   CreateShoppingItemRequest,
+  CreateShoppingListRequest,
+  ShoppingItemDto,
+  ShoppingListDto,
   UpdateShoppingItemRequest,
+  UserDto,
 } from '../../data/models';
 import { HttpClient } from '../http';
 import { CacheService } from '../storage';
@@ -19,6 +19,9 @@ import { CacheService } from '../storage';
 export * from './auth-service';
 export * from './auth-service-instance';
 export * from './google-auth-service';
+export * from './user-service';
+export * from './user-service-instance';
+
 
 export class ApiRemoteDataSource implements RemoteDataSource {
   constructor(private httpClient: HttpClient) {}
