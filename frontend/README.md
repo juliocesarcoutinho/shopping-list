@@ -311,7 +311,7 @@ Sistema completo de autenticação com UI minimalista Fresh Market:
 - Validações:
   - Email obrigatório e formato válido
   - Senha mínimo 6 caracteres
-- Banner de erro amigável
+- Banner de erro amigável com mensagens específicas do backend
 - Navegação automática após login
 - Tratamento de erros de rede
 
@@ -327,6 +327,12 @@ Sistema completo de autenticação com UI minimalista Fresh Market:
 - Validação: senhas devem conferir
 - Navegação automática após registro
 
+#### **🏠 Home Screen**
+- Exibe dados do usuário autenticado
+- Botão "Sair" para logout seguro
+- Informações sobre Clean Architecture
+- Acesso às outras abas (Explore, Playground)
+
 ### **Fluxo Completo:**
 
 ```
@@ -337,11 +343,11 @@ Sistema completo de autenticação com UI minimalista Fresh Market:
        │
        ├─ Não autenticado ──► LoginScreen
        │                          │
-       │                          ├─ Login email/senha ──► Mock API
-       │                          ├─ Login Google ──────► Mock API
+       │                          ├─ Login email/senha ──► API Backend
+       │                          ├─ Login Google ──────► API Backend
        │                          └─ "Criar conta" ────► RegisterScreen
        │                                                      │
-       │                                                      └─ Cadastro ──► Mock API
+       │                                                      └─ Cadastro ──► API Backend
        │                                                                          │
        └─ Autenticado ───────────────────────────────────────────────────────────┘
                                                                                    │
@@ -349,6 +355,7 @@ Sistema completo de autenticação com UI minimalista Fresh Market:
                                                                             ┌──────────────┐
                                                                             │ HomeScreen   │
                                                                             │ (tabs)       │
+                                                                            │ Botão: Sair  │
                                                                             └──────────────┘
 ```
 
@@ -384,6 +391,7 @@ Sistema inteligente que renova tokens expirados sem interromper a navegação do
 
 **Interceptor Axios (401):**
 - Detecta automaticamente quando access token expira (HTTP 401)
+- ⚠️ **Não tenta refresh em endpoints de autenticação** (login, register, logout, google)
 - Pausa todos os requests em andamento e coloca em fila
 - Tenta refresh do token usando refresh token salvo
 - Se sucesso: atualiza token, refaz requests automaticamente
@@ -396,13 +404,15 @@ Sistema inteligente que renova tokens expirados sem interromper a navegação do
 
 **Fluxo:**
 ```
-Request → 401 → Já refreshing? 
-                  ├─ Sim → Aguarda na fila
-                  └─ Não → Inicia refresh
-                            ↓
-                      Refresh bem-sucedido?
-                      ├─ Sim → Atualiza token, refaz requests
-                      └─ Não → Limpa sessão, logout
+Request → 401 → É endpoint de auth?
+                ├─ Sim → Retorna erro normalizado
+                └─ Não → Já refreshing? 
+                          ├─ Sim → Aguarda na fila
+                          └─ Não → Inicia refresh
+                                    ↓
+                              Refresh bem-sucedido?
+                              ├─ Sim → Atualiza token, refaz requests
+                              └─ Não → Limpa sessão, logout
 ```
 
 **Benefícios:**
@@ -419,6 +429,229 @@ Request → 401 → Já refreshing?
   - Desenvolvimento: Android Client ID com package `host.exp.exponent` e SHA-1 do debug.keystore
   - Produção: Android/iOS Client IDs com packages de produção e keystores de release
 - **Documentação:** Ver `docs/GOOGLE_OAUTH_SETUP.md` e `docs/FIX_GOOGLE_OAUTH_ERROR.md`
+
+### **🔐 Logout Seguro:**
+
+Implementação segura com três etapas:
+
+**Fluxo Logout:**
+```
+Usuário clica "Sair" (HomeScreen)
+            ↓
+      signOut() (Auth Context)
+            ↓
+      authService.logout()
+            ↓
+    ┌─────────────────────┐
+    │ 1. Chamar backend   │ → POST /api/v1/auth/logout (refresh_token)
+    │    (best-effort)    │    Se falhar: ignora e continua
+    └─────────────────────┘
+            ↓
+    ┌─────────────────────┐
+    │ 2. Limpar storage   │ → Remove accessToken, refreshToken, user
+    │    (local)          │
+    └─────────────────────┘
+            ↓
+    ┌─────────────────────┐
+    │ 3. Limpar apiClient │ → Remove token dos headers HTTP
+    │    (memory)         │
+    └─────────────────────┘
+            ↓
+      setUser(null) (Context)
+            ↓
+    Redireciona para LoginScreen
+```
+
+**Implementação:**
+
+```typescript
+// auth-service.ts
+async logout(): Promise<void> {
+  const refreshToken = await this.storage.getRefreshToken();
+
+  if (refreshToken) {
+    try {
+      // Tenta revogar o refresh token no backend
+      await this.repository.logout(refreshToken);
+    } catch (_error) {
+      // Se falhar, ignora (já vamos limpar localmente)
+      console.log('Backend logout falhou, limpando localmente');
+    }
+  }
+
+  // Limpa tokens do storage e remove do client HTTP
+  await this.storage.clearSession();
+  getApiClient().removeAuthToken();
+}
+
+// auth-context.tsx
+async function signOut() {
+  try {
+    await authService.logout();
+    setUser(null); // Limpa estado global
+    console.log('[AuthContext] Logout realizado com sucesso');
+  } catch (error) {
+    console.error('[AuthContext] Erro ao fazer logout:', error);
+    // Mesmo com erro, limpa o usuário para retornar ao login
+    setUser(null);
+    throw error;
+  }
+}
+```
+
+**Características:**
+- ✅ **Best-effort no backend** - Se servidor cair, ainda faz logout localmente
+- ✅ **Três níveis de limpeza** - Backend, Storage, Client HTTP
+- ✅ **Sem memória de tokens** - Remove completamente
+- ✅ **Redirecionamento garantido** - Volta sempre para login
+
+## 🎯 Tratamento de Erros
+
+Sistema robusto de tratamento e exibição de erros com mensagens específicas:
+
+### **Normalização de Erros (ApiClient):**
+
+O `ApiHttpClient` normaliza todos os erros em um formato consistente:
+
+```typescript
+interface ApiError {
+  message: string;         // Mensagem legível para o usuário
+  status?: number;         // Status HTTP (401, 400, 500, etc)
+  code?: string;           // Código de erro do Axios
+  data?: unknown;          // Dados originais da API
+}
+```
+
+**Fluxo de Normalização:**
+
+```
+Backend retorna 401 com: { "message": "Email ou senha não conferem" }
+                                          ↓
+                            normalizeError(AxiosError)
+                                          ↓
+                    Extrai: error.response.data.message
+                                          ↓
+                    Retorna ApiError com message customizada
+                                          ↓
+                            auth-context captura
+                                          ↓
+                      Exibe no banner de erro
+```
+
+### **Mensagens Específicas por Erro:**
+
+**Autenticação (401):**
+```
+Backend: "Email ou senha não conferem"
+UI: "Email ou senha não conferem" ✅ (específico)
+```
+
+**Validação (400):**
+```
+Backend: "Email já registrado"
+UI: "Email já registrado" ✅ (específico)
+```
+
+**Servidor (500):**
+```
+Backend: Erro genérico
+UI: "Erro ao fazer login. Tente novamente." ✅ (fallback)
+```
+
+**Rede:**
+```
+Sem conexão
+UI: "Erro ao fazer login. Tente novamente." ✅ (fallback)
+```
+
+### **Implementação no Auth Context:**
+
+```typescript
+async function signIn(email: string, password: string) {
+  try {
+    const session = await authService.login(email, password);
+    setUser(session.user);
+  } catch (error: any) {
+    // Extrai mensagem normalizada do ApiClient
+    let errorMessage = 'Erro ao fazer login. Tente novamente.';
+    
+    if (typeof error === 'object' && error !== null) {
+      // Erro normalizado do ApiClient tem .message e .status
+      if (error.message && error.status !== undefined) {
+        errorMessage = error.message;
+      } 
+      // Erro comum tem apenas .message
+      else if (error.message) {
+        errorMessage = error.message;
+      }
+    } else if (typeof error === 'string') {
+      errorMessage = error;
+    }
+    
+    console.error('[AuthContext] Erro ao fazer login:', errorMessage);
+    
+    // Propaga erro para LoginScreen exibir
+    const userError = new Error(errorMessage);
+    userError.name = 'AuthenticationError';
+    throw userError;
+  }
+}
+```
+
+### **Exibição no UI (LoginScreen):**
+
+```tsx
+const onSubmit = async (data: LoginFormData) => {
+  setIsLoading(true);
+  setErrorMessage('');
+
+  try {
+    await signIn(data.email, data.password);
+    // Navegação automática via _layout.tsx
+  } catch (error: unknown) {
+    // Extrai mensagem já normalizada
+    const apiError = error as { message?: string };
+    setErrorMessage(apiError?.message || 'Erro ao fazer login. Tente novamente.');
+  } finally {
+    setIsLoading(false);
+  }
+};
+
+// Renderização
+{errorMessage ? (
+  <View style={[styles.errorBanner, { backgroundColor: theme.colors.error + '15' }]}>
+    <Text style={[styles.errorBannerText, { color: theme.colors.error }]}>
+      {errorMessage}
+    </Text>
+  </View>
+) : null}
+```
+
+### **Casos de Erro Tratados:**
+
+| Erro | Status | Tratamento |
+|------|--------|-----------|
+| Credenciais inválidas | 401 | Msg específica do backend |
+| Email já registrado | 400 | Msg específica do backend |
+| Validação fallhou | 400 | Msg específica do backend |
+| Token expirado | 401 | Auto-refresh + fila de requests |
+| Sem conexão | — | Msg fallback genérica |
+| Servidor indisponível | 503 | Msg fallback genérica |
+| Erro desconhecido | — | Msg fallback genérica |
+
+### **Logging para Debug:**
+
+Quando `ENABLE_DEBUG_LOGS=true` no `.env`:
+
+```log
+[ApiClient] Response Data: {"message":"Email ou senha não conferem"}
+[ApiClient] Extracted message: Email ou senha não conferem
+[AuthContext] Erro ao fazer login: Email ou senha não conferem
+```
+
+---
+
+
 
 ## 🏛️ Padrões e Convenções
 
@@ -454,21 +687,16 @@ Request → 401 → Já refreshing?
 - [x] **Integração com Backend (API REST)**
 - [x] **Sistema de autenticação real (JWT + Refresh Token)**
 - [x] **Persistência de sessão com AsyncStorage**
-- [x] **Auto-refresh de tokens expirados no startup**
+- [x] **Auto-refresh de tokens expirados**
 - [x] **Interceptor HTTP com refresh automático em 401**
 - [x] **Fila de requests durante refresh**
 - [x] **Google OAuth2 integrado (Android/iOS)**
+- [x] **Logout seguro com 3 camadas de limpeza**
+- [x] **Tratamento de erros com mensagens específicas do backend**
+- [x] **Normalização de erros padronizada**
+- [x] **Logging de debug para erros HTTP**
 
 ### **🚀 Próximas Features:**
-
-**Fase 1 - Autenticação (✅ CONCLUÍDA):**
-- [x] Integrar API real de autenticação
-- [x] Implementar refresh token com rotação
-- [x] Tratamento de erros de rede
-- [x] Persistência de sessão
-- [x] Guard de rotas
-- [x] Interceptor automático para renovação de token
-- [x] Google OAuth2
 
 **Fase 2 - Listas de Compras:**
 - [ ] Criar lista de compras
@@ -499,148 +727,4 @@ Request → 401 → Já refreshing?
 
 ---
 
-**Clean Architecture + Design System + Autenticação = Base sólida para escalar! 🏗️✨**
-
-# Shopping List App
-
-Aplicação de Lista de Compras desenvolvida com Clean Architecture e React Native.
-
-## 🏗️ Arquitetura
-
-Este projeto segue os princípios da **Clean Architecture**, organizando o código em camadas bem definidas:
-
-```
-src/
-├── domain/              # 🧠 Regras de Negócio
-│   ├── entities/        # Entidades do domínio
-│   ├── repositories/    # Interfaces de repositório  
-│   └── use-cases/       # Casos de uso
-├── data/                # 📊 Acesso a Dados
-│   ├── models/          # DTOs e modelos de API
-│   ├── data-sources/    # Interfaces de fontes de dados
-│   └── repositories/    # Implementações de repositório
-├── presentation/        # 🎨 Interface do Usuário
-│   ├── screens/         # Telas da aplicação
-│   ├── components/      # Componentes reutilizáveis
-│   ├── hooks/           # Hooks personalizados
-│   └── navigation/      # Configuração de rotas
-└── infrastructure/      # 🔧 Serviços Externos
-    ├── http/           # Cliente HTTP
-    ├── storage/        # Armazenamento local
-    └── services/       # Implementações de serviços
-```
-
-## 📱 Tecnologias
-
-- **React Native** - Framework para desenvolvimento mobile
-- **Expo** - Plataforma de desenvolvimento
-- **TypeScript** - Tipagem estática
-- **Expo Router** - Roteamento baseado em arquivos
-- **AsyncStorage** - Armazenamento local
-- **ESLint + Prettier** - Qualidade e formatação do código
-
-## 🚀 Como Executar
-
-1. **Instalar dependências:**
-   ```bash
-   npm install
-   ```
-
-2. **Iniciar o desenvolvimento:**
-   ```bash
-   npm start
-   ```
-
-3. **Executar em dispositivos específicos:**
-   ```bash
-   npm run android  # Android
-   npm run ios      # iOS
-   npm run web      # Web
-   ```
-
-## 📋 Scripts Disponíveis
-
-- `npm start` - Iniciar o servidor de desenvolvimento
-- `npm run lint` - Verificar código com ESLint
-- `npm run lint:fix` - Corrigir problemas automaticamente
-- `npm run format` - Formatar código com Prettier
-- `npm run typecheck` - Verificar tipos TypeScript
-- `npm run check-all` - Executar todas as verificações
-
-## 🏛️ Estrutura Clean Architecture
-
-### Domain Layer (Núcleo)
-- **Entities**: Modelos de dados fundamentais
-- **Use Cases**: Lógica de negócio da aplicação
-- **Repository Interfaces**: Contratos para acesso a dados
-
-### Data Layer
-- **Models**: DTOs para comunicação com APIs
-- **Data Sources**: Interfaces para fontes de dados
-- **Repositories**: Implementações concretas dos contratos
-
-### Presentation Layer
-- **Screens**: Telas da aplicação
-- **Components**: Componentes UI reutilizáveis
-- **Hooks**: Lógica de estado e efeitos
-
-### Infrastructure Layer
-- **HTTP**: Cliente para comunicação com APIs
-- **Storage**: Serviços de armazenamento local
-- **Services**: Implementações de serviços externos
-
-## 📖 Documentação Adicional
-
-- **`CLEAN_ARCHITECTURE.md`** - Guia completo de arquitetura e convenções
-- **`COMPONENTS.md`** - Documentação detalhada dos componentes
-- **`FRESH_MARKET_PALETTE.md`** - Guia da paleta de cores
-
-## ✨ Features Implementadas
-
-### **🎨 Design System**
-- ✅ Paleta Fresh Market (verde minimalista)
-- ✅ Design tokens completos (cores, tipografia, espaçamento)
-- ✅ Tema claro/escuro automático
-- ✅ 60+ tokens de cores
-- ✅ Sistema de componentes reutilizáveis
-
-### **🔐 Autenticação**
-- ✅ Login com email/senha
-- ✅ Login com Google (mock)
-- ✅ Registro com validação forte
-- ✅ Senha segura (8+ chars, maiúscula, número, especial)
-- ✅ Persistência com AsyncStorage
-- ✅ Navegação automática baseada em auth
-- ✅ Mock API funcionando
-
-### **📱 Componentes**
-- ✅ Button (3 tamanhos, loading, disabled)
-- ✅ TextField (validação, error states)
-- ✅ Card (3 variantes)
-- ✅ Loader (3 animações)
-- ✅ Divider (horizontal/vertical)
-
-### **🛠️ Validação**
-- ✅ React Hook Form + Zod
-- ✅ Validação em tempo real
-- ✅ Mensagens de erro customizadas
-- ✅ Type-safe schemas
-
-### **⚙️ Configuração**
-- ✅ Variáveis de ambiente (.env)
-- ✅ Configuração por ambiente (dev/staging/prod)
-- ✅ Tela de settings para debug
-- ✅ API URL configurável
-
-### **🏗️ Arquitetura**
-- ✅ Clean Architecture com 4 camadas
-- ✅ Separação clara de responsabilidades
-- ✅ Barrel exports organizados
-- ✅ TypeScript strict mode
-- ✅ ESLint + Prettier configurados
-
----
-
-**🛒 Shopping List App - Base sólida para crescer! 💚✨**
-
-Desenvolvido com Clean Architecture + Design System Fresh Market
+**Clean Architecture + Design System + Autenticação Completa = Base sólida para escalar! 🏗️✨**
