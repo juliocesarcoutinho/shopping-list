@@ -5,7 +5,7 @@
  */
 
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 import { Button } from '../components';
 import { useAuth } from '../contexts/auth-context';

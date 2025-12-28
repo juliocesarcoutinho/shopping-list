@@ -106,10 +106,21 @@ export class ApiHttpClient implements HttpClient {
         // Log de erro em desenvolvimento
         if (env.enableDebugLogs) {
           console.error(`${error.response?.status} ${error.config?.url}`);
+          console.log('[ApiClient] Response Data:', error.response?.data);
         }
 
         // Tratamento específico para 401 Unauthorized
         if (error.response?.status === 401 && !originalRequest._retry) {
+          // Se é um erro de login/register, não tenta fazer refresh
+          const url = error.config?.url || '';
+          if (url.includes('/auth/login') || url.includes('/auth/register') || url.includes('/auth/google')) {
+            // Erro de autenticação no login - retorna o erro normalizado sem tentar refresh
+            if (env.enableDebugLogs) {
+              console.log('[ApiClient] Auth error on login endpoint, returning normalized error');
+            }
+            return Promise.reject(this.normalizeError(error));
+          }
+
           // Se já estou tentando fazer refresh, coloco este request na fila
           if (this.isRefreshing) {
             console.log('[ApiClient] Request aguardando refresh em andamento');
@@ -217,10 +228,24 @@ export class ApiHttpClient implements HttpClient {
   }
 
   private normalizeError(error: AxiosError): ApiError {
-    const responseData = error.response?.data as { message?: string };
+    const responseData = error.response?.data as { message?: string } | { error?: { message?: string } };
+    
+    // Tenta extrair a mensagem do backend de várias posições possíveis
+    let message: string | undefined;
+    
+    if (typeof responseData === 'object' && responseData !== null) {
+      message = (responseData as any).message || (responseData as any).error?.message;
+    }
+    
+    const finalMessage = message || error.message || 'Erro desconhecido';
+
+    if (error.response?.status === 401 || error.response?.status === 400) {
+      console.log('[ApiClient] Error response data:', JSON.stringify(error.response?.data));
+      console.log('[ApiClient] Extracted message:', finalMessage);
+    }
 
     return {
-      message: responseData?.message || error.message || 'Erro desconhecido',
+      message: finalMessage,
       status: error.response?.status,
       code: error.code,
       data: error.response?.data,
