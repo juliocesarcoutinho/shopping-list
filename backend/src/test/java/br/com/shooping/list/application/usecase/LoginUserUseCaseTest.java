@@ -148,7 +148,7 @@ class LoginUserUseCaseTest {
         // Act & Assert
         assertThatThrownBy(() -> loginUserUseCase.execute(validRequest, "Mozilla/5.0", "192.168.1.1"))
                 .isInstanceOf(InvalidCredentialsException.class)
-                .hasMessageContaining("Credenciais inválidas");
+                .hasMessageContaining("Email ou senha não conferem");
 
         // Verify
         verify(userRepository).findByEmail(validRequest.getEmail());
@@ -167,7 +167,7 @@ class LoginUserUseCaseTest {
         // Act & Assert
         assertThatThrownBy(() -> loginUserUseCase.execute(validRequest, "Mozilla/5.0", "192.168.1.1"))
                 .isInstanceOf(InvalidCredentialsException.class)
-                .hasMessageContaining("Credenciais inválidas");
+                .hasMessageContaining("Email ou senha não conferem");
 
         // Verify
         verify(userRepository).findByEmail(validRequest.getEmail());

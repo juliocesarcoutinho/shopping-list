@@ -160,7 +160,7 @@ class AuthControllerLoginTest {
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.status", is(401)))
                 .andExpect(jsonPath("$.error", is("Unauthorized")))
-                .andExpect(jsonPath("$.message", containsString("Credenciais inválidas")));
+                .andExpect(jsonPath("$.message", containsString("Email ou senha não conferem")));
     }
 
     @Test
@@ -186,7 +186,7 @@ class AuthControllerLoginTest {
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.status", is(401)))
                 .andExpect(jsonPath("$.error", is("Unauthorized")))
-                .andExpect(jsonPath("$.message", containsString("Credenciais inválidas")));
+                .andExpect(jsonPath("$.message", containsString("Email ou senha não conferem")));
     }
 
     @Test
