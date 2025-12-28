@@ -1,22 +1,32 @@
 package br.com.shooping.list.domain.shoppinglist;
 
+import lombok.Getter;
+
 import java.util.Objects;
 
 /**
  * Value Object que representa o nome de um item.
  * Garante que nomes sejam válidos e fornece normalização para comparação case-insensitive.
- *
  * Regras:
  * - Nome não pode ser nulo ou vazio
  * - Nome deve ter entre 2 e 100 caracteres (após trim)
  * - Nome é normalizado para lowercase internamente para comparações
  */
+@Getter
 public final class ItemName {
 
     private static final int MIN_LENGTH = 2;
     private static final int MAX_LENGTH = 100;
 
+    /**
+     * — - GETTER --
+     *  Retorna o valor original do nome (com capitalização preservada).
+     */
     private final String value;
+    /**
+     * — - GETTER --
+     *  Retorna o valor normalizado (lowercase, trimmed) para comparações.
+     */
     private final String normalizedValue;
 
     private ItemName(String value) {
@@ -54,20 +64,6 @@ public final class ItemName {
         }
 
         return trimmed;
-    }
-
-    /**
-     * Retorna o valor original do nome (com capitalização preservada).
-     */
-    public String getValue() {
-        return value;
-    }
-
-    /**
-     * Retorna o valor normalizado (lowercase, trimmed) para comparações.
-     */
-    public String getNormalizedValue() {
-        return normalizedValue;
     }
 
     /**

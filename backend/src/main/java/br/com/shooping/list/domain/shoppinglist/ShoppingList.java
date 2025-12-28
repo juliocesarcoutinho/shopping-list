@@ -1,13 +1,17 @@
 package br.com.shooping.list.domain.shoppinglist;
 
+import lombok.Getter;
+import lombok.Setter;
+
 import java.time.Instant;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
 
 /**
  * Aggregate Root que representa uma lista de compras.
  * Gerencia o ciclo de vida dos itens e garante invariantes do aggregate.
- *
  * Regras de negócio:
  * - Título da lista é obrigatório (3-100 caracteres)
  * - Descrição é opcional (até 255 caracteres)
@@ -15,17 +19,17 @@ import java.util.stream.Collectors;
  * - Não é permitido adicionar itens com nomes duplicados (case-insensitive)
  * - Lista pode ter no máximo 100 itens
  * - Apenas o dono da lista pode modificá-la
- *
  * O ShoppingList é responsável por:
  * - Adicionar itens validando duplicatas e limite
  * - Remover itens
  * - Marcar itens como comprados/não comprados
  * - Limpar itens comprados
  * - Contar itens por status
- *
  * Nota: Esta classe não tem anotações JPA propositalmente.
  * O modelo de domínio deve ser puro, sem dependências de frameworks.
  */
+@Getter
+@Setter
 public class ShoppingList {
 
     private static final int MIN_TITLE_LENGTH = 3;
@@ -192,7 +196,7 @@ public class ShoppingList {
     public int clearPurchasedItems() {
         List<ListItem> purchasedItems = items.stream()
                 .filter(ListItem::isPurchased)
-                .collect(Collectors.toList());
+                .toList();
 
         int count = purchasedItems.size();
         items.removeAll(purchasedItems);
@@ -331,34 +335,6 @@ public class ShoppingList {
      */
     public boolean isOwnedBy(Long userId) {
         return Objects.equals(this.ownerId, userId);
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public Long getOwnerId() {
-        return ownerId;
-    }
-
-    public String getTitle() {
-        return title;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public Instant getCreatedAt() {
-        return createdAt;
-    }
-
-    public Instant getUpdatedAt() {
-        return updatedAt;
     }
 
     @Override

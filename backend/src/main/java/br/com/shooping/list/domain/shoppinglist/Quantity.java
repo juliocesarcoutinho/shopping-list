@@ -1,19 +1,25 @@
 package br.com.shooping.list.domain.shoppinglist;
 
+import lombok.Getter;
+
 import java.math.BigDecimal;
 import java.util.Objects;
 
 /**
  * Value Object que representa a quantidade de um item.
  * Garante que quantidades sejam sempre válidas (maior que zero).
- *
  * Regras:
  * - Quantidade não pode ser nula
  * - Quantidade deve ser maior que zero
  * - Usa BigDecimal para precisão em números decimais
  */
+@Getter
 public final class Quantity {
 
+    /**
+     * — - GETTER --
+     *  Retorna o valor da quantidade como BigDecimal.
+     */
     private final BigDecimal value;
 
     private Quantity(BigDecimal value) {
@@ -64,13 +70,6 @@ public final class Quantity {
             throw new IllegalArgumentException("Quantidade deve ser maior que zero");
         }
 
-        return value;
-    }
-
-    /**
-     * Retorna o valor da quantidade como BigDecimal.
-     */
-    public BigDecimal getValue() {
         return value;
     }
 

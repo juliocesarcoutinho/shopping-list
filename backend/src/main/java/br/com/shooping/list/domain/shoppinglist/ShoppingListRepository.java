@@ -5,10 +5,8 @@ import java.util.Optional;
 
 /**
  * Contrato de repositório para ShoppingList (Port - Clean Architecture).
- *
  * Define as operações de persistência necessárias para o agregado ShoppingList,
  * sem depender de detalhes de infraestrutura (JPA, JDBC, etc).
- *
  * A implementação concreta fica na camada infrastructure.
  */
 public interface ShoppingListRepository {

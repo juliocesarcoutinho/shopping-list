@@ -1,12 +1,14 @@
 package br.com.shooping.list.domain.shoppinglist;
 
+import lombok.Getter;
+import lombok.Setter;
+
 import java.time.Instant;
 import java.util.Objects;
 
 /**
  * Entity que representa um item individual dentro de uma lista de compras.
  * Cada item possui nome, quantidade, unidade de medida opcional e status de compra.
- *
  * Regras de negócio:
  * - Item não pode existir sem uma lista pai (relacionamento obrigatório)
  * - Nome do item é obrigatório e validado pelo Value Object ItemName
@@ -14,12 +16,13 @@ import java.util.Objects;
  * - Unidade de medida é opcional (pode ser null)
  * - Status padrão é PENDING (não comprado)
  * - Ao marcar como comprado, timestamp updatedAt é atualizado
- *
  * Nota: Esta classe não tem anotações JPA propositalmente.
  * O modelo de domínio deve ser puro, sem dependências de frameworks.
  * As anotações JPA serão adicionadas na camada de infraestrutura se necessário,
  * ou podemos usar esta mesma classe como entidade JPA nas próximas iterações.
  */
+@Getter
+@Setter
 public class ListItem {
 
     private Long id;
@@ -144,14 +147,14 @@ public class ListItem {
     }
 
     /**
-     * Verifica se o item está comprado.
+     * Verifica se o ‘item’ está comprado.
      */
     public boolean isPurchased() {
         return this.status == ItemStatus.PURCHASED;
     }
 
     /**
-     * Verifica se o item está pendente (não comprado).
+     * Verifica se o ‘item’ está pendente (não comprado).
      */
     public boolean isPending() {
         return this.status == ItemStatus.PENDING;
@@ -173,42 +176,6 @@ public class ListItem {
      */
     public boolean hasName(ItemName itemName) {
         return this.name.isSameAs(itemName);
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public ShoppingList getShoppingList() {
-        return shoppingList;
-    }
-
-    public ItemName getName() {
-        return name;
-    }
-
-    public Quantity getQuantity() {
-        return quantity;
-    }
-
-    public String getUnit() {
-        return unit;
-    }
-
-    public ItemStatus getStatus() {
-        return status;
-    }
-
-    public Instant getCreatedAt() {
-        return createdAt;
-    }
-
-    public Instant getUpdatedAt() {
-        return updatedAt;
     }
 
     @Override
