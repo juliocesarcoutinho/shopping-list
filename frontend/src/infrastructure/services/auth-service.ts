@@ -70,7 +70,7 @@ export class AuthService {
       // Access token inválido ou expirado, vou tentar renovar usando refresh token
       console.log('[AuthService] Access token inválido, tentando refresh');
       const refreshToken = await this.storage.getRefreshToken();
-      
+
       if (!refreshToken) {
         console.log('[AuthService] Nenhum refresh token disponível, limpando sessão');
         await this.storage.clearSession();

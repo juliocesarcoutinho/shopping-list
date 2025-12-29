@@ -35,10 +35,10 @@ export class ApiHttpClient implements HttpClient {
   private readonly axiosInstance: AxiosInstance;
   private authToken: string | null = null;
   private isRefreshing: boolean = false;
-  private failedQueue: Array<{
+  private failedQueue: {
     resolve: (token: string) => void;
     reject: (error: unknown) => void;
-  }> = [];
+  }[] = [];
 
   constructor(baseURL: string, timeout: number = 30000) {
     this.axiosInstance = axios.create({
@@ -113,7 +113,11 @@ export class ApiHttpClient implements HttpClient {
         if (error.response?.status === 401 && !originalRequest._retry) {
           // Se é um erro de login/register, não tenta fazer refresh
           const url = error.config?.url || '';
-          if (url.includes('/auth/login') || url.includes('/auth/register') || url.includes('/auth/google')) {
+          if (
+            url.includes('/auth/login') ||
+            url.includes('/auth/register') ||
+            url.includes('/auth/google')
+          ) {
             // Erro de autenticação no login - retorna o erro normalizado sem tentar refresh
             if (env.enableDebugLogs) {
               console.log('[ApiClient] Auth error on login endpoint, returning normalized error');
@@ -146,14 +150,14 @@ export class ApiHttpClient implements HttpClient {
 
           try {
             console.log('[ApiClient] Token expirado, tentando refresh');
-            
+
             // Importo dinamicamente para evitar dependência circular
             const { authService } = await import('../services/auth-service-instance');
             const newSession = await authService.refreshToken();
 
             if (newSession) {
               console.log('[ApiClient] Refresh bem-sucedido, refazendo requests');
-              
+
               // Atualizo o token no cliente
               this.setAuthToken(newSession.accessToken);
 
@@ -164,24 +168,24 @@ export class ApiHttpClient implements HttpClient {
               if (originalRequest.headers) {
                 originalRequest.headers.Authorization = `Bearer ${newSession.accessToken}`;
               }
-              
+
               return this.axiosInstance(originalRequest);
             } else {
               // Refresh retornou null, significa que não havia refresh token válido
               console.warn('[ApiClient] Refresh falhou: nenhum refresh token disponível');
               this.processQueue(new Error('Sessão expirada'), null);
               this.removeAuthToken();
-              
+
               // TODO: Disparar evento de logout global aqui se necessário
               return Promise.reject(error);
             }
           } catch (refreshError) {
             console.error('[ApiClient] Erro ao fazer refresh:', refreshError);
-            
+
             // Processo a fila rejeitando todos os requests
             this.processQueue(refreshError, null);
             this.removeAuthToken();
-            
+
             // TODO: Disparar evento de logout global aqui se necessário
             return Promise.reject(refreshError);
           } finally {
@@ -211,7 +215,9 @@ export class ApiHttpClient implements HttpClient {
               break;
 
             case 503:
-              console.error('[ApiClient] Service Unavailable - Serviço temporariamente indisponível');
+              console.error(
+                '[ApiClient] Service Unavailable - Serviço temporariamente indisponível'
+              );
               break;
           }
         } else if (error.request) {
@@ -228,15 +234,17 @@ export class ApiHttpClient implements HttpClient {
   }
 
   private normalizeError(error: AxiosError): ApiError {
-    const responseData = error.response?.data as { message?: string } | { error?: { message?: string } };
-    
+    const responseData = error.response?.data as
+      | { message?: string }
+      | { error?: { message?: string } };
+
     // Tenta extrair a mensagem do backend de várias posições possíveis
     let message: string | undefined;
-    
+
     if (typeof responseData === 'object' && responseData !== null) {
       message = (responseData as any).message || (responseData as any).error?.message;
     }
-    
+
     const finalMessage = message || error.message || 'Erro desconhecido';
 
     if (error.response?.status === 401 || error.response?.status === 400) {

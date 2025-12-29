@@ -34,6 +34,7 @@ export interface ShoppingItem {
 export interface ShoppingList {
   id: string;
   title: string;
+  description?: string;
   items: ShoppingItem[];
   createdAt: string;
   updatedAt: string;

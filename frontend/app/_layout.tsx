@@ -24,7 +24,7 @@ function NavigationContent() {
     if (!isAuthenticated && inProtectedArea) {
       router.replace('/login' as never);
     }
-    
+
     // Se estou autenticado mas na área de login/register, redireciono para home
     if (isAuthenticated && !inProtectedArea && segments[0] !== undefined) {
       router.replace('/(tabs)' as never);
@@ -43,6 +43,14 @@ function NavigationContent() {
       <Stack.Screen name='(tabs)' options={{ headerShown: false }} />
       <Stack.Screen name='modal' options={{ presentation: 'modal', title: 'Modal' }} />
       <Stack.Screen name='settings' options={{ title: 'Configurações' }} />
+      <Stack.Screen
+        name='create-list'
+        options={{
+          presentation: 'modal',
+          title: 'Nova Lista',
+          headerShown: true,
+        }}
+      />
     </Stack>
   );
 }

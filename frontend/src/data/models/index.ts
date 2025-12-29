@@ -76,11 +76,17 @@ export interface ShoppingItemDto {
 }
 
 export interface ShoppingListDto {
-  id: string;
+  id: string | number;
   title: string;
-  items: ShoppingItemDto[];
-  created_at: string;
-  updated_at: string;
+  description?: string;
+  items?: ShoppingItemDto[];
+  itemsCount?: number;
+  pendingItemsCount?: number;
+  // API pode retornar camelCase ou snake_case
+  createdAt?: string;
+  updatedAt?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface UserDto {

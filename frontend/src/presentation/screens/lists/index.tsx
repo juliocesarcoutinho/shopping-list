@@ -1,19 +1,29 @@
-import { ShoppingList } from '@/src/domain/entities';
-import { GetMyListsUseCase } from '@/src/domain/use-cases/get-my-lists-use-case';
 import React, { useCallback, useEffect, useState } from 'react';
 import { FlatList, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+import { useRouter } from 'expo-router';
+
+import { ShoppingListRemoteDataSource } from '@/src/data/data-sources/shopping-list-remote-data-source';
+import { ShoppingListRepositoryImpl } from '@/src/data/repositories/shopping-list-repository';
+import { ShoppingList } from '@/src/domain/entities';
+import { GetMyListsUseCase } from '@/src/domain/use-cases/get-my-lists-use-case';
+
+import { Button } from '../../components';
 import FloatingActionButton from '../../components/fab';
 import ListCard from '../../components/list-card';
 import EmptyListSvg from '../../components/list-card/EmptyListSvg';
 import { useAppTheme } from '../../hooks';
 
-// Instanciação direta para exemplo, idealmente usar DI/contexto
-const useCase = new GetMyListsUseCase({
-  getMyLists: async () => [], // Substitua por injeção real do repository
-});
+// Instancio use case com repository real
+const remoteDataSource = new ShoppingListRemoteDataSource();
+const repository = new ShoppingListRepositoryImpl(remoteDataSource);
+const useCase = new GetMyListsUseCase(repository);
 
 export const ListsDashboardScreen: React.FC = () => {
   const theme = useAppTheme();
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [lists, setLists] = useState<ShoppingList[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -25,8 +35,9 @@ export const ListsDashboardScreen: React.FC = () => {
     try {
       const data = await useCase.execute();
       setLists(data);
-    } catch (err: any) {
-      setError(err?.message || 'Erro ao carregar listas');
+    } catch (err) {
+      const error = err as Error;
+      setError(error?.message || 'Erro ao carregar listas');
     } finally {
       setLoading(false);
     }
@@ -38,8 +49,9 @@ export const ListsDashboardScreen: React.FC = () => {
     try {
       const data = await useCase.execute();
       setLists(data);
-    } catch (err: any) {
-      setError(err?.message || 'Erro ao recarregar listas');
+    } catch (err) {
+      const error = err as Error;
+      setError(error?.message || 'Erro ao recarregar listas');
     } finally {
       setRefreshing(false);
     }
@@ -69,7 +81,14 @@ export const ListsDashboardScreen: React.FC = () => {
     return (
       <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
         {[1, 2, 3].map(i => (
-          <ListCard key={i} loading />
+          <ListCard
+            key={i}
+            title=''
+            itemsCount={0}
+            pendingItemsCount={0}
+            purchasedItemsCount={0}
+            loading
+          />
         ))}
       </View>
     );
@@ -92,7 +111,7 @@ export const ListsDashboardScreen: React.FC = () => {
           style={[styles.retryButton, { backgroundColor: theme.colors.primary }]}
           onPress={fetchLists}
         >
-          <Text style={[styles.retryButtonText, { color: theme.colors.onPrimary }]}>
+          <Text style={[styles.retryButtonText, { color: theme.colors.textInverted }]}>
             Tentar novamente
           </Text>
         </TouchableOpacity>
@@ -108,31 +127,26 @@ export const ListsDashboardScreen: React.FC = () => {
         <Text style={[styles.emptySubtitle, { color: theme.colors.textSecondary }]}>
           Crie uma lista para organizar suas compras do dia a dia
         </Text>
-        <TouchableOpacity
-          style={[styles.ctaButton, { backgroundColor: theme.colors.primary }]}
-          onPress={() => {
-            /* Navegar para criar lista */
-          }}
-          activeOpacity={0.85}
-          testID='cta-create-list'
-          accessibilityRole='button'
-          accessibilityLabel='Criar primeira lista'
-        >
-          <Text style={[styles.ctaButtonText, { color: theme.colors.onPrimary }]}>
-            Criar primeira lista
-          </Text>
-        </TouchableOpacity>
+        <Button
+          title='Começar minha lista'
+          onPress={() => router.push('/create-list' as never)}
+          size='large'
+          variant='primary'
+        />
       </View>
     );
   }
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
+        <Text style={[styles.headerTitle, { color: theme.colors.text }]}>Minhas Listas</Text>
+      </View>
       <FlatList
         data={lists}
         keyExtractor={item => item.id}
         renderItem={renderItem}
-        contentContainerStyle={{ paddingVertical: 16 }}
+        contentContainerStyle={{ paddingTop: 8, paddingBottom: 100, gap: 16 }}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -145,9 +159,7 @@ export const ListsDashboardScreen: React.FC = () => {
         testID='lists-flatlist'
       />
       <FloatingActionButton
-        onPress={() => {
-          // Navegar para criar lista (abrir modal/tela)
-        }}
+        onPress={() => router.push('/create-list' as never)}
         testID='fab-create-list'
         accessibilityLabel='Criar nova lista'
       />
@@ -158,7 +170,15 @@ export const ListsDashboardScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  header: {
     paddingHorizontal: 20,
+    paddingBottom: 16,
+  },
+  headerTitle: {
+    fontSize: 32,
+    fontWeight: '700',
+    letterSpacing: 0.3,
   },
   errorText: {
     fontSize: 16,
@@ -198,16 +218,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontWeight: '400',
     lineHeight: 22,
-  },
-  ctaButton: {
-    borderRadius: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 32,
-    marginTop: 8,
-  },
-  ctaButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
   },
 });
 

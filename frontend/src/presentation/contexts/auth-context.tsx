@@ -54,12 +54,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (error: any) {
       // O erro vem do normalizeError do apiClient, tem estrutura: { message, status, code, data }
       let errorMessage = 'Erro ao fazer login. Tente novamente.';
-      
+
       if (typeof error === 'object' && error !== null) {
         // Se é um erro normalizado do ApiClient
         if (error.message && error.status !== undefined) {
           errorMessage = error.message;
-        } 
+        }
         // Se é um Error comum
         else if (error.message) {
           errorMessage = error.message;
@@ -67,9 +67,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } else if (typeof error === 'string') {
         errorMessage = error;
       }
-      
+
       console.error('[AuthContext] Erro ao fazer login:', errorMessage);
-      
+
       // Cria um erro com a mensagem apropriada para que a UI possa exibir
       const userError = new Error(errorMessage);
       userError.name = 'AuthenticationError';
@@ -83,9 +83,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(session.user);
       console.log('[AuthContext] Registro realizado com sucesso:', session.user.email);
     } catch (error: any) {
-      const errorMessage = error?.message || error?.data?.message || 'Erro ao fazer registro. Tente novamente.';
+      const errorMessage =
+        error?.message || error?.data?.message || 'Erro ao fazer registro. Tente novamente.';
       console.error('[AuthContext] Erro ao fazer registro:', errorMessage);
-      
+
       const userError = new Error(errorMessage);
       userError.name = 'RegistrationError';
       throw userError;
@@ -112,9 +113,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(session.user);
       console.log('[AuthContext] Login com Google realizado com sucesso:', session.user.email);
     } catch (error: any) {
-      const errorMessage = error?.message || error?.data?.message || 'Erro ao fazer login com Google. Tente novamente.';
+      const errorMessage =
+        error?.message ||
+        error?.data?.message ||
+        'Erro ao fazer login com Google. Tente novamente.';
       console.error('[AuthContext] Erro ao fazer login com Google:', errorMessage);
-      
+
       const userError = new Error(errorMessage);
       userError.name = 'GoogleAuthError';
       throw userError;

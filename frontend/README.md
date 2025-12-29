@@ -85,11 +85,15 @@ Acesse `/settings` no app para visualizar todas as variáveis de ambiente carreg
 ## 📋 Scripts Disponíveis
 
 - `npm start` - Iniciar o servidor de desenvolvimento
+- `npm run android` - Rodar no Android
+- `npm run ios` - Rodar no iOS
+- `npm run web` - Rodar no navegador
+- `npm test` - Executar testes unitários
 - `npm run lint` - Verificar código com ESLint
 - `npm run lint:fix` - Corrigir problemas automaticamente
 - `npm run format` - Formatar código com Prettier
 - `npm run typecheck` - Verificar tipos TypeScript
-- `npm run check-all` - Executar todas as verificações
+- `npm run check-all` - Executar todas as verificações (lint + format + typecheck)
 
 ## 🏗️ Arquitetura
 
@@ -287,16 +291,63 @@ Após o login, o usuário autenticado é direcionado automaticamente para a tela
 ### ListsDashboardScreen
 Arquivo: `src/presentation/screens/lists/index.tsx`
 
-- Exibe as listas do usuário em cards (ListCard) usando FlatList para performance.
-- Integração direta com o use case GetMyListsUseCase.
-- Estados tratados:
-  - **Loading:** skeletons de ListCard
-  - **Empty:** mensagem amigável + botão "Criar lista"
-  - **Erro:** mensagem amigável + botão "Tentar novamente"
-  - **Sucesso:** renderiza ListCard para cada lista
-- Suporte a pull-to-refresh (atualização por gesto)
-- Layout responsivo, acessibilidade básica, uso do tema Fresh Market
+**Características:**
+- Exibe as listas do usuário em cards (ListCard) usando FlatList para performance
+- Integração direta com o use case GetMyListsUseCase
+- Header "Minhas Listas" com Safe Area Insets para respeitar áreas do dispositivo
+- Floating Action Button (FAB) para criar novas listas
+
+**Estados tratados:**
+- **Loading:** skeletons de ListCard
+- **Empty:** mensagem amigável + botão "Criar lista"
+- **Erro:** mensagem amigável + botão "Tentar novamente"
+- **Sucesso:** renderiza ListCard para cada lista
+
+**Features:**
+- Pull-to-refresh (atualização por gesto)
+- Layout responsivo com Safe Area Insets
+- Espaçamento otimizado entre cards (gap: 16px)
+- Acessibilidade básica com labels
+- Uso do tema Fresh Market
 - Sem lógica de rede na UI, apenas consumo do use case
+
+## ✨ Funcionalidades Implementadas
+
+### 📝 Criar Nova Lista
+
+Sistema completo de criação de listas seguindo Clean Architecture.
+
+**Arquivo:** `src/presentation/screens/create-list-screen.tsx`
+
+**Características:**
+- Modal apresentado ao clicar no FAB do dashboard
+- Formulário com React Hook Form + Zod validation
+- Campos:
+  - **Título:** obrigatório, 3-100 caracteres
+  - **Descrição:** opcional, máximo 255 caracteres
+- Validação client-side e business logic no use case
+- Loading state durante requisição
+- Mensagens de erro específicas do backend
+- Fecha modal automaticamente após sucesso
+
+**Use Case:** `CreateListUseCase`
+- Validações de negócio (comprimento, campos obrigatórios)
+- Trim automático de espaços
+- Integração com repository pattern
+
+**Fluxo:**
+1. Usuário clica no FAB (+) ou botão "Começar minha lista" (empty state)
+2. Modal de criação é exibido
+3. Preenche título (obrigatório) e descrição (opcional)
+4. Validação acontece em tempo real
+5. Ao clicar "Criar", use case valida e envia para API
+6. Sucesso: modal fecha e lista aparece no dashboard
+7. Erro: mensagem específica é exibida
+
+**Testes:**
+- 8 testes unitários no CreateListUseCase
+- 4 testes no mapper de listas
+- Cobertura de validações e edge cases
 
 ### ListCard
 Arquivo: `src/presentation/components/list-card/index.tsx`
@@ -318,7 +369,11 @@ O acesso às listas do usuário autenticado segue Clean Architecture, desacoplad
 
 Arquivo: `src/data/data-sources/shopping-list-remote-data-source.ts`
 
-Responsável por consumir GET `/api/v1/lists` usando o `apiClient` padrão:
+Responsável por consumir as APIs de listas usando o `apiClient` padrão:
+
+**Endpoints:**
+- `GET /api/v1/lists` - Buscar listas do usuário
+- `POST /api/v1/lists` - Criar nova lista
 
 ```typescript
 export class ShoppingListRemoteDataSource {
@@ -327,14 +382,15 @@ export class ShoppingListRemoteDataSource {
       return await apiClient.get<ShoppingListDto[]>("/lists");
     } catch (error) {
       // Normalização de erro conforme padrão do projeto
-      if (error && typeof error === 'object' && 'response' in error) {
-        const err = error as any;
-        throw {
-          message: err.response?.data?.message || 'Erro ao buscar listas',
-          status: err.response?.status,
-        };
-      }
-      throw { message: 'Erro desconhecido ao buscar listas' };
+      throw error;
+    }
+  }
+
+  async createList(data: CreateListDto): Promise<ShoppingListDto> {
+    try {
+      return await apiClient.post<ShoppingListDto>('/lists', data);
+    } catch (error) {
+      throw error; // Erro já normalizado pelo apiClient
     }
   }
 }
@@ -358,6 +414,20 @@ export class ShoppingListRepositoryImpl {
       throw error; // Erro já normalizado
     }
   }
+
+  async create(list: Omit<ShoppingList, 'id' | 'createdAt' | 'updatedAt'>): Promise<ShoppingList> {
+    try {
+      const dto = await this.remote.createList({
+        title: list.title,
+        description: list.description,
+      });
+      return mapShoppingListDtoToDomain(dto);
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // Métodos update, delete, getById implementados com throw Error('Not implemented')
 }
 ```
 
@@ -408,6 +478,7 @@ Arquivo: `src/domain/entities/index.ts`
 export interface ShoppingList {
   id: string;
   title: string;
+  description?: string;  // Opcional
   items: ShoppingItem[];
   createdAt: string;
   updatedAt: string;
@@ -418,13 +489,21 @@ export interface ShoppingList {
 
 Arquivo: `src/data/models/index.ts`
 
+Suporta tanto formato **camelCase** (formato real da API) quanto **snake_case** para compatibilidade:
+
 ```typescript
 export interface ShoppingListDto {
-  id: string;
+  id: string | number;
   title: string;
-  items: ShoppingItemDto[];
-  created_at: string;
-  updated_at: string;
+  description?: string;
+  items?: ShoppingItemDto[];
+  itemsCount?: number;
+  pendingItemsCount?: number;
+  // API pode retornar camelCase ou snake_case
+  createdAt?: string;
+  updatedAt?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 ```
 
@@ -432,34 +511,54 @@ export interface ShoppingListDto {
 
 Arquivo: `src/data/mappers/shopping-list-mapper.ts`
 
-Responsável por converter o DTO do backend para a entidade de domínio, validando campos obrigatórios:
+Responsável por converter o DTO do backend para a entidade de domínio, com flexibilidade para ambos formatos:
 
 ```typescript
 export function mapShoppingListDtoToDomain(dto: ShoppingListDto): ShoppingList {
-  if (!dto.id || !dto.title || !dto.items || !dto.created_at || !dto.updated_at) {
+  // Suporto tanto camelCase quanto snake_case para compatibilidade
+  const createdAt = dto.createdAt || dto.created_at;
+  const updatedAt = dto.updatedAt || dto.updated_at;
+
+  if (!dto.id || !dto.title || !createdAt || !updatedAt) {
+    console.error('[Mapper] DTO recebido:', JSON.stringify(dto, null, 2));
     throw new Error('Campos obrigatórios ausentes em ShoppingListDto');
   }
+
   return {
-    id: dto.id,
+    id: String(dto.id),
     title: dto.title,
-    items: dto.items.map(/* ... */),
-    createdAt: dto.created_at,
-    updatedAt: dto.updated_at,
+    description: dto.description,
+    // Items pode ser null/undefined, trato como array vazio
+    items: Array.isArray(dto.items) ? dto.items.map(mapShoppingItemDtoToDomain) : [],
+    createdAt,
+    updatedAt,
   };
 }
 ```
 
 ### Testes Unitários
 
-Arquivo: `src/data/mappers/__tests__/shopping-list-mapper.test.ts`
+**Mapper Tests:** `src/data/mappers/__tests__/shopping-list-mapper.test.ts`
+- Cobertura: Mapeamento válido e ausência de campos obrigatórios (4 tests)
 
-Cobre casos de mapeamento válido e ausência de campos obrigatórios.
+**Repository Tests:** `src/data/repositories/__tests__/shopping-list-repository.test.ts`
+- Cobertura: getMyLists success/error (2 tests)
+
+**Use Case Tests:** `src/domain/use-cases/__tests__/get-my-lists-use-case.test.ts`
+- Cobertura: success/error (2 tests)
+
+**Create List Use Case Tests:** `src/domain/use-cases/__tests__/create-list-use-case.test.ts`
+- Cobertura: validação de título (min/max/trim), descrição (opcional/max), integração com repositório (8 tests)
+
+Total: 16 testes automatizados
 
 ### Padrões Seguidos
 - Sem dependência de UI/React em domain/data
 - Tipos alinhados com payload do backend
 - Separação clara por camadas
-- Testes automatizados para o mapper
+- Testes automatizados para todas as camadas
+- Validação defensiva para campos opcionais (items, description)
+- Suporte a múltiplos formatos de API (camelCase/snake_case)
 
 ---
 ## 📖 Documentação Adicional
@@ -1005,7 +1104,7 @@ Loading (ActivityIndicator)
 - [x] Sistema de navegação com autenticação
 - [x] Tela de Login com validação (RHF + Zod)
 - [x] Tela de Register com senha forte
-- [x] Componentes reutilizáveis (Button, TextField, Card, etc)
+- [x] Componentes reutilizáveis (Button, TextField, Card, FAB, etc)
 - [x] Validação de formulários robusta
 - [x] Configuração de ambiente (.env)
 - [x] Tema claro/escuro automático
@@ -1024,11 +1123,22 @@ Loading (ActivityIndicator)
 - [x] **AccountScreen - Tela de perfil do usuário**
 - [x] **Loading + Erro tratados na AccountScreen**
 - [x] **Exibição de dados reais: nome, email, provider**
+- [x] **Dashboard de Listas - Visualização das listas do usuário**
+- [x] **CreateListUseCase - Caso de uso para criação de listas**
+- [x] **CreateListScreen - Tela modal para criar nova lista**
+- [x] **Validação de formulário (título: 3-100 chars, descrição: 0-255 chars)**
+- [x] **Mapper flexível - Suporta camelCase e snake_case da API**
+- [x] **Safe Area Insets - Layout responsivo para dispositivos modernos**
+- [x] **Testes unitários - 16 testes cobrindo use cases, mappers e repositories**
 
 ### **🚀 Próximas Features:**
 
 **Fase 2 - Listas de Compras:**
-- [ ] Criar lista de compras
+- [x] Criar lista de compras
+- [x] Listar listas do usuário
+- [ ] Visualizar detalhes de uma lista
+- [ ] Editar lista existente
+- [ ] Excluir lista
 - [ ] Adicionar/remover itens
 - [ ] Marcar itens como comprados
 - [ ] Compartilhar listas com outros usuários
@@ -1042,7 +1152,8 @@ Loading (ActivityIndicator)
 - [ ] Modo offline completo
 
 **Fase 4 - Qualidade:**
-- [ ] Testes unitários (Jest)
+- [x] Testes unitários (Jest) - Use cases, mappers, repositories
+- [ ] Testes de componentes (React Testing Library)
 - [ ] Testes E2E (Detox)
 - [ ] CI/CD pipeline
 - [ ] Monitoramento de erros (Sentry)
@@ -1056,4 +1167,4 @@ Loading (ActivityIndicator)
 
 ---
 
-**Clean Architecture + Design System + Autenticação Completa + Dados Reais = Base sólida para escalar! 🏗️✨**
+**Clean Architecture + Design System + Autenticação Completa + Gestão de Listas + Dados Reais = Base sólida para escalar! 🏗️✨**

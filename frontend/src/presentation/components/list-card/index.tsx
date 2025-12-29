@@ -1,5 +1,6 @@
 import React from 'react';
 import { StyleSheet, Text, TextStyle, TouchableOpacity, View, ViewStyle } from 'react-native';
+
 import { useAppTheme } from '../../hooks';
 
 export interface ListCardProps {
@@ -99,7 +100,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     padding: 20,
     marginVertical: 8,
-    marginHorizontal: 0,
+    marginHorizontal: 20,
     shadowColor: '#000',
     shadowOpacity: 0.06,
     shadowRadius: 8,

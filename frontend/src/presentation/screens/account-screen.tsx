@@ -8,6 +8,7 @@ import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-nat
 
 import { User } from '@/src/domain/entities';
 import { userService } from '@/src/infrastructure/services';
+
 import { Button } from '../components';
 import { useAuth } from '../contexts/auth-context';
 import { useAppTheme } from '../hooks';
@@ -87,10 +88,7 @@ export function AccountScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-      >
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         {/* Header */}
         <Text style={[styles.title, { color: theme.colors.text }]}>Minha Conta</Text>
 
@@ -122,9 +120,7 @@ export function AccountScreen() {
         >
           {/* Nome */}
           <View style={styles.fieldSection}>
-            <Text style={[styles.fieldLabel, { color: theme.colors.textSecondary }]}>
-              📛 NOME
-            </Text>
+            <Text style={[styles.fieldLabel, { color: theme.colors.textSecondary }]}>📛 NOME</Text>
             <Text style={[styles.fieldValue, { color: theme.colors.text }]}>{user.name}</Text>
           </View>
 
@@ -133,9 +129,7 @@ export function AccountScreen() {
 
           {/* Email */}
           <View style={styles.fieldSection}>
-            <Text style={[styles.fieldLabel, { color: theme.colors.textSecondary }]}>
-              📧 EMAIL
-            </Text>
+            <Text style={[styles.fieldLabel, { color: theme.colors.textSecondary }]}>📧 EMAIL</Text>
             <Text style={[styles.fieldValue, { color: theme.colors.text }]}>{user.email}</Text>
           </View>
 

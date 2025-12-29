@@ -2,7 +2,13 @@
 // Responsável por consumir GET /api/v1/lists usando o apiClient padrão
 
 import { apiClient } from '@/src/infrastructure/http/apiClient';
+
 import { ShoppingListDto } from '../models';
+
+export interface CreateListDto {
+  title: string;
+  description?: string;
+}
 
 export class ShoppingListRemoteDataSource {
   async getMyLists(): Promise<ShoppingListDto[]> {
@@ -18,6 +24,15 @@ export class ShoppingListRemoteDataSource {
         };
       }
       throw { message: 'Erro desconhecido ao buscar listas' };
+    }
+  }
+
+  async createList(data: CreateListDto): Promise<ShoppingListDto> {
+    try {
+      return await apiClient.post<ShoppingListDto>('/lists', data);
+    } catch (error) {
+      // Repasso erro já normalizado pelo apiClient
+      throw error;
     }
   }
 }

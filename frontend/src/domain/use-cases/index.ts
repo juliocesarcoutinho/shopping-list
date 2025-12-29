@@ -5,8 +5,11 @@
  * Orchestrate data flow between repositories and presentation layer.
  */
 
-import { ShoppingList, ShoppingItem } from '../entities';
-import { ShoppingListRepository, ShoppingItemRepository } from '../repositories';
+import { ShoppingItem, ShoppingList } from '../entities';
+import { ShoppingItemRepository, ShoppingListRepository } from '../repositories';
+
+export * from './create-list-use-case';
+export * from './get-my-lists-use-case';
 
 export class GetShoppingListsUseCase {
   constructor(private shoppingListRepository: ShoppingListRepository) {}

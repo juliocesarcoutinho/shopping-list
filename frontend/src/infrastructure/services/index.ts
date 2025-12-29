@@ -22,7 +22,6 @@ export * from './google-auth-service';
 export * from './user-service';
 export * from './user-service-instance';
 
-
 export class ApiRemoteDataSource implements RemoteDataSource {
   constructor(private httpClient: HttpClient) {}
 

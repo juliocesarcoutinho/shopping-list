@@ -16,15 +16,24 @@ function mapShoppingItemDtoToDomain(dto: ShoppingItemDto) {
 }
 
 export function mapShoppingListDtoToDomain(dto: ShoppingListDto): ShoppingList {
-  if (!dto.id || !dto.title || !dto.items || !dto.created_at || !dto.updated_at) {
+  // Suporto tanto camelCase quanto snake_case para compatibilidade
+  const createdAt = dto.createdAt || dto.created_at;
+  const updatedAt = dto.updatedAt || dto.updated_at;
+
+  // Valido apenas campos realmente obrigatórios
+  if (!dto.id || !dto.title || !createdAt || !updatedAt) {
+    console.error('[Mapper] DTO recebido:', JSON.stringify(dto, null, 2));
     throw new Error('Campos obrigatórios ausentes em ShoppingListDto');
   }
+
   return {
-    id: dto.id,
+    id: String(dto.id),
     title: dto.title,
-    items: dto.items.map(mapShoppingItemDtoToDomain),
-    createdAt: dto.created_at,
-    updatedAt: dto.updated_at,
+    description: dto.description,
+    // Items pode ser null/undefined, trato como array vazio
+    items: Array.isArray(dto.items) ? dto.items.map(mapShoppingItemDtoToDomain) : [],
+    createdAt,
+    updatedAt,
   };
 }
 
