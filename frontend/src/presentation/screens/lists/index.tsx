@@ -66,10 +66,12 @@ export const ListsDashboardScreen: React.FC = () => {
       <ListCard
         title={item.title}
         itemsCount={item.items.length}
-        pendingItemsCount={item.items.filter(i => !i.isCompleted).length}
         purchasedItemsCount={item.items.filter(i => i.isCompleted).length}
         onPress={() => {
           /* Navegar para detalhes ou ação */
+        }}
+        onMenuPress={() => {
+          /* Abrir menu de opções (editar/excluir) */
         }}
         testID={`list-card-${item.id}`}
       />
@@ -81,14 +83,7 @@ export const ListsDashboardScreen: React.FC = () => {
     return (
       <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
         {[1, 2, 3].map(i => (
-          <ListCard
-            key={i}
-            title=''
-            itemsCount={0}
-            pendingItemsCount={0}
-            purchasedItemsCount={0}
-            loading
-          />
+          <ListCard key={i} title='' itemsCount={0} purchasedItemsCount={0} loading />
         ))}
       </View>
     );
@@ -141,12 +136,15 @@ export const ListsDashboardScreen: React.FC = () => {
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
         <Text style={[styles.headerTitle, { color: theme.colors.text }]}>Minhas Listas</Text>
+        <Text style={[styles.headerSubtitle, { color: theme.colors.textSecondary }]}>
+          Organize suas compras
+        </Text>
       </View>
       <FlatList
         data={lists}
         keyExtractor={item => item.id}
         renderItem={renderItem}
-        contentContainerStyle={{ paddingTop: 8, paddingBottom: 100, gap: 16 }}
+        contentContainerStyle={{ paddingTop: 8, paddingBottom: 100, gap: 8 }}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -179,6 +177,11 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: '700',
     letterSpacing: 0.3,
+    marginBottom: 4,
+  },
+  headerSubtitle: {
+    fontSize: 16,
+    fontWeight: '400',
   },
   errorText: {
     fontSize: 16,
