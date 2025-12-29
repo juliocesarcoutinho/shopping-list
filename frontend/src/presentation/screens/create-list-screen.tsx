@@ -80,7 +80,7 @@ export function CreateListScreen() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: '#E8F5E9' }]}>
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps='handled'
