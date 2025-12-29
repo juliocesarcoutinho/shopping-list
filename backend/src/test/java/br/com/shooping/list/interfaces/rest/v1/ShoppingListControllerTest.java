@@ -241,10 +241,7 @@ class ShoppingListControllerTest {
         ShoppingList list = ShoppingList.create(testUser.getId(), "Título Original", "Descrição");
         list = shoppingListRepository.save(list);
 
-        RenameShoppingListRequest request = new RenameShoppingListRequest(
-                list.getId(),
-                "Novo Título"
-        );
+        RenameShoppingListRequest request = new RenameShoppingListRequest("Novo Título");
 
         // Act & Assert
         mockMvc.perform(patch("/api/v1/lists/" + list.getId())
@@ -265,10 +262,7 @@ class ShoppingListControllerTest {
     @DisplayName("PATCH /api/v1/lists/{id} - Deve retornar 404 quando lista não existe")
     void shouldReturn404WhenRenamingNonExistentList() throws Exception {
         // Arrange
-        RenameShoppingListRequest request = new RenameShoppingListRequest(
-                999L,
-                "Novo Título"
-        );
+        RenameShoppingListRequest request = new RenameShoppingListRequest("Novo Título");
 
         // Act & Assert
         mockMvc.perform(patch("/api/v1/lists/999")
@@ -288,10 +282,7 @@ class ShoppingListControllerTest {
         ShoppingList otherList = ShoppingList.create(anotherUser.getId(), "Lista de Outro", null);
         otherList = shoppingListRepository.save(otherList);
 
-        RenameShoppingListRequest request = new RenameShoppingListRequest(
-                otherList.getId(),
-                "Tentando Renomear"
-        );
+        RenameShoppingListRequest request = new RenameShoppingListRequest("Tentando Renomear");
 
         // Act & Assert
         mockMvc.perform(patch("/api/v1/lists/" + otherList.getId())
@@ -308,10 +299,7 @@ class ShoppingListControllerTest {
         ShoppingList list = ShoppingList.create(testUser.getId(), "Título Original", null);
         list = shoppingListRepository.save(list);
 
-        RenameShoppingListRequest request = new RenameShoppingListRequest(
-                list.getId(),
-                "" // Título vazio
-        );
+        RenameShoppingListRequest request = new RenameShoppingListRequest("");
 
         // Act & Assert
         mockMvc.perform(patch("/api/v1/lists/" + list.getId())
@@ -328,10 +316,7 @@ class ShoppingListControllerTest {
         ShoppingList list = ShoppingList.create(testUser.getId(), "Título", null);
         list = shoppingListRepository.save(list);
 
-        RenameShoppingListRequest request = new RenameShoppingListRequest(
-                list.getId(),
-                "Novo Título"
-        );
+        RenameShoppingListRequest request = new RenameShoppingListRequest("Novo Título");
 
         // Act & Assert
         mockMvc.perform(patch("/api/v1/lists/" + list.getId())

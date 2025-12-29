@@ -92,9 +92,7 @@ public class ShoppingListController {
         Long ownerId = extractOwnerId();
         log.debug("Renomeando lista: listId={}, ownerId={}, newTitle={}", id, ownerId, request.getNewTitle());
 
-        // Cria request completo com ID da URL
-        RenameShoppingListRequest fullRequest = new RenameShoppingListRequest(id, request.getNewTitle());
-        ShoppingListResponse response = renameShoppingListUseCase.execute(ownerId, fullRequest);
+        ShoppingListResponse response = renameShoppingListUseCase.execute(ownerId, id, request);
 
         log.info("Lista renomeada com sucesso: listId={}, ownerId={}", id, ownerId);
         return ResponseEntity.ok(response);

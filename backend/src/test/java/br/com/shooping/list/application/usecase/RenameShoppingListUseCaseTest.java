@@ -45,7 +45,7 @@ class RenameShoppingListUseCaseTest {
     void setUp() {
         ownerId = 1L;
         listId = 10L;
-        validRequest = new RenameShoppingListRequest(listId, "Novo Título da Lista");
+        validRequest = new RenameShoppingListRequest("Novo Título da Lista");
 
         existingList = ShoppingList.create(ownerId, "Título Antigo", "Descrição");
         setField(existingList, "id", listId);
@@ -59,7 +59,7 @@ class RenameShoppingListUseCaseTest {
         when(shoppingListRepository.save(any(ShoppingList.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         // Act
-        ShoppingListResponse response = renameShoppingListUseCase.execute(ownerId, validRequest);
+        ShoppingListResponse response = renameShoppingListUseCase.execute(ownerId, listId, validRequest);
 
         // Assert
         assertThat(response).isNotNull();
@@ -78,7 +78,7 @@ class RenameShoppingListUseCaseTest {
         when(shoppingListRepository.findById(listId)).thenReturn(Optional.empty());
 
         // Act & Assert
-        assertThatThrownBy(() -> renameShoppingListUseCase.execute(ownerId, validRequest))
+        assertThatThrownBy(() -> renameShoppingListUseCase.execute(ownerId, listId, validRequest))
                 .isInstanceOf(ShoppingListNotFoundException.class)
                 .hasMessageContaining("não encontrada");
 
@@ -94,7 +94,7 @@ class RenameShoppingListUseCaseTest {
         when(shoppingListRepository.findById(listId)).thenReturn(Optional.of(existingList));
 
         // Act & Assert
-        assertThatThrownBy(() -> renameShoppingListUseCase.execute(differentOwnerId, validRequest))
+        assertThatThrownBy(() -> renameShoppingListUseCase.execute(differentOwnerId, listId, validRequest))
                 .isInstanceOf(UnauthorizedShoppingListAccessException.class)
                 .hasMessageContaining("não tem permissão");
 
@@ -110,7 +110,7 @@ class RenameShoppingListUseCaseTest {
         when(shoppingListRepository.save(any(ShoppingList.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         // Act
-        renameShoppingListUseCase.execute(ownerId, validRequest);
+        renameShoppingListUseCase.execute(ownerId, listId, validRequest);
 
         // Assert - Verificar que o título foi atualizado via método do domínio
         assertThat(existingList.getTitle()).isEqualTo("Novo Título da Lista");

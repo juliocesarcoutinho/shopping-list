@@ -32,28 +32,29 @@ public class RenameShoppingListUseCase {
      * Renomeia uma lista de compras do usuário autenticado.
      *
      * @param ownerId ID do usuário proprietário (extraído do JWT)
-     * @param request dados com ID da lista e novo título
+     * @param listId ID da lista a ser renomeada (extraído da URL)
+     * @param request dados com novo título
      * @return lista atualizada
      * @throws ShoppingListNotFoundException se lista não existir
      * @throws UnauthorizedShoppingListAccessException se usuário não for o dono
      */
     @Transactional
-    public ShoppingListResponse execute(Long ownerId, RenameShoppingListRequest request) {
+    public ShoppingListResponse execute(Long ownerId, Long listId, RenameShoppingListRequest request) {
         log.info("Renomeando lista de compras: listId={}, ownerId={}, newTitle={}",
-                request.getListId(), ownerId, request.getNewTitle());
+                listId, ownerId, request.getNewTitle());
 
         // Buscar lista
-        ShoppingList list = shoppingListRepository.findById(request.getListId())
+        ShoppingList list = shoppingListRepository.findById(listId)
                 .orElseThrow(() -> {
-                    log.warn("Lista não encontrada: listId={}", request.getListId());
-                    return new ShoppingListNotFoundException(request.getListId());
+                    log.warn("Lista não encontrada: listId={}", listId);
+                    return new ShoppingListNotFoundException(listId);
                 });
 
         // Validar ownership
         if (!list.isOwnedBy(ownerId)) {
             log.warn("Tentativa de acesso não autorizado: listId={}, ownerId={}, realOwnerId={}",
-                    request.getListId(), ownerId, list.getOwnerId());
-            throw new UnauthorizedShoppingListAccessException(request.getListId());
+                    listId, ownerId, list.getOwnerId());
+            throw new UnauthorizedShoppingListAccessException(listId);
         }
 
         // Delegar atualização ao domínio (valida regras de título)
