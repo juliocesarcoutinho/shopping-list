@@ -25,7 +25,7 @@ class ListItemTest {
         ListItem item = ListItem.create(shoppingList, name, quantity, "kg");
 
         assertThat(item.getName()).isEqualTo(name);
-        assertThat(item.getQuantity()).isEqualTo(quantity);
+        assertThat(item.getQuantityAsValueObject()).isEqualTo(quantity);
         assertThat(item.getUnit()).isEqualTo("kg");
         assertThat(item.getStatus()).isEqualTo(ItemStatus.PENDING);
         assertThat(item.getShoppingList()).isEqualTo(shoppingList);
@@ -141,7 +141,7 @@ class ListItemTest {
         Quantity newQuantity = Quantity.of(5);
         item.updateQuantity(newQuantity);
 
-        assertThat(item.getQuantity()).isEqualTo(newQuantity);
+        assertThat(item.getQuantityAsValueObject()).isEqualTo(newQuantity);
     }
 
     @Test

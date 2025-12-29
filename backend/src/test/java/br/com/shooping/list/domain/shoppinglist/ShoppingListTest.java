@@ -301,7 +301,7 @@ class ShoppingListTest {
 
         list.updateItemQuantity(1L, Quantity.of(3));
 
-        assertThat(item.getQuantity()).isEqualTo(Quantity.of(3));
+        assertThat(item.getQuantityAsValueObject()).isEqualTo(Quantity.of(3));
     }
 
     @Test

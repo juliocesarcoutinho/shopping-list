@@ -307,6 +307,50 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * Trata erros de lista de compras não encontrada.
+     * <p>
+     * Retorna 404 Not Found.
+     */
+    @ExceptionHandler(ShoppingListNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleShoppingListNotFoundException(
+            ShoppingListNotFoundException ex,
+            HttpServletRequest request
+    ) {
+        log.warn("Shopping list not found on path: {}", request.getRequestURI());
+
+        var error = ErrorResponse.of(
+                HttpStatus.NOT_FOUND.value(),
+                "Not Found",
+                ex.getMessage(),
+                request.getRequestURI()
+        );
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+    }
+
+    /**
+     * Trata erros de acesso não autorizado a lista de compras.
+     * <p>
+     * Retorna 403 Forbidden.
+     */
+    @ExceptionHandler(UnauthorizedShoppingListAccessException.class)
+    public ResponseEntity<ErrorResponse> handleUnauthorizedShoppingListAccessException(
+            UnauthorizedShoppingListAccessException ex,
+            HttpServletRequest request
+    ) {
+        log.warn("Unauthorized shopping list access on path: {}", request.getRequestURI());
+
+        var error = ErrorResponse.of(
+                HttpStatus.FORBIDDEN.value(),
+                "Forbidden",
+                ex.getMessage(),
+                request.getRequestURI()
+        );
+
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
+    }
+
+    /**
      * Trata erros de validação de token do Google OAuth2.
      * <p>
      * Retorna 401 Unauthorized.

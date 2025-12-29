@@ -1,5 +1,7 @@
 package br.com.shooping.list.domain.shoppinglist;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.Embeddable;
 import lombok.Getter;
 
 import java.util.Objects;
@@ -12,6 +14,7 @@ import java.util.Objects;
  * - Nome deve ter entre 2 e 100 caracteres (após trim)
  * - Nome é normalizado para lowercase internamente para comparações
  */
+@Embeddable
 @Getter
 public final class ItemName {
 
@@ -19,15 +22,22 @@ public final class ItemName {
     private static final int MAX_LENGTH = 100;
 
     /**
-     * — - GETTER --
-     *  Retorna o valor original do nome (com capitalização preservada).
+     * Retorna o valor original do nome (com capitalização preservada).
      */
-    private final String value;
+    @Column(name = "name", nullable = false, length = 100)
+    private String value;
+
     /**
-     * — - GETTER --
-     *  Retorna o valor normalizado (lowercase, trimmed) para comparações.
+     * Retorna o valor normalizado (lowercase, trimmed) para comparações.
      */
-    private final String normalizedValue;
+    @Column(name = "normalized_name", nullable = false, length = 100)
+    private String normalizedValue;
+
+    /**
+     * Construtor protegido para JPA.
+     */
+    protected ItemName() {
+    }
 
     private ItemName(String value) {
         this.value = validate(value);

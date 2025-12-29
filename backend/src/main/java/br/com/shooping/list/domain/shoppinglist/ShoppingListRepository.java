@@ -46,14 +46,6 @@ public interface ShoppingListRepository {
     boolean existsByIdAndOwnerId(Long listId, Long ownerId);
 
     /**
-     * Remove uma lista de compras.
-     * Nota: A remoção deve ser em cascata, removendo também todos os itens.
-     *
-     * @param shoppingList lista a ser removida
-     */
-    void delete(ShoppingList shoppingList);
-
-    /**
      * Remove uma lista por ID.
      *
      * @param id ID da lista a ser removida

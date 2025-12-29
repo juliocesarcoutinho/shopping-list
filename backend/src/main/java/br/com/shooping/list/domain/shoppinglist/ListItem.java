@@ -1,8 +1,12 @@
 package br.com.shooping.list.domain.shoppinglist;
 
+import jakarta.persistence.*;
+import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Objects;
 
@@ -16,22 +20,39 @@ import java.util.Objects;
  * - Unidade de medida é opcional (pode ser null)
  * - Status padrão é PENDING (não comprado)
  * - Ao marcar como comprado, timestamp updatedAt é atualizado
- * Nota: Esta classe não tem anotações JPA propositalmente.
- * O modelo de domínio deve ser puro, sem dependências de frameworks.
- * As anotações JPA serão adicionadas na camada de infraestrutura se necessário,
- * ou podemos usar esta mesma classe como entidade JPA nas próximas iterações.
  */
+@Entity
+@Table(name = "tb_shopping_item")
 @Getter
 @Setter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class ListItem {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private final ShoppingList shoppingList;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "shopping_list_id", nullable = false)
+    private ShoppingList shoppingList;
+
+    @Embedded
     private ItemName name;
-    private Quantity quantity;
+
+    @Column(nullable = false, precision = 10, scale = 2)
+    private BigDecimal quantity;
+
+    @Column(length = 20)
     private String unit;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
     private ItemStatus status;
-    private final Instant createdAt;
+
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private Instant createdAt;
+
+    @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
     /**
@@ -42,7 +63,7 @@ public class ListItem {
         validateShoppingList(shoppingList);
         this.shoppingList = shoppingList;
         this.name = name;
-        this.quantity = quantity;
+        this.quantity = quantity.getValue();
         this.unit = validateUnit(unit);
         this.status = ItemStatus.PENDING;
         this.createdAt = Instant.now();
@@ -119,8 +140,15 @@ public class ListItem {
         if (quantity == null) {
             throw new IllegalArgumentException("Quantidade não pode ser nula");
         }
-        this.quantity = quantity;
+        this.quantity = quantity.getValue();
         this.updatedAt = Instant.now();
+    }
+
+    /**
+     * Retorna a quantidade como Value Object Quantity.
+     */
+    public Quantity getQuantityAsValueObject() {
+        return Quantity.of(this.quantity);
     }
 
     /**

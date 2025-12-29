@@ -1,6 +1,9 @@
 package br.com.shooping.list.domain.shoppinglist;
 
+import jakarta.persistence.*;
+import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.Instant;
@@ -25,11 +28,12 @@ import java.util.Objects;
  * - Marcar itens como comprados/não comprados
  * - Limpar itens comprados
  * - Contar itens por status
- * Nota: Esta classe não tem anotações JPA propositalmente.
- * O modelo de domínio deve ser puro, sem dependências de frameworks.
  */
+@Entity
+@Table(name = "tb_shopping_list")
 @Getter
 @Setter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class ShoppingList {
 
     private static final int MIN_TITLE_LENGTH = 3;
@@ -37,12 +41,26 @@ public class ShoppingList {
     private static final int MAX_DESCRIPTION_LENGTH = 255;
     private static final int MAX_ITEMS = 100;
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private final Long ownerId;
+
+    @Column(name = "owner_id", nullable = false)
+    private Long ownerId;
+
+    @Column(nullable = false, length = 100)
     private String title;
+
+    @Column(length = 255)
     private String description;
-    private final List<ListItem> items;
-    private final Instant createdAt;
+
+    @OneToMany(mappedBy = "shoppingList", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ListItem> items = new ArrayList<>();
+
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private Instant createdAt;
+
+    @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
     /**
