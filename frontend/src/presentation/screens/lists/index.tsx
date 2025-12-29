@@ -146,14 +146,12 @@ export const ListsDashboardScreen: React.FC = () => {
         title={item.title}
         itemsCount={item.items.length}
         purchasedItemsCount={item.items.filter(i => i.isCompleted).length}
-        onPress={() => {
-          /* Navegar para detalhes ou ação */
-        }}
+        onPress={() => router.push(`/lists/${item.id}` as never)}
         onMenuPress={() => handleDeleteList(item)}
         testID={`list-card-${item.id}`}
       />
     ),
-    [handleDeleteList]
+    [handleDeleteList, router]
   );
 
   if (loading) {

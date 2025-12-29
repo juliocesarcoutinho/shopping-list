@@ -511,10 +511,60 @@ const isCompleted = progress === 100;
   title="Compras da Semana"
   itemsCount={12}
   purchasedItemsCount={8}
-  onPress={() => navigateToDetails()}
+  onPress={() => router.push(`/lists/${listId}`)}
   onMenuPress={() => openMenu()}
 />
 ```
+
+### 📋 Visualizar Detalhes da Lista
+
+Navegação para tela de detalhes ao clicar em um card de lista.
+
+**Arquivos:**
+- `app/lists/[id].tsx` - Rota dinâmica com parâmetros tipados
+- `src/presentation/screens/list-details-screen.tsx` - Tela de detalhes (placeholder)
+
+**Rota:**
+- Padrão: `/lists/[id]` (dinâmica)
+- Parâmetros: `useLocalSearchParams<{ id: string }>()`
+- Navegação: `router.push(\`/lists/${item.id}\`)`
+
+**Design da Tela (Placeholder):**
+
+✅ **Header com Safe Area:**
+- Botão back (←) funcional
+- Título centralizado da lista
+- Contador: "X de Y itens" (comprados/total)
+- Menu (⋮) para ações futuras
+
+✅ **Card de Total Estimado:**
+- Background verde claro (primary + 15% opacity)
+- "Total estimado: R$ XX,XX"
+- Border sutil com cor primária
+
+✅ **Lista de Itens:**
+- Checkbox circular (verde quando marcado)
+- Nome do item (strikethrough quando completo)
+- Quantidade: # 2x, # 1x
+- Preço unitário: R$ X.XX (em verde)
+- Total calculado: (total: R$ XX.XX)
+- Cards brancos com border sutil
+- Gap de 12px entre itens
+
+✅ **Placeholder "Em Construção":**
+- Ícone e mensagem informando que é visualização mockada
+- Explica que funcionalidade completa vem no próximo épico
+
+**Dados Mockados:**
+8 itens de exemplo com quantidades, preços e status variados para demonstração do layout.
+
+**Funcionalidade Atual:**
+- ✅ Navegação completa (ida e volta)
+- ✅ Layout responsivo com Safe Area
+- ✅ Design profissional seguindo Fresh Market
+- ✅ Parâmetros tipados (listId)
+- ⏳ Gerenciamento de itens (próximo épico)
+- ⏳ Integração com API real (próximo épico)
 
 ### Fluxo inicial
 - Ao logar, o usuário é direcionado para a tab Home, que agora exibe o dashboard de listas (ListsDashboardScreen)
@@ -1314,6 +1364,9 @@ Loading (ActivityIndicator)
 - [x] **Toast - Feedback não bloqueante com animações (success/error)**
 - [x] **DeleteShoppingListUseCase - Exclusão de listas com validações**
 - [x] **Fluxo UX profissional para exclusão (modal + toast)**
+- [x] **Navegação para detalhes da lista - Rota dinâmica /lists/[id]**
+- [x] **ListDetailsScreen - Tela de detalhes (placeholder) com design profissional**
+- [x] **Parâmetros tipados - useLocalSearchParams com TypeScript**
 
 ### **🚀 Próximas Features:**
 
@@ -1321,7 +1374,7 @@ Loading (ActivityIndicator)
 - [x] Criar lista de compras
 - [x] Listar listas do usuário
 - [x] Excluir lista (com modal de confirmação customizado + toast)
-- [ ] Visualizar detalhes de uma lista
+- [x] Visualizar detalhes de uma lista (navegação + placeholder)
 - [ ] Editar lista existente
 - [ ] Adicionar/remover itens
 - [ ] Marcar itens como comprados
