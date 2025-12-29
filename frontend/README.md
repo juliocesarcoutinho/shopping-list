@@ -277,6 +277,160 @@ const { control, handleSubmit } = useForm({
 - **TypeScript** - Type checking
 - **dotenv** - Gerenciamento de variáveis de ambiente
 
+
+
+## 🛒 Listas de Compras - Acesso a Dados
+
+O acesso às listas do usuário autenticado segue Clean Architecture, desacoplado de UI e com tratamento de erros padronizado.
+
+### Data Source Remoto
+
+Arquivo: `src/data/data-sources/shopping-list-remote-data-source.ts`
+
+Responsável por consumir GET `/api/v1/lists` usando o `apiClient` padrão:
+
+```typescript
+export class ShoppingListRemoteDataSource {
+  async getMyLists(): Promise<ShoppingListDto[]> {
+    try {
+      return await apiClient.get<ShoppingListDto[]>("/lists");
+    } catch (error) {
+      // Normalização de erro conforme padrão do projeto
+      if (error && typeof error === 'object' && 'response' in error) {
+        const err = error as any;
+        throw {
+          message: err.response?.data?.message || 'Erro ao buscar listas',
+          status: err.response?.status,
+        };
+      }
+      throw { message: 'Erro desconhecido ao buscar listas' };
+    }
+  }
+}
+```
+
+### Repository
+
+Arquivo: `src/data/repositories/shopping-list-repository.ts`
+
+Implementa o contrato de domínio, retorna entidades já mapeadas:
+
+```typescript
+export class ShoppingListRepositoryImpl {
+  constructor(private readonly remote: ShoppingListRemoteDataSource) {}
+
+  async getMyLists(): Promise<ShoppingList[]> {
+    try {
+      const dtos = await this.remote.getMyLists();
+      return dtos.map(mapShoppingListDtoToDomain);
+    } catch (error) {
+      throw error; // Erro já normalizado
+    }
+  }
+}
+```
+
+### Tratamento de Erros
+- Todos os erros são normalizados (mensagem + status) conforme padrão do `apiClient`.
+- Não há lógica de UI ou dependência de presentation.
+
+
+### Use Case: Buscar Listas do Usuário
+
+Arquivo: `src/domain/use-cases/get-my-lists-use-case.ts`
+
+Orquestra a busca das listas do usuário, aplicando regras de negócio:
+
+- Retorna listas ordenadas por `updatedAt` (mais recentes primeiro)
+- Se não houver listas, retorna array vazio
+- Em erro, propaga erro normalizado (status/message)
+
+```typescript
+export class GetMyListsUseCase {
+  constructor(private readonly repository: ShoppingListRepository) {}
+
+  async execute(): Promise<ShoppingList[]> {
+    const lists = await this.repository.getMyLists();
+    return (lists ?? []).slice().sort((a, b) => {
+      return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+    });
+  }
+}
+```
+
+#### Testes Unitários
+- Ordenação correta por `updatedAt desc`
+- Retorno vazio se não houver listas
+- Propagação de erro do repository
+
+---
+
+---
+
+O projeto implementa modelos, entidades e mappers para listas de compras seguindo Clean Architecture e alinhamento com o backend.
+
+### Entidade de Domínio
+
+Arquivo: `src/domain/entities/index.ts`
+
+```typescript
+export interface ShoppingList {
+  id: string;
+  title: string;
+  items: ShoppingItem[];
+  createdAt: string;
+  updatedAt: string;
+}
+```
+
+### DTO/Model (API)
+
+Arquivo: `src/data/models/index.ts`
+
+```typescript
+export interface ShoppingListDto {
+  id: string;
+  title: string;
+  items: ShoppingItemDto[];
+  created_at: string;
+  updated_at: string;
+}
+```
+
+### Mapper DTO → Domain
+
+Arquivo: `src/data/mappers/shopping-list-mapper.ts`
+
+Responsável por converter o DTO do backend para a entidade de domínio, validando campos obrigatórios:
+
+```typescript
+export function mapShoppingListDtoToDomain(dto: ShoppingListDto): ShoppingList {
+  if (!dto.id || !dto.title || !dto.items || !dto.created_at || !dto.updated_at) {
+    throw new Error('Campos obrigatórios ausentes em ShoppingListDto');
+  }
+  return {
+    id: dto.id,
+    title: dto.title,
+    items: dto.items.map(/* ... */),
+    createdAt: dto.created_at,
+    updatedAt: dto.updated_at,
+  };
+}
+```
+
+### Testes Unitários
+
+Arquivo: `src/data/mappers/__tests__/shopping-list-mapper.test.ts`
+
+Cobre casos de mapeamento válido e ausência de campos obrigatórios.
+
+### Padrões Seguidos
+- Sem dependência de UI/React em domain/data
+- Tipos alinhados com payload do backend
+- Separação clara por camadas
+- Testes automatizados para o mapper
+
+---
 ## 📖 Documentação Adicional
 
 - `CLEAN_ARCHITECTURE.md` - Guia de arquitetura e convenções

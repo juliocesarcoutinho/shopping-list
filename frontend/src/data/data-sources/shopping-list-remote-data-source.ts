@@ -1,0 +1,23 @@
+// Data source remoto para listas de compras
+// Responsável por consumir GET /api/v1/lists usando o apiClient padrão
+
+import { apiClient } from '@/src/infrastructure/http/apiClient';
+import { ShoppingListDto } from '../models';
+
+export class ShoppingListRemoteDataSource {
+  async getMyLists(): Promise<ShoppingListDto[]> {
+    try {
+      return await apiClient.get<ShoppingListDto[]>('/lists');
+    } catch (error) {
+      // Normalização de erro conforme padrão do projeto
+      if (error && typeof error === 'object' && 'response' in error) {
+        const err = error as any;
+        throw {
+          message: err.response?.data?.message || 'Erro ao buscar listas',
+          status: err.response?.status,
+        };
+      }
+      throw { message: 'Erro desconhecido ao buscar listas' };
+    }
+  }
+}

@@ -1,5 +1,5 @@
-import { HomeScreen } from '@/src/presentation/screens/home-screen';
+import ListsDashboardScreen from '@/src/presentation/screens/lists';
 
 export default function TabOneScreen() {
-  return <HomeScreen />;
+  return <ListsDashboardScreen />;
 }
