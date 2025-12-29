@@ -89,11 +89,8 @@ export function AccountScreen() {
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        {/* Header */}
-        <Text style={[styles.title, { color: theme.colors.text }]}>Minha Conta</Text>
-
-        {/* Avatar Section */}
-        <View style={styles.avatarSection}>
+        {/* Hero Section - Avatar + Nome */}
+        <View style={styles.heroSection}>
           <View
             style={[
               styles.avatar,
@@ -103,107 +100,71 @@ export function AccountScreen() {
               },
             ]}
           >
-            <Text style={styles.avatarText}>👤</Text>
+            <Text style={styles.avatarText}>
+              {user.name
+                .split(' ')
+                .map(n => n[0])
+                .slice(0, 2)
+                .join('')
+                .toUpperCase()}
+            </Text>
           </View>
           <Text style={[styles.userName, { color: theme.colors.text }]}>{user.name}</Text>
         </View>
 
-        {/* User Data Card */}
-        <View
-          style={[
-            styles.userCard,
-            {
-              backgroundColor: theme.colors.surface,
-              borderColor: theme.colors.border,
-            },
-          ]}
-        >
-          {/* Nome */}
-          <View style={styles.fieldSection}>
-            <Text style={[styles.fieldLabel, { color: theme.colors.textSecondary }]}>📛 NOME</Text>
-            <Text style={[styles.fieldValue, { color: theme.colors.text }]}>{user.name}</Text>
-          </View>
-
-          {/* Divider */}
-          <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
-
+        {/* Informações do Perfil - Layout Clean */}
+        <View style={styles.infoSection}>
           {/* Email */}
-          <View style={styles.fieldSection}>
-            <Text style={[styles.fieldLabel, { color: theme.colors.textSecondary }]}>📧 EMAIL</Text>
-            <Text style={[styles.fieldValue, { color: theme.colors.text }]}>{user.email}</Text>
+          <View style={styles.infoRow}>
+            <Text style={[styles.infoLabel, { color: theme.colors.textSecondary }]}>Email</Text>
+            <Text style={[styles.infoValue, { color: theme.colors.text }]}>{user.email}</Text>
           </View>
 
-          {/* Divider */}
-          <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
-
-          {/* Método de Autenticação */}
-          <View style={styles.fieldSection}>
-            <Text style={[styles.fieldLabel, { color: theme.colors.textSecondary }]}>
-              🔐 AUTENTICAÇÃO
+          {/* Autenticação */}
+          <View style={styles.infoRow}>
+            <Text style={[styles.infoLabel, { color: theme.colors.textSecondary }]}>
+              Autenticação
             </Text>
-            <View
-              style={[
-                styles.badge,
-                {
-                  backgroundColor: theme.colors.primary + '15',
-                  borderColor: theme.colors.primary,
-                },
-              ]}
-            >
-              <Text style={styles.badgeIcon}>{getProviderIcon(user.provider)}</Text>
-              <Text style={[styles.badgeText, { color: theme.colors.primary }]}>
-                {getProviderLabel(user.provider)}
-              </Text>
-            </View>
+            <Text style={[styles.infoValue, { color: theme.colors.text }]}>
+              {getProviderLabel(user.provider)}
+            </Text>
           </View>
-
-          {/* Divider */}
-          <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
 
           {/* Status */}
           {user.status && (
-            <>
-              <View style={styles.fieldSection}>
-                <Text style={[styles.fieldLabel, { color: theme.colors.textSecondary }]}>
-                  ✓ STATUS
-                </Text>
-                <View
-                  style={[
-                    styles.badge,
-                    {
-                      backgroundColor: theme.colors.primary + '15',
-                      borderColor: theme.colors.primary,
-                    },
-                  ]}
-                >
-                  <Text style={styles.badgeIcon}>✓</Text>
-                  <Text style={[styles.badgeText, { color: theme.colors.primary }]}>
-                    {user.status === 'ACTIVE' ? 'Ativo' : 'Inativo'}
-                  </Text>
-                </View>
-              </View>
-
-              {/* Divider */}
-              <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
-            </>
+            <View style={styles.infoRow}>
+              <Text style={[styles.infoLabel, { color: theme.colors.textSecondary }]}>Status</Text>
+              <Text style={[styles.infoValue, { color: theme.colors.success }]}>
+                {user.status === 'ACTIVE' ? 'Ativo' : 'Inativo'}
+              </Text>
+            </View>
           )}
 
-          {/* Membro Desde */}
+          {/* Membro desde */}
           {user.createdAt && (
-            <View style={styles.fieldSection}>
-              <Text style={[styles.fieldLabel, { color: theme.colors.textSecondary }]}>
-                📅 MEMBRO DESDE
+            <View style={styles.infoRow}>
+              <Text style={[styles.infoLabel, { color: theme.colors.textSecondary }]}>
+                Membro desde
               </Text>
-              <Text style={[styles.fieldValue, { color: theme.colors.text }]}>
-                {new Date(user.createdAt).toLocaleDateString('pt-BR')}
+              <Text style={[styles.infoValue, { color: theme.colors.text }]}>
+                {new Date(user.createdAt).toLocaleDateString('pt-BR', {
+                  day: 'numeric',
+                  month: 'long',
+                  year: 'numeric',
+                })}
               </Text>
             </View>
           )}
         </View>
 
-        {/* Actions */}
+        {/* Actions - Botões mais discretos */}
         <View style={styles.actions}>
-          <Button title='Recarregar Dados' onPress={loadUserData} variant='primary' size='large' />
+          <Button
+            title='Recarregar Dados'
+            onPress={loadUserData}
+            variant='secondary'
+            size='medium'
+          />
           <Button
             title='Sair'
             onPress={async () => {
@@ -214,7 +175,7 @@ export function AccountScreen() {
               }
             }}
             variant='secondary'
-            size='large'
+            size='medium'
           />
         </View>
       </ScrollView>
@@ -227,92 +188,55 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: 16,
-    paddingTop: 56,
-    paddingBottom: 32,
+    paddingHorizontal: 24,
+    paddingTop: 72,
+    paddingBottom: 48,
   },
   centerContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  title: {
-    fontSize: 32,
-    fontWeight: '700',
-    marginBottom: 32,
-    textAlign: 'center',
-    letterSpacing: 0.5,
-  },
-  avatarSection: {
+  heroSection: {
     alignItems: 'center',
-    marginBottom: 32,
+    marginBottom: 48,
   },
   avatar: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    width: 96,
+    height: 96,
+    borderRadius: 48,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 3,
     marginBottom: 16,
   },
   avatarText: {
-    fontSize: 48,
+    fontSize: 36,
+    fontWeight: '700',
+    color: '#2ECC71',
   },
   userName: {
-    fontSize: 18,
+    fontSize: 24,
     fontWeight: '600',
     textAlign: 'center',
-    letterSpacing: 0.3,
+    letterSpacing: 0.2,
   },
-  userCard: {
-    borderRadius: 16,
-    paddingVertical: 24,
-    paddingHorizontal: 20,
-    marginBottom: 28,
-    borderWidth: 1,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 4,
+  infoSection: {
+    gap: 24,
+    marginBottom: 48,
   },
-  fieldSection: {
-    marginVertical: 12,
-  },
-  fieldLabel: {
-    fontSize: 11,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-    marginBottom: 10,
-  },
-  fieldValue: {
-    fontSize: 16,
-    fontWeight: '500',
-    lineHeight: 22,
-  },
-  divider: {
-    height: 1,
-    marginVertical: 16,
-  },
-  badge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-    borderWidth: 1.5,
-    alignSelf: 'flex-start',
-    marginTop: 8,
+  infoRow: {
     gap: 6,
   },
-  badgeIcon: {
-    fontSize: 14,
-  },
-  badgeText: {
+  infoLabel: {
     fontSize: 13,
-    fontWeight: '600',
+    fontWeight: '500',
     letterSpacing: 0.2,
+  },
+  infoValue: {
+    fontSize: 17,
+    fontWeight: '500',
+    lineHeight: 24,
   },
   errorCard: {
     borderRadius: 16,
