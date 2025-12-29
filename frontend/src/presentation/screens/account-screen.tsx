@@ -39,7 +39,7 @@ export function AccountScreen() {
     }
   };
 
-  const getProviderIcon = (provider: 'LOCAL' | 'GOOGLE'): string => {
+  const _getProviderIcon = (provider: 'LOCAL' | 'GOOGLE'): string => {
     return provider === 'GOOGLE' ? '🔐' : '📧';
   };
 

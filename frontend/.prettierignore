@@ -42,3 +42,4 @@ package-lock.json
 app.json
 expo-env.d.ts
 
+docs/**/*.txt

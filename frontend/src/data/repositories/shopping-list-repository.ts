@@ -46,8 +46,12 @@ export class ShoppingListRepositoryImpl {
     throw new Error('Not implemented');
   }
 
-  async delete(_id: string): Promise<void> {
-    // Implementar quando backend tiver endpoint
-    throw new Error('Not implemented');
+  async delete(id: string): Promise<void> {
+    try {
+      await this.remote.deleteList(id);
+    } catch (error) {
+      // Repassa erro já normalizado
+      throw error;
+    }
   }
 }

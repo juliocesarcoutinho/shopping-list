@@ -1,25 +1,26 @@
+import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import { FlatList, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { useFocusEffect, useRouter } from 'expo-router';
-
 import { ShoppingListRemoteDataSource } from '@/src/data/data-sources/shopping-list-remote-data-source';
 import { ShoppingListRepositoryImpl } from '@/src/data/repositories/shopping-list-repository';
 import { ShoppingList } from '@/src/domain/entities';
+import { DeleteShoppingListUseCase } from '@/src/domain/use-cases/delete-shopping-list-use-case';
 import { GetMyListsUseCase } from '@/src/domain/use-cases/get-my-lists-use-case';
 
-import { Button } from '../../components';
+import { Button, ConfirmModal, Toast } from '../../components';
 import FloatingActionButton from '../../components/fab';
 import ListCard from '../../components/list-card';
 import EmptyListSvg from '../../components/list-card/EmptyListSvg';
 import { useAuth } from '../../contexts/auth-context';
 import { useAppTheme } from '../../hooks';
 
-// Instancio use case com repository real
+// Instancio use cases com repository real
 const remoteDataSource = new ShoppingListRemoteDataSource();
 const repository = new ShoppingListRepositoryImpl(remoteDataSource);
-const useCase = new GetMyListsUseCase(repository);
+const getMyListsUseCase = new GetMyListsUseCase(repository);
+const deleteListUseCase = new DeleteShoppingListUseCase(repository);
 
 export const ListsDashboardScreen: React.FC = () => {
   const theme = useAppTheme();
@@ -30,6 +31,14 @@ export const ListsDashboardScreen: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Estados para modal de confirmação e toast
+  const [confirmModalVisible, setConfirmModalVisible] = useState(false);
+  const [selectedList, setSelectedList] = useState<ShoppingList | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [toastVisible, setToastVisible] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastType, setToastType] = useState<'success' | 'error'>('success');
 
   // Função para obter iniciais do usuário
   const getUserInitials = () => {
@@ -45,7 +54,7 @@ export const ListsDashboardScreen: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      const data = await useCase.execute();
+      const data = await getMyListsUseCase.execute();
       setLists(data);
     } catch (err) {
       const error = err as Error;
@@ -59,7 +68,7 @@ export const ListsDashboardScreen: React.FC = () => {
     setRefreshing(true);
     setError(null);
     try {
-      const data = await useCase.execute();
+      const data = await getMyListsUseCase.execute();
       setLists(data);
     } catch (err) {
       const error = err as Error;
@@ -77,6 +86,60 @@ export const ListsDashboardScreen: React.FC = () => {
     }, [fetchLists])
   );
 
+  // Função para abrir modal de confirmação de exclusão
+  const handleDeleteList = useCallback((list: ShoppingList) => {
+    setSelectedList(list);
+    setConfirmModalVisible(true);
+  }, []);
+
+  // Função para confirmar exclusão
+  const confirmDelete = useCallback(async () => {
+    if (!selectedList) return;
+
+    setDeleting(true);
+    try {
+      await deleteListUseCase.execute(selectedList.id);
+      // Remove da UI imediatamente
+      setLists(prev => prev.filter(l => l.id !== selectedList.id));
+      // Fecha modal
+      setConfirmModalVisible(false);
+      setSelectedList(null);
+      // Exibe toast de sucesso
+      setToastMessage('Lista excluída com sucesso');
+      setToastType('success');
+      setToastVisible(true);
+    } catch (err: any) {
+      // Tratamento de erros específicos
+      setConfirmModalVisible(false);
+      setSelectedList(null);
+
+      if (err?.status === 404) {
+        // Já foi deletada, remove da UI
+        setLists(prev => prev.filter(l => l.id === selectedList.id));
+        setToastMessage('Lista não encontrada (já foi removida)');
+        setToastType('error');
+        setToastVisible(true);
+      } else if (err?.status === 403) {
+        setToastMessage('Você não tem permissão para deletar esta lista');
+        setToastType('error');
+        setToastVisible(true);
+      } else {
+        const message = err?.message || 'Erro ao deletar lista';
+        setToastMessage(message);
+        setToastType('error');
+        setToastVisible(true);
+      }
+    } finally {
+      setDeleting(false);
+    }
+  }, [selectedList]);
+
+  // Função para cancelar exclusão
+  const cancelDelete = useCallback(() => {
+    setConfirmModalVisible(false);
+    setSelectedList(null);
+  }, []);
+
   const renderItem = useCallback(
     ({ item }: { item: ShoppingList }) => (
       <ListCard
@@ -86,13 +149,11 @@ export const ListsDashboardScreen: React.FC = () => {
         onPress={() => {
           /* Navegar para detalhes ou ação */
         }}
-        onMenuPress={() => {
-          /* Abrir menu de opções (editar/excluir) */
-        }}
+        onMenuPress={() => handleDeleteList(item)}
         testID={`list-card-${item.id}`}
       />
     ),
-    []
+    [handleDeleteList]
   );
 
   if (loading) {
@@ -190,6 +251,29 @@ export const ListsDashboardScreen: React.FC = () => {
         onPress={() => router.push('/create-list' as never)}
         testID='fab-create-list'
         accessibilityLabel='Criar nova lista'
+      />
+
+      {/* Modal de Confirmação */}
+      <ConfirmModal
+        visible={confirmModalVisible}
+        title='Excluir lista?'
+        message={`Tem certeza que deseja excluir a lista "${selectedList?.title}"? Essa ação não pode ser desfeita.`}
+        confirmText='Excluir lista'
+        cancelText='Cancelar'
+        confirmVariant='destructive'
+        onConfirm={confirmDelete}
+        onCancel={cancelDelete}
+        loading={deleting}
+      />
+
+      {/* Toast de Feedback */}
+      <Toast
+        visible={toastVisible}
+        message={toastMessage}
+        type={toastType}
+        duration={3000}
+        onHide={() => setToastVisible(false)}
+        position='bottom'
       />
     </View>
   );

@@ -17,6 +17,10 @@ import {
 
 import { useAppTheme } from '../hooks';
 
+// Export custom components
+export { ConfirmModal } from './confirm-modal';
+export { Toast } from './toast';
+
 // Button Component (melhorado com loading state)
 export interface ButtonProps {
   title: string;

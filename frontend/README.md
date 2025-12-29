@@ -229,6 +229,31 @@ Sistema completo de componentes com estados, variações e validações:
   - Texto opcional
   - Cor customizável
 
+- **ConfirmModal** 
+  - Modal de confirmação customizado (substitui Alert nativo)
+  - Design consistente com o app (Fresh Market)
+  - Overlay semi-transparente com animação fade
+  - 2 botões: cancelar (outline) e confirmar (primary/destructive)
+  - Loading state no botão de confirmação
+  - Fecha ao tocar fora do modal
+  - Variantes: `primary` (verde) e `destructive` (vermelho)
+
+- **Toast** 
+  - Feedback não bloqueante com animações suaves
+  - Posicionamento configurável (topo/rodapé)
+  - Auto-desaparece após duração configurável (padrão: 3s)
+  - 3 tipos: `success` (verde), `error` (vermelho), `info` (azul)
+  - Não bloqueia navegação ou interação
+  - Design alinhado ao Fresh Market
+
+**Exportação centralizada:**
+```tsx
+// Importação de componentes
+import { Button, TextField, ConfirmModal, Toast } from '@/src/presentation/components';
+```
+
+Todos os componentes seguem o Design System Fresh Market e são totalmente tipados com TypeScript.
+
 ### **Validação de Formulários:**
 
 **Stack Tecnológico:**
@@ -374,6 +399,72 @@ Sistema completo de criação de listas seguindo Clean Architecture com design m
 - Tipo: Modal (`presentation: 'modal'`)
 - Header: "Nova Lista" (padrão do sistema)
 
+### 🗑️ Excluir Lista
+
+Sistema completo de exclusão de listas com UX profissional e design consistente.
+
+**Arquivos:**
+- `src/presentation/screens/lists/index.tsx` - Integração na dashboard
+- `src/presentation/components/confirm-modal/index.tsx` - Modal de confirmação customizado
+- `src/presentation/components/toast/index.tsx` - Feedback não bloqueante
+- `src/domain/use-cases/delete-shopping-list-use-case.ts` - Lógica de negócio
+
+**Fluxo de Exclusão:**
+1. Usuário clica no menu "⋮" do ListCard
+2. **ConfirmModal customizado** abre com:
+   - Título: "Excluir lista?"
+   - Mensagem: "Tem certeza que deseja excluir a lista \"{nome}\"? Essa ação não pode ser desfeita."
+   - Botão secundário: "Cancelar" (outline)
+   - Botão destrutivo: "Excluir lista" (vermelho)
+3. Ao confirmar:
+   - Loading no botão durante exclusão
+   - Chama `DELETE /api/v1/lists/{id}`
+   - Modal fecha
+   - Lista é removida da UI imediatamente
+   - **Toast verde** aparece: "Lista excluída com sucesso"
+   - Toast desaparece automaticamente após 3 segundos
+
+**Tratamento de Erros:**
+- **404:** Remove da UI + Toast "Lista não encontrada (já foi removida)"
+- **403:** Toast "Você não tem permissão para deletar esta lista"
+- **401:** Fluxo de auth/refresh automático do app
+- **Outros:** Toast com mensagem do backend
+
+**Componentes Criados:**
+
+**ConfirmModal** - Modal de confirmação customizado
+- Design consistente com o app (cores, tipografia, bordas arredondadas)
+- Overlay semi-transparente com animação fade
+- Fecha ao tocar fora do modal
+- Loading state no botão de confirmação
+- Suporta variantes: `destructive` (vermelho) e `primary` (verde)
+
+**Toast** - Feedback não bloqueante
+- Animação suave de entrada/saída
+- Posicionamento configurável (topo/rodapé)
+- Auto-desaparece após duração configurável (padrão: 3s)
+- Tipos: `success` (verde), `error` (vermelho), `info`
+- Não bloqueia navegação ou interação
+- Design alinhado ao Fresh Market
+
+**Use Case:** `DeleteShoppingListUseCase`
+- Validação de ID (obrigatório, não vazio)
+- Trim automático
+- Delega para repository pattern
+- Propaga erros normalizados do backend
+
+**Testes:**
+- 11 testes unitários no DeleteShoppingListUseCase
+- Cobertura: validações, sucesso, 404, 403, 401, 500
+- Todos os testes passando ✅
+
+**UX Profissional:**
+- ✅ Confirmação clara para ações destrutivas
+- ✅ Feedback não bloqueante (Toast)
+- ✅ Consistência visual total
+- ✅ Experiência fluida sem interrupções
+- ✅ Sem Alert nativo do sistema
+
 ### ListCard - Design Moderno com Progresso Visual
 
 Arquivo: `src/presentation/components/list-card/index.tsx`
@@ -442,6 +533,7 @@ Responsável por consumir as APIs de listas usando o `apiClient` padrão:
 **Endpoints:**
 - `GET /api/v1/lists` - Buscar listas do usuário
 - `POST /api/v1/lists` - Criar nova lista
+- `DELETE /api/v1/lists/{id}` - Deletar lista por ID
 
 ```typescript
 export class ShoppingListRemoteDataSource {
@@ -457,6 +549,14 @@ export class ShoppingListRemoteDataSource {
   async createList(data: CreateListDto): Promise<ShoppingListDto> {
     try {
       return await apiClient.post<ShoppingListDto>('/lists', data);
+    } catch (error) {
+      throw error; // Erro já normalizado pelo apiClient
+    }
+  }
+
+  async deleteList(listId: string): Promise<void> {
+    try {
+      await apiClient.delete(`/lists/${listId}`);
     } catch (error) {
       throw error; // Erro já normalizado pelo apiClient
     }
@@ -495,7 +595,15 @@ export class ShoppingListRepositoryImpl {
     }
   }
 
-  // Métodos update, delete, getById implementados com throw Error('Not implemented')
+  async delete(id: string): Promise<void> {
+    try {
+      await this.remote.deleteList(id);
+    } catch (error) {
+      throw error; // Erro já normalizado
+    }
+  }
+
+  // Métodos update, getById implementados com throw Error('Not implemented')
 }
 ```
 
@@ -1201,16 +1309,20 @@ Loading (ActivityIndicator)
 - [x] **Validação de formulário (título: 3-100 chars, descrição: 0-255 chars)**
 - [x] **Mapper flexível - Suporta camelCase e snake_case da API**
 - [x] **Safe Area Insets - Layout responsivo para dispositivos modernos**
-- [x] **Testes unitários - 16 testes cobrindo use cases, mappers e repositories**
+- [x] **Testes unitários - 25 testes cobrindo use cases, mappers e repositories**
+- [x] **ConfirmModal - Modal de confirmação customizado (substitui Alert nativo)**
+- [x] **Toast - Feedback não bloqueante com animações (success/error)**
+- [x] **DeleteShoppingListUseCase - Exclusão de listas com validações**
+- [x] **Fluxo UX profissional para exclusão (modal + toast)**
 
 ### **🚀 Próximas Features:**
 
 **Fase 2 - Listas de Compras:**
 - [x] Criar lista de compras
 - [x] Listar listas do usuário
+- [x] Excluir lista (com modal de confirmação customizado + toast)
 - [ ] Visualizar detalhes de uma lista
 - [ ] Editar lista existente
-- [ ] Excluir lista
 - [ ] Adicionar/remover itens
 - [ ] Marcar itens como comprados
 - [ ] Compartilhar listas com outros usuários
