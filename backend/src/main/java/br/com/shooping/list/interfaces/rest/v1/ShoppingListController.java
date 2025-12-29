@@ -1,13 +1,13 @@
 package br.com.shooping.list.interfaces.rest.v1;
 
 import br.com.shooping.list.application.dto.shoppinglist.CreateShoppingListRequest;
-import br.com.shooping.list.application.dto.shoppinglist.RenameShoppingListRequest;
 import br.com.shooping.list.application.dto.shoppinglist.ShoppingListResponse;
 import br.com.shooping.list.application.dto.shoppinglist.ShoppingListSummaryResponse;
+import br.com.shooping.list.application.dto.shoppinglist.UpdateShoppingListRequest;
 import br.com.shooping.list.application.usecase.CreateShoppingListUseCase;
 import br.com.shooping.list.application.usecase.DeleteShoppingListUseCase;
 import br.com.shooping.list.application.usecase.GetMyShoppingListsUseCase;
-import br.com.shooping.list.application.usecase.RenameShoppingListUseCase;
+import br.com.shooping.list.application.usecase.UpdateShoppingListUseCase;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,7 +34,7 @@ public class ShoppingListController {
 
     private final CreateShoppingListUseCase createShoppingListUseCase;
     private final GetMyShoppingListsUseCase getMyShoppingListsUseCase;
-    private final RenameShoppingListUseCase renameShoppingListUseCase;
+    private final UpdateShoppingListUseCase updateShoppingListUseCase;
     private final DeleteShoppingListUseCase deleteShoppingListUseCase;
 
     /**
@@ -75,26 +75,27 @@ public class ShoppingListController {
     }
 
     /**
-     * Renomeia uma lista de compras existente.
+     * Atualiza uma lista de compras existente (título e/ou descrição).
+     * Atualização parcial: envia apenas os campos que deseja alterar.
      * Valida que a lista pertence ao usuário autenticado.
      *
-     * @param id ID da lista a ser renomeada
-     * @param request novo título da lista
+     * @param id ID da lista a ser atualizada
+     * @param request título e/ou descrição novos
      * @return lista atualizada
      */
     @PatchMapping("/{id}")
-    public ResponseEntity<ShoppingListResponse> renameList(
+    public ResponseEntity<ShoppingListResponse> updateList(
             @PathVariable Long id,
-            @Valid @RequestBody RenameShoppingListRequest request
+            @Valid @RequestBody UpdateShoppingListRequest request
     ) {
         log.info("Requisição recebida: PATCH /api/v1/lists/{}", id);
 
         Long ownerId = extractOwnerId();
-        log.debug("Renomeando lista: listId={}, ownerId={}, newTitle={}", id, ownerId, request.getNewTitle());
+        log.debug("Atualizando lista: listId={}, ownerId={}", id, ownerId);
 
-        ShoppingListResponse response = renameShoppingListUseCase.execute(ownerId, id, request);
+        ShoppingListResponse response = updateShoppingListUseCase.execute(ownerId, id, request);
 
-        log.info("Lista renomeada com sucesso: listId={}, ownerId={}", id, ownerId);
+        log.info("Lista atualizada com sucesso: listId={}, ownerId={}", id, ownerId);
         return ResponseEntity.ok(response);
     }
 

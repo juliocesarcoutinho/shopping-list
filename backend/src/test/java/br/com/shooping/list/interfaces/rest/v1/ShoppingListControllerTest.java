@@ -1,7 +1,7 @@
 package br.com.shooping.list.interfaces.rest.v1;
 
 import br.com.shooping.list.application.dto.shoppinglist.CreateShoppingListRequest;
-import br.com.shooping.list.application.dto.shoppinglist.RenameShoppingListRequest;
+import br.com.shooping.list.application.dto.shoppinglist.UpdateShoppingListRequest;
 import br.com.shooping.list.domain.shoppinglist.ShoppingList;
 import br.com.shooping.list.domain.user.User;
 import br.com.shooping.list.infrastructure.persistence.shoppinglist.JpaShoppingListRepository;
@@ -235,13 +235,13 @@ class ShoppingListControllerTest {
     // ==================== PATCH /api/v1/lists/{id} ====================
 
     @Test
-    @DisplayName("PATCH /api/v1/lists/{id} - Deve renomear lista com sucesso")
-    void shouldRenameListSuccessfully() throws Exception {
+    @DisplayName("PATCH /api/v1/lists/{id} - Deve atualizar título com sucesso")
+    void shouldUpdateTitleSuccessfully() throws Exception {
         // Arrange
         ShoppingList list = ShoppingList.create(testUser.getId(), "Título Original", "Descrição");
         list = shoppingListRepository.save(list);
 
-        RenameShoppingListRequest request = new RenameShoppingListRequest("Novo Título");
+        UpdateShoppingListRequest request = new UpdateShoppingListRequest("Novo Título", null);
 
         // Act & Assert
         mockMvc.perform(patch("/api/v1/lists/" + list.getId())
@@ -256,13 +256,69 @@ class ShoppingListControllerTest {
         // Verify
         ShoppingList updated = shoppingListRepository.findById(list.getId()).orElseThrow();
         assertThat(updated.getTitle()).isEqualTo("Novo Título");
+        assertThat(updated.getDescription()).isEqualTo("Descrição");
+    }
+
+    @Test
+    @DisplayName("PATCH /api/v1/lists/{id} - Deve atualizar descrição com sucesso")
+    void shouldUpdateDescriptionSuccessfully() throws Exception {
+        // Arrange
+        ShoppingList list = ShoppingList.create(testUser.getId(), "Título", "Descrição Antiga");
+        list = shoppingListRepository.save(list);
+
+        UpdateShoppingListRequest request = new UpdateShoppingListRequest(null, "Nova Descrição");
+
+        // Act & Assert
+        mockMvc.perform(patch("/api/v1/lists/" + list.getId())
+                        .header("Authorization", "Bearer " + validToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.title", is("Título")))
+                .andExpect(jsonPath("$.description", is("Nova Descrição")));
+    }
+
+    @Test
+    @DisplayName("PATCH /api/v1/lists/{id} - Deve atualizar título e descrição juntos")
+    void shouldUpdateBothTitleAndDescription() throws Exception {
+        // Arrange
+        ShoppingList list = ShoppingList.create(testUser.getId(), "Título Antigo", "Descrição Antiga");
+        list = shoppingListRepository.save(list);
+
+        UpdateShoppingListRequest request = new UpdateShoppingListRequest("Novo Título", "Nova Descrição");
+
+        // Act & Assert
+        mockMvc.perform(patch("/api/v1/lists/" + list.getId())
+                        .header("Authorization", "Bearer " + validToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.title", is("Novo Título")))
+                .andExpect(jsonPath("$.description", is("Nova Descrição")));
+    }
+
+    @Test
+    @DisplayName("PATCH /api/v1/lists/{id} - Deve retornar 400 quando nenhum campo é fornecido")
+    void shouldReturn400WhenNoFieldProvided() throws Exception {
+        // Arrange
+        ShoppingList list = ShoppingList.create(testUser.getId(), "Título", null);
+        list = shoppingListRepository.save(list);
+
+        UpdateShoppingListRequest request = new UpdateShoppingListRequest(null, null);
+
+        // Act & Assert
+        mockMvc.perform(patch("/api/v1/lists/" + list.getId())
+                        .header("Authorization", "Bearer " + validToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
     }
 
     @Test
     @DisplayName("PATCH /api/v1/lists/{id} - Deve retornar 404 quando lista não existe")
-    void shouldReturn404WhenRenamingNonExistentList() throws Exception {
+    void shouldReturn404WhenUpdatingNonExistentList() throws Exception {
         // Arrange
-        RenameShoppingListRequest request = new RenameShoppingListRequest("Novo Título");
+        UpdateShoppingListRequest request = new UpdateShoppingListRequest("Novo Título", null);
 
         // Act & Assert
         mockMvc.perform(patch("/api/v1/lists/999")
@@ -274,7 +330,7 @@ class ShoppingListControllerTest {
 
     @Test
     @DisplayName("PATCH /api/v1/lists/{id} - Deve retornar 403 quando lista pertence a outro usuário")
-    void shouldReturn403WhenRenamingAnotherUserList() throws Exception {
+    void shouldReturn403WhenUpdatingAnotherUserList() throws Exception {
         // Arrange - Criar outro usuário e sua lista
         User anotherUser = User.createLocalUser("another@email.com", "Another User", "hash");
         anotherUser = userRepository.save(anotherUser);
@@ -282,7 +338,7 @@ class ShoppingListControllerTest {
         ShoppingList otherList = ShoppingList.create(anotherUser.getId(), "Lista de Outro", null);
         otherList = shoppingListRepository.save(otherList);
 
-        RenameShoppingListRequest request = new RenameShoppingListRequest("Tentando Renomear");
+        UpdateShoppingListRequest request = new UpdateShoppingListRequest("Tentando Atualizar", null);
 
         // Act & Assert
         mockMvc.perform(patch("/api/v1/lists/" + otherList.getId())
@@ -293,13 +349,13 @@ class ShoppingListControllerTest {
     }
 
     @Test
-    @DisplayName("PATCH /api/v1/lists/{id} - Deve retornar 400 quando novo título é inválido")
-    void shouldReturn400WhenNewTitleIsInvalid() throws Exception {
+    @DisplayName("PATCH /api/v1/lists/{id} - Deve retornar 400 quando título é inválido")
+    void shouldReturn400WhenTitleIsInvalid() throws Exception {
         // Arrange
         ShoppingList list = ShoppingList.create(testUser.getId(), "Título Original", null);
         list = shoppingListRepository.save(list);
 
-        RenameShoppingListRequest request = new RenameShoppingListRequest("");
+        UpdateShoppingListRequest request = new UpdateShoppingListRequest("ab", null); // Muito curto
 
         // Act & Assert
         mockMvc.perform(patch("/api/v1/lists/" + list.getId())
@@ -311,12 +367,12 @@ class ShoppingListControllerTest {
 
     @Test
     @DisplayName("PATCH /api/v1/lists/{id} - Deve retornar 401 sem token JWT")
-    void shouldReturn401WhenRenamingWithoutToken() throws Exception {
+    void shouldReturn401WhenUpdatingWithoutToken() throws Exception {
         // Arrange
         ShoppingList list = ShoppingList.create(testUser.getId(), "Título", null);
         list = shoppingListRepository.save(list);
 
-        RenameShoppingListRequest request = new RenameShoppingListRequest("Novo Título");
+        UpdateShoppingListRequest request = new UpdateShoppingListRequest("Novo Título", null);
 
         // Act & Assert
         mockMvc.perform(patch("/api/v1/lists/" + list.getId())
