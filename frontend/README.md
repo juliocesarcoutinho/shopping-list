@@ -291,23 +291,34 @@ Após o login, o usuário autenticado é direcionado automaticamente para a tela
 ### ListsDashboardScreen
 Arquivo: `src/presentation/screens/lists/index.tsx`
 
-**Características:**
+**Design Moderno:**
+- **Header:** Título "Minhas Listas" + subtítulo "Organize suas compras" + avatar com iniciais do usuário
+- **Avatar clicável:** Exibe iniciais (ex: "MC" para Miriã Coutinho) e navega para tela de conta
+- **Cards com progresso visual:** Cada lista mostra ícone, título, contador "X of Y items" e barra de progresso
+- **FAB (+):** Botão flutuante verde para criar nova lista
+- **Safe Area Insets:** Layout adaptado para dispositivos modernos (notch, status bar)
+
+**Características técnicas:**
+- Usa `GetMyListsUseCase` para buscar listas do backend
+- `useFocusEffect` para atualizar automaticamente ao voltar do modal de criação
 - Exibe as listas do usuário em cards (ListCard) usando FlatList para performance
-- Integração direta com o use case GetMyListsUseCase
-- Header "Minhas Listas" com Safe Area Insets para respeitar áreas do dispositivo
-- Floating Action Button (FAB) para criar novas listas
+- Integra com Clean Architecture (sem lógica de rede na UI)
 
 **Estados tratados:**
-- **Loading:** skeletons de ListCard
-- **Empty:** mensagem amigável + botão "Criar lista"
+- **Loading:** skeletons de ListCard (3 placeholders animados)
+- **Empty:** SVG + mensagem amigável + botão "Começar minha lista"
 - **Erro:** mensagem amigável + botão "Tentar novamente"
 - **Sucesso:** renderiza ListCard para cada lista
 
 **Features:**
+- **Atualização automática:** Ao criar uma lista, dashboard atualiza sem refresh manual
 - Pull-to-refresh (atualização por gesto)
 - Layout responsivo com Safe Area Insets
-- Espaçamento otimizado entre cards (gap: 16px)
+- Espaçamento otimizado entre cards (gap: 8px)
 - Acessibilidade básica com labels
+- Uso do tema Fresh Market
+- Avatar com iniciais do usuário no header
+- Menu de 3 pontos em cada card (preparado para ações futuras)
 - Uso do tema Fresh Market
 - Sem lógica de rede na UI, apenas consumo do use case
 
@@ -315,9 +326,16 @@ Arquivo: `src/presentation/screens/lists/index.tsx`
 
 ### 📝 Criar Nova Lista
 
-Sistema completo de criação de listas seguindo Clean Architecture.
+Sistema completo de criação de listas seguindo Clean Architecture com design minimalista.
 
 **Arquivo:** `src/presentation/screens/create-list-screen.tsx`
+
+**Design Clean:**
+- Background consistente com tema do app
+- Labels discretos ("Nome da Lista", "Descrição (optional)")
+- Textarea expandida (5 linhas) para descrição
+- Botão único "Criar Lista" (verde, sem botão cancelar)
+- Layout limpo sem título/subtítulo centralizados
 
 **Características:**
 - Modal apresentado ao clicar no FAB do dashboard
@@ -327,35 +345,85 @@ Sistema completo de criação de listas seguindo Clean Architecture.
   - **Descrição:** opcional, máximo 255 caracteres
 - Validação client-side e business logic no use case
 - Loading state durante requisição
-- Mensagens de erro específicas do backend
-- Fecha modal automaticamente após sucesso
+- Error banner com mensagens específicas do backend
+- **Atualização automática:** Após criar, dashboard é atualizado via `useFocusEffect`
 
 **Use Case:** `CreateListUseCase`
 - Validações de negócio (comprimento, campos obrigatórios)
 - Trim automático de espaços
 - Integração com repository pattern
+- Retorna erro normalizado do backend
 
-**Fluxo:**
+**Fluxo completo:**
 1. Usuário clica no FAB (+) ou botão "Começar minha lista" (empty state)
-2. Modal de criação é exibido
+2. Modal de criação é exibido com apresentação 'modal'
 3. Preenche título (obrigatório) e descrição (opcional)
-4. Validação acontece em tempo real
-5. Ao clicar "Criar", use case valida e envia para API
-6. Sucesso: modal fecha e lista aparece no dashboard
-7. Erro: mensagem específica é exibida
+4. Validação acontece em tempo real (RHF + Zod)
+5. Ao clicar "Criar Lista", use case valida e envia POST para API
+6. Sucesso: `router.back()` fecha modal → Dashboard ganha foco → `useFocusEffect` dispara → Lista aparece no topo
+7. Erro: error banner com mensagem específica é exibido
 
 **Testes:**
-- 8 testes unitários no CreateListUseCase
+- 8 testes unitários no CreateListUseCase (validações, trim, erro do repositório)
 - 4 testes no mapper de listas
 - Cobertura de validações e edge cases
+- Todos os testes passando ✅
 
-### ListCard
+**Navegação:**
+- Rota: `/create-list`
+- Tipo: Modal (`presentation: 'modal'`)
+- Header: "Nova Lista" (padrão do sistema)
+
+### ListCard - Design Moderno com Progresso Visual
+
 Arquivo: `src/presentation/components/list-card/index.tsx`
 
-- Componente reutilizável para exibir uma lista em formato de card
-- Props: title, itemsCount, pendingItemsCount, purchasedItemsCount, onPress, loading
-- Usa tokens do tema, responsivo, acessível (testID, roles, labels)
-- Variação skeleton para loading
+Componente reutilizável para exibir listas com design moderno focado em escaneabilidade.
+
+**Design Visual:**
+- **Ícone:** 🛍️ sacola (listas ativas) ou ✓ check verde (100% completas)
+- **Background do ícone:** Semi-transparente (20% opacity) verde primário ou sucesso
+- **Título:** 17px, weight 600, truncado em 1 linha
+- **Contador:** "X of Y items" em texto secundário (14px)
+- **Barra de progresso:** Horizontal, 8px altura, com percentual à direita
+- **Menu:** 3 pontos no canto superior direito (preparado para ações)
+- **Borda verde:** Quando lista está 100% completa
+- **Sombra:** Elevation 3 para profundidade
+
+**Props:**
+- `title` - Nome da lista
+- `itemsCount` - Total de itens
+- `purchasedItemsCount` - Itens comprados (para cálculo de progresso)
+- `onPress` - Callback ao clicar no card
+- `onMenuPress` - Callback ao clicar no menu (opcional)
+- `loading` - Exibe skeleton animado
+
+**Estados:**
+- **Normal:** Card com progresso < 100%
+- **Completo:** Card com progresso = 100% (ícone check verde, borda verde)
+- **Loading:** Skeleton com placeholder de ícone, título e barra
+
+**Cálculo de progresso:**
+```typescript
+const progress = itemsCount > 0 ? (purchasedItemsCount / itemsCount) * 100 : 0;
+const isCompleted = progress === 100;
+```
+
+**Acessibilidade:**
+- `accessibilityRole='button'`
+- `accessibilityLabel` com informação completa da lista
+- `testID` para testes automatizados
+
+**Uso:**
+```tsx
+<ListCard
+  title="Compras da Semana"
+  itemsCount={12}
+  purchasedItemsCount={8}
+  onPress={() => navigateToDetails()}
+  onMenuPress={() => openMenu()}
+/>
+```
 
 ### Fluxo inicial
 - Ao logar, o usuário é direcionado para a tab Home, que agora exibe o dashboard de listas (ListsDashboardScreen)

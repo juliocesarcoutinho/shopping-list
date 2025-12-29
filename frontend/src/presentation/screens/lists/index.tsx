@@ -1,8 +1,8 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { FlatList, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 
 import { ShoppingListRemoteDataSource } from '@/src/data/data-sources/shopping-list-remote-data-source';
 import { ShoppingListRepositoryImpl } from '@/src/data/repositories/shopping-list-repository';
@@ -69,9 +69,13 @@ export const ListsDashboardScreen: React.FC = () => {
     }
   }, []);
 
-  useEffect(() => {
-    fetchLists();
-  }, [fetchLists]);
+  // Recarrega listas automaticamente quando a tela ganha foco
+  // Isso garante que após criar uma lista, o dashboard seja atualizado
+  useFocusEffect(
+    useCallback(() => {
+      fetchLists();
+    }, [fetchLists])
+  );
 
   const renderItem = useCallback(
     ({ item }: { item: ShoppingList }) => (
