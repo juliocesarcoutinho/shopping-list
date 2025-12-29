@@ -373,11 +373,73 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * Trata todas as outras exceções não mapeadas.
-     * <p>
-     * Retorna 500 Internal Server Error.
-     * <p>
-     * Em produção, não expor detalhes internos.
+     * Trata erros de item não encontrado.
+     *
+     * @return 404 Not Found
+     */
+    @ExceptionHandler(br.com.shooping.list.domain.shoppinglist.ItemNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleItemNotFoundException(
+            br.com.shooping.list.domain.shoppinglist.ItemNotFoundException ex,
+            HttpServletRequest request
+    ) {
+        log.warn("Item not found on path: {}", request.getRequestURI());
+
+        var error = ErrorResponse.of(
+                HttpStatus.NOT_FOUND.value(),
+                "Not Found",
+                ex.getMessage(),
+                request.getRequestURI()
+        );
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+    }
+
+    /**
+     * Trata erros de item duplicado.
+     *
+     * @return 400 Bad Request
+     */
+    @ExceptionHandler(br.com.shooping.list.domain.shoppinglist.DuplicateItemException.class)
+    public ResponseEntity<ErrorResponse> handleDuplicateItemException(
+            br.com.shooping.list.domain.shoppinglist.DuplicateItemException ex,
+            HttpServletRequest request
+    ) {
+        log.warn("Duplicate item on path: {}", request.getRequestURI());
+
+        var error = ErrorResponse.of(
+                HttpStatus.BAD_REQUEST.value(),
+                "Bad Request",
+                ex.getMessage(),
+                request.getRequestURI()
+        );
+
+        return ResponseEntity.badRequest().body(error);
+    }
+
+    /**
+     * Trata erros de limite de itens excedido.
+     *
+     * @return 400 Bad Request
+     */
+    @ExceptionHandler(br.com.shooping.list.domain.shoppinglist.ListLimitExceededException.class)
+    public ResponseEntity<ErrorResponse> handleListLimitExceededException(
+            br.com.shooping.list.domain.shoppinglist.ListLimitExceededException ex,
+            HttpServletRequest request
+    ) {
+        log.warn("List limit exceeded on path: {}", request.getRequestURI());
+
+        var error = ErrorResponse.of(
+                HttpStatus.BAD_REQUEST.value(),
+                "Bad Request",
+                ex.getMessage(),
+                request.getRequestURI()
+        );
+
+        return ResponseEntity.badRequest().body(error);
+    }
+
+    /**
+     * Fallback para exceções não tratadas.
      */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGenericException(

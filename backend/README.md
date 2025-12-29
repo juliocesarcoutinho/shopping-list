@@ -326,7 +326,10 @@ Testes de Aplicação (Shopping List):
   ✅ GetMyShoppingListsUseCaseTest   : 3 testes (100% passed)
   ✅ UpdateShoppingListUseCaseTest   : 7 testes (100% passed)
   ✅ DeleteShoppingListUseCaseTest   : 4 testes (100% passed)
-  Total Aplicação: 17 testes unitários
+  ✅ AddItemToListUseCaseTest        : 5 testes (100% passed)
+  ✅ UpdateItemUseCaseTest           : 9 testes (100% passed)
+  ✅ RemoveItemFromListUseCaseTest   : 4 testes (100% passed)
+  Total Aplicação: 35 testes unitários
 
 Testes de Persistência (JPA):
   ✅ JpaShoppingListRepositoryIntegrationTest : 11 testes (100% passed)
@@ -340,15 +343,17 @@ Testes de Integração:
   ✅ JwtAuthentication         : 8 testes (100% passed)
   ✅ AdminAuthorization        : 3 testes (100% passed)
   ✅ ShoppingListController    : 21 testes (100% passed)
+  ✅ ShoppingListItemController: 18 testes (100% passed)
   ✅ HealthController          : 1 teste  (100% passed)
-  Total: 67 testes de integração
+  Total: 85 testes de integração
 
-📈 Total Geral: 195+ testes | 195+ passing | 0 failures
-⚡ Tempo médio de execução: ~30 segundos
+📈 Total Geral: 231+ testes | 231+ passing | 0 failures
+⚡ Tempo médio de execução: ~35 segundos
 🎯 Modelo de domínio: 100% cobertura das regras de negócio
 🎯 Camada de aplicação: 100% cobertura dos use cases
 🎯 Persistência JPA: 100% cobertura com banco real
 🎯 Controllers REST: 100% cobertura end-to-end
+🎯 Gerenciamento de Itens: 100% cobertura completa
 **Documentação detalhada:** Veja `GOOGLE_OAUTH_TESTING.md` na raiz do projeto.
 
 ### Modelo de Domínio - Shopping List (Domain-Driven Design)
@@ -1055,11 +1060,174 @@ GET /api/v1/lists (200 OK):
 [INFO] Tests run: 21, Failures: 0, Errors: 0
 ```
 
+### **Gerenciamento de Itens (Implementado)**
+
+Endpoints REST completos para adicionar, atualizar e remover itens das listas.
+
+**Endpoints implementados:**
+```http
+POST   /api/v1/lists/{listId}/items              - Adicionar item
+PATCH  /api/v1/lists/{listId}/items/{itemId}    - Atualizar item
+DELETE /api/v1/lists/{listId}/items/{itemId}    - Remover item
+```
+
+**Características:**
+- Autenticação JWT obrigatória em todas as rotas
+- Validação de ownership da lista em todas as operações
+- Atualização parcial no PATCH (envia apenas campos a alterar)
+- Toggle de status (PENDING ↔ PURCHASED)
+- Validações de domínio (duplicatas, limite de 100 itens)
+- Operações delegadas ao agregado ShoppingList
+
+**Exemplos de uso:**
+
+```bash
+# Adicionar item
+curl -X POST http://localhost:8080/api/v1/lists/1/items \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Arroz Integral",
+    "quantity": 2.0,
+    "unit": "kg"
+  }'
+
+# Atualizar nome do item
+curl -X PATCH http://localhost:8080/api/v1/lists/1/items/1 \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{"name": "Feijão Preto"}'
+
+# Marcar item como comprado
+curl -X PATCH http://localhost:8080/api/v1/lists/1/items/1 \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{"status": "PURCHASED"}'
+
+# Atualizar múltiplos campos
+curl -X PATCH http://localhost:8080/api/v1/lists/1/items/1 \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Feijão Preto",
+    "quantity": 3,
+    "unit": "pacote",
+    "status": "PURCHASED"
+  }'
+
+# Remover item
+curl -X DELETE http://localhost:8080/api/v1/lists/1/items/1 \
+  -H "Authorization: Bearer {token}"
+```
+
+**Respostas:**
+
+POST /api/v1/lists/{listId}/items (201 Created):
+```json
+{
+  "id": 1,
+  "name": "Arroz Integral",
+  "quantity": 2.0,
+  "unit": "kg",
+  "status": "PENDING",
+  "createdAt": "2025-12-29T10:00:00.000Z",
+  "updatedAt": "2025-12-29T10:00:00.000Z"
+}
+```
+
+PATCH /api/v1/lists/{listId}/items/{itemId} (200 OK):
+```json
+{
+  "id": 1,
+  "name": "Feijão Preto",
+  "quantity": 3,
+  "unit": "pacote",
+  "status": "PURCHASED",
+  "createdAt": "2025-12-29T10:00:00.000Z",
+  "updatedAt": "2025-12-29T10:05:00.000Z"
+}
+```
+
+DELETE /api/v1/lists/{listId}/items/{itemId} (204 No Content)
+
+**Validações:**
+- Nome: mínimo 3, máximo 100 caracteres (obrigatório no POST)
+- Quantidade: maior que zero (obrigatório no POST)
+- Unidade: máximo 20 caracteres (opcional)
+- Status: PENDING ou PURCHASED (opcional no PATCH)
+- PATCH: pelo menos um campo deve ser fornecido
+- Duplicatas: não permite item com mesmo nome na lista
+- Limite: máximo 100 itens por lista
+
+**Tratamento de erros:**
+```json
+// 400 Bad Request - Item duplicado
+{
+  "message": "Item já existe na lista: Arroz",
+  "status": 400,
+  "timestamp": "2025-12-29T10:00:00.000Z"
+}
+
+// 400 Bad Request - Limite excedido
+{
+  "message": "Lista atingiu o limite máximo de 100 itens",
+  "status": 400,
+  "timestamp": "2025-12-29T10:00:00.000Z"
+}
+
+// 404 Not Found - Item não existe
+{
+  "message": "Item não encontrado na lista: itemId=999",
+  "status": 404,
+  "timestamp": "2025-12-29T10:00:00.000Z"
+}
+
+// 403 Forbidden - Lista de outro usuário
+{
+  "message": "Usuário não tem permissão para acessar esta lista",
+  "status": 403,
+  "timestamp": "2025-12-29T10:00:00.000Z"
+}
+```
+
+**Testes de Integração:** 36 cenários completos
+- POST: adicionar item, validações, duplicatas, ownership, autenticação (7 testes)
+- PATCH: atualizar nome, quantidade, status, múltiplos campos, validações, ownership, autenticação (7 testes)
+- DELETE: remover, validações, ownership, autenticação (4 testes)
+- Use Cases: 18 testes unitários (Add: 5, Update: 9, Remove: 4)
+
+**Validação:**
+```
+./mvnw test -Dtest="ShoppingListItemControllerTest"
+[INFO] Tests run: 18, Failures: 0, Errors: 0
+
+./mvnw test -Dtest="AddItemToListUseCaseTest,UpdateItemUseCaseTest,RemoveItemFromListUseCaseTest"
+[INFO] Tests run: 18, Failures: 0, Errors: 0
+```
+
+**Fluxo completo end-to-end:**
+```
+1. POST /api/v1/lists
+   → Criar lista
+
+2. POST /api/v1/lists/{id}/items
+   → Adicionar itens à lista
+
+3. PATCH /api/v1/lists/{id}/items/{itemId}
+   → Atualizar itens / Marcar como comprado
+
+4. DELETE /api/v1/lists/{id}/items/{itemId}
+   → Remover itens
+
+5. GET /api/v1/lists
+   → Ver listas com contadores atualizados (itemsCount, pendingItemsCount, purchasedItemsCount)
+```
+
 ### **Próximos Passos**
 
-O backend está completo para operações de listas. As próximas etapas são:
+O backend está completo para operações básicas de listas e itens. As próximas etapas são:
 
-**Sprint Atual - Gerenciamento de Itens:**
+**Sprint Atual - Recursos Avançados:**
 - 🚧 **Use Cases de Itens**: Adicionar, remover, atualizar, marcar como comprado
 - 🚧 **DTOs de Itens**: Request/Response para operações de itens
 - 🚧 **Endpoints REST**: Gerenciar itens dentro de uma lista
@@ -1103,13 +1271,17 @@ backend/
     │   │       │   │   │   ├── RegisterRequest.java
     │   │       │   │   │   └── RegisterResponse.java
     │   │       │   │   ├── shoppinglist/
+    │   │       │   │   │   ├── AddItemRequest.java
     │   │       │   │   │   ├── CreateShoppingListRequest.java
+    │   │       │   │   │   ├── ItemResponse.java
     │   │       │   │   │   ├── ShoppingListResponse.java
     │   │       │   │   │   ├── ShoppingListSummaryResponse.java
+    │   │       │   │   │   ├── UpdateItemRequest.java
     │   │       │   │   │   └── UpdateShoppingListRequest.java
     │   │       │   │   └── user/
     │   │       │   │       └── UserMeResponse.java
     │   │       │   └── usecase
+    │   │       │       ├── AddItemToListUseCase.java
     │   │       │       ├── CreateShoppingListUseCase.java
     │   │       │       ├── DeleteShoppingListUseCase.java
     │   │       │       ├── GetCurrentUserUseCase.java
@@ -1119,6 +1291,8 @@ backend/
     │   │       │       ├── LogoutUseCase.java
     │   │       │       ├── RefreshTokenUseCase.java
     │   │       │       ├── RegisterUserUseCase.java
+    │   │       │       ├── RemoveItemFromListUseCase.java
+    │   │       │       ├── UpdateItemUseCase.java
     │   │       │       └── UpdateShoppingListUseCase.java
                 │   │       ├── domain
                 │   │       │   ├── user
@@ -1167,6 +1341,7 @@ backend/
     │   │                   ├── AuthController.java
     │   │                   ├── HealthController.java
     │   │                   ├── ShoppingListController.java
+    │   │                   ├── ShoppingListItemController.java
     │   │                   └── UserController.java
     │   └── resources
     │       ├── application.yml
@@ -1189,6 +1364,7 @@ backend/
                 ├── StartupApplicationTests.java
                 ├── application
                 │   └── usecase
+                │       ├── AddItemToListUseCaseTest.java
                 │       ├── CreateShoppingListUseCaseTest.java
                 │       ├── DeleteShoppingListUseCaseTest.java
                 │       ├── GetMyShoppingListsUseCaseTest.java
@@ -1197,6 +1373,8 @@ backend/
                 │       ├── LogoutUseCaseTest.java
                 │       ├── RefreshTokenUseCaseTest.java
                 │       ├── RegisterUserUseCaseTest.java
+                │       ├── RemoveItemFromListUseCaseTest.java
+                │       ├── UpdateItemUseCaseTest.java
                 │       └── UpdateShoppingListUseCaseTest.java
                 ├── domain
                 │   └── shoppinglist
@@ -1221,7 +1399,8 @@ backend/
                             ├── GoogleAuthControllerIntegrationTest.java
                             ├── HealthControllerTest.java
                             ├── JwtAuthenticationIntegrationTest.java
-                            └── ShoppingListControllerTest.java
+                            ├── ShoppingListControllerTest.java
+                            └── ShoppingListItemControllerTest.java
 ```
 
 ---
@@ -1809,12 +1988,13 @@ Para testar rapidamente sem frontend:
 - ✅ **100% cobertura** das regras de negócio
 
 #### **📝 Camada de Aplicação Shopping List**
-- ✅ **Use Cases**: CreateShoppingList, GetMyShoppingLists, UpdateShoppingList, DeleteShoppingList
-- ✅ **DTOs**: 4 DTOs com validações Jakarta (request/response)
-- ✅ **Exceções Customizadas**: ShoppingListNotFoundException, UnauthorizedShoppingListAccessException
-- ✅ **Validação de Ownership**: Apenas o dono pode modificar suas listas
+- ✅ **Use Cases Listas**: CreateShoppingList, GetMyShoppingLists, UpdateShoppingList, DeleteShoppingList
+- ✅ **Use Cases Itens**: AddItemToList, UpdateItem, RemoveItemFromList
+- ✅ **DTOs**: 7 DTOs com validações Jakarta (request/response)
+- ✅ **Exceções Customizadas**: ShoppingListNotFoundException, UnauthorizedShoppingListAccessException, ItemNotFoundException, DuplicateItemException, ListLimitExceededException
+- ✅ **Validação de Ownership**: Apenas o dono pode modificar suas listas e itens
 - ✅ **Logging Estruturado**: INFO/WARN/DEBUG em todas as operações
-- ✅ **17 testes unitários** (100% cobertura dos use cases)
+- ✅ **35 testes unitários** (100% cobertura dos use cases)
 - ✅ **Zero dependência de web/JPA** (apenas mocks)
 
 #### **💾 Persistência JPA Shopping List**
@@ -1849,25 +2029,33 @@ Para testar rapidamente sem frontend:
 - ✅ Health checks (Spring Actuator + customizado)
 - ✅ CORS configurado para frontend
 - ✅ Logging estruturado com correlation IDs
-- ✅ **195+ testes** automatizados (unitários + integração)
+- ✅ **231+ testes** automatizados (unitários + integração)
+
+#### **🛒 Gerenciamento de Itens (Implementado)**
+- ✅ **Use Cases de Itens**: Add, Update, Remove (18 testes unitários)
+- ✅ **DTOs de Itens**: AddItemRequest, UpdateItemRequest, ItemResponse
+- ✅ **Endpoints REST**: POST/PATCH/DELETE em /api/v1/lists/{id}/items
+- ✅ **Atualização Parcial**: PATCH permite atualizar nome, quantidade, unidade, status
+- ✅ **Toggle Status**: Marcar item como comprado/pendente
+- ✅ **Validações**: Duplicatas, limite de 100 itens, ownership
+- ✅ **Testes E2E**: 18 testes de integração com MockMvc
+- ✅ **100% cobertura** de cenários (sucesso, validações, erros, auth)
 
 ### 🚧 **EM DESENVOLVIMENTO**
 
-#### **🔄 Sprint Atual - Gerenciamento de Itens**
-- 🚧 **Use Cases de Itens**: Adicionar, remover, atualizar quantidade, marcar como comprado
-- 🚧 **DTOs de Itens**: Request/Response para operações de itens
-- 🚧 **Endpoints REST**: POST/PATCH/DELETE em /api/v1/lists/{id}/items
+#### **🔄 Sprint Atual - Recursos Avançados**
 - 🚧 **Operações em Lote**: Limpar comprados, marcar todos, reordenar
-- 🚧 **Testes E2E**: Integração completa com MockMvc
+- 🚧 **Paginação e Ordenação**: Buscar listas por status, ordenar por data
+- 🚧 **Filtros**: Filtros de busca (por título, data, status)
+- 🚧 **Busca Full-Text**: Buscar itens por nome
 
 ### 📅 **ROADMAP - Próximas Funcionalidades**
 
-#### **🔍 Sprint 1 - Recursos Avançados**
-- 🏗️ Paginação e ordenação de listas
-- 🏗️ Filtros de busca (por título, data, status)
-- 🏗️ Busca full-text em itens
+#### **🔍 Sprint 1 - Recursos Avançados II**
 - 🏗️ Compartilhamento de listas entre usuários
 - 🏗️ Categorização de itens
+- 🏗️ Templates de listas
+- 🏗️ Histórico de alterações
 
 #### **📊 Sprint 2 - Analytics e Relatórios**
 - 🏗️ Dashboard de estatísticas
