@@ -19,6 +19,9 @@ function NavigationContent() {
 
     // Verifico se estou na área protegida (tabs) ou na área pública (login/register)
     const inProtectedArea = segments[0] === '(tabs)';
+    const isPublicRoute = segments[0] === 'login' || segments[0] === 'register';
+    const isModalRoute =
+      segments[0] === 'create-list' || segments[0] === 'modal' || segments[0] === 'settings';
 
     // Se não estou autenticado mas tentando acessar área protegida, redireciono para login
     if (!isAuthenticated && inProtectedArea) {
@@ -26,7 +29,8 @@ function NavigationContent() {
     }
 
     // Se estou autenticado mas na área de login/register, redireciono para home
-    if (isAuthenticated && !inProtectedArea && segments[0] !== undefined) {
+    // Não redireciono se estiver em rotas modais
+    if (isAuthenticated && isPublicRoute) {
       router.replace('/(tabs)' as never);
     }
   }, [isAuthenticated, isLoading, router, segments]);

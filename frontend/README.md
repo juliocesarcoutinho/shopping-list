@@ -950,7 +950,7 @@ Quando `ENABLE_DEBUG_LOGS=true` no `.env`:
 
 ## 👤 Tela de Conta - UserService
 
-Sistema para exibir dados reais do usuário autenticado após login com design elegante e responsivo:
+Sistema para exibir dados reais do usuário autenticado após login com design clean e moderno:
 
 ### **UserService**
 Serviço centralizado para operações de usuário:
@@ -976,8 +976,8 @@ export class UserService {
 - Tipagem forte com interface `User` do domínio
 - Tratamento de erro automático via `ApiClient` com normalização
 
-### **AccountScreen - Design Premium**
-Tela dedicada para exibir perfil do usuário com design elegante Fresh Market:
+### **AccountScreen - Design Clean e Elegante**
+Tela de perfil do usuário com foco em legibilidade e hierarquia visual:
 
 **Fluxo de Dados:**
 ```
@@ -986,93 +986,97 @@ AccountScreen renderiza
 useEffect → userService.getMe()
         ↓
 Loading (ActivityIndicator)
-        ├─ Sucesso → Exibe card com dados
+        ├─ Sucesso → Exibe perfil clean
         └─ Erro → Exibe banner de erro com retry
 ```
 
-**Design Visual:**
-- 🎯 **Avatar Premium**: 100x100px com borda verde (tema primary) e fundo semi-transparente
-- 📝 **Nome em Destaque**: Exibido abaixo do avatar com tipografia grande (18px)
-- 📋 **Card de Dados**: Com dividers entre campos para separação clara
-- 🏷️ **Labels Stylizados**: Uppercase com letter-spacing, ícones integrados
-- 🎨 **Badges com Ícones**: Para método de autenticação (📧 Email/🔐 Google) e status (✓ Ativo)
-- 💬 **Espaçamento Respirado**: Padding generoso (56px top, 16px lateral) para não sobrepor câmera/status bar
-- 📱 **ScrollView Responsivo**: Suporta telas pequenas e grandes sem problemas
-- ✨ **Sombra Sofisticada**: elevation 4 e shadow blur para profundidade
+**Filosofia de Design:**
+- ✨ **Layout Hero**: Avatar + nome como elemento principal centralizado
+- 📋 **Lista simples**: Informações em lista vertical sem cards pesados
+- 🎯 **Hierarquia clara**: Labels discretos, valores em destaque
+- 🚫 **Sem ruído visual**: Sem caps lock, sem ícones excessivos, sem dividers
+- 💚 **Minimalista**: Design limpo e respirado com espaçamento generoso
 
-**Dados Exibidos com Ícones:**
-- 👤 Avatar visual (emoji)
-- 📛 Nome do usuário (campo)
-- 📧 Email (campo)
-- 🔐 Método de autenticação (badge)
-- ✓ Status (badge com ícone)
-- 📅 Data de cadastro (campo)
+**Design Visual Refinado:**
+- 🎯 **Avatar com Iniciais**: 96x96px com iniciais reais do usuário (ex: "MC" para Miriã Coutinho)
+- 📝 **Nome em Destaque**: 24px, weight 600, centralizado abaixo do avatar
+- 📋 **Informações Clean**: Lista simples com gap de 24px entre campos
+- 🏷️ **Labels Discretos**: 13px, weight 500, sem uppercase, sem ícones
+- 💬 **Valores em Foco**: 17px, weight 500, maior destaque que labels
+- 📅 **Data Formatada**: "29 de dezembro de 2025" (formato extenso pt-BR)
+- 💚 **Status Verde**: Cor success para indicar conta ativa
+- 🔘 **Botões Sutis**: Ambos secondary/medium para não roubar atenção do conteúdo
+
+**Dados Exibidos (sem duplicação):**
+- Avatar com iniciais do usuário
+- Nome completo (hero section)
+- Email
+- Método de autenticação (texto simples: "Email/Senha" ou "Google")
+- Status (verde se ativo)
+- Data de cadastro (formato extenso)
 
 **Componentes UI:**
 | Componente | Descrição | Estado |
 |-----------|-----------|--------|
-| Avatar | Círculo com borda, 100x100 | Sempre visível |
-| Card | Container com dividers | Sucesso |
-| Badge | Pill com ícone e texto | Autenticação e Status |
+| Hero Section | Avatar + Nome centralizado | Sempre visível |
+| Info Section | Lista de informações com gap 24px | Sucesso |
 | Loading | ActivityIndicator + texto | Carregando |
 | Error | Card com aviso e retry | Erro |
-| Buttons | Recarregar + Sair | Sempre |
+| Buttons | Recarregar + Sair (secondary) | Sempre |
 
 **Estados e Tratamento:**
 | Estado | UI | Ação |
 |--------|-----|------|
 | Loading | ActivityIndicator + "Carregando dados..." | Aguarda dados |
-| Sucesso | Card com dados + Botões | Exibe informações completas |
+| Sucesso | Hero + Info list + Botões | Exibe informações completas |
 | Erro | Error card com mensagem + Retry | Tenta novamente |
 | Logout | Redireciona para login | Via signOut() |
 
-**Paleta de Cores Fresh Market:**
-- Avatar border: `theme.colors.primary` (verde)
-- Avatar background: `primary + 20%` opacity
-- Card background: `theme.colors.surface` (branco)
-- Card border: `theme.colors.border` (cinza suave)
-- Badges: `primary + 15%` background, `primary` text
-- Dividers: `theme.colors.border`
-- Labels: `theme.colors.textSecondary` (muted)
-
-**Layout Responsivo:**
+**Layout Responsivo e Limpo:**
 ```
 ┌─────────────────────────────┐
-│  Minha Conta (32px, bold)   │  ← paddingTop: 56px (respeita camera)
+│                             │  ← paddingTop: 72px
+│         MC                  │  ← Avatar 96x96 com iniciais
 │                             │
-│         👤                  │  ← Avatar 100x100
+│  Miriã Aquino Coutinho      │  ← Nome 24px, weight 600
+│                             │  ← gap: 48px
+│  Email                      │  ← Label 13px discreto
+│  miria@email.com            │  ← Valor 17px em destaque
+│                             │  ← gap: 24px
+│  Autenticação               │
+│  Email/Senha                │  ← Texto simples, sem badge
 │                             │
-│  Miriam Aquino Coutinho     │  ← Nome 18px
+│  Status                     │
+│  Ativo                      │  ← Verde (success color)
 │                             │
-│  ┌───────────────────────┐  │
-│  │ 📛 NOME               │  │
-│  │ Miriam Aquino...      │  │
-│  │ ─────────────────     │  │
-│  │ 📧 EMAIL              │  │
-│  │ miriaaquicout@g...    │  │
-│  │ ─────────────────     │  │
-│  │ 🔐 AUTENTICAÇÃO       │  │
-│  │ [📧 Email/Senha]      │  │ ← Badge com borda
-│  │ ─────────────────     │  │
-│  │ ✓ STATUS              │  │
-│  │ [✓ Ativo]             │  │ ← Badge com borda
-│  │ ─────────────────     │  │
-│  │ 📅 MEMBRO DESDE       │  │
-│  │ 27/12/2025            │  │
-│  └───────────────────────┘  │
-│                             │
-│  [Recarregar Dados - verde] │
-│  [Sair - outlined]          │
+│  Membro desde               │
+│  29 de dezembro de 2025     │  ← Data formatada pt-BR
+│                             │  ← gap: 48px
+│  [Recarregar Dados]         │  ← secondary/medium
+│  [Sair]                     │  ← secondary/medium
 │                             │
 └─────────────────────────────┘
 ```
 
 **Tipografia Refinada:**
-- Título: 32px, weight 700, letter-spacing 0.5
-- Nome: 18px, weight 600, letter-spacing 0.3
-- Labels: 11px, weight 700, uppercase, letter-spacing 1
-- Valores: 16px, weight 500, line-height 22
-- Badges: 13px, weight 600, letter-spacing 0.2
+- Avatar iniciais: 36px, weight 700, color primary
+- Nome: 24px, weight 600, letter-spacing 0.2
+- Labels: 13px, weight 500, letter-spacing 0.2
+- Valores: 17px, weight 500, line-height 24
+- Espaçamento hero: 48px
+- Espaçamento info: 24px entre campos
+
+**Melhorias UX:**
+- ✅ Removido título "Minha Conta" duplicado
+- ✅ Removido card grande com sombra pesada
+- ✅ Removido nome duplicado (antes aparecia 2x)
+- ✅ Removido labels em CAPS LOCK com ícones
+- ✅ Removido badges visuais excessivos
+- ✅ Removido dividers entre campos
+- ✅ Adicionado iniciais reais no avatar
+- ✅ Adicionado data em formato extenso pt-BR
+- ✅ Reduzido tamanho dos botões (medium vs large)
+- ✅ Layout mais respirado (padding 24px, gaps 24px/48px)
 
 
 ---
