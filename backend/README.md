@@ -324,9 +324,9 @@ Testes de Domínio (DDD):
 Testes de Aplicação (Shopping List):
   ✅ CreateShoppingListUseCaseTest   : 3 testes (100% passed)
   ✅ GetMyShoppingListsUseCaseTest   : 3 testes (100% passed)
-  ✅ RenameShoppingListUseCaseTest   : 4 testes (100% passed)
+  ✅ UpdateShoppingListUseCaseTest   : 7 testes (100% passed)
   ✅ DeleteShoppingListUseCaseTest   : 4 testes (100% passed)
-  Total Aplicação: 14 testes unitários
+  Total Aplicação: 17 testes unitários
 
 Testes de Persistência (JPA):
   ✅ JpaShoppingListRepositoryIntegrationTest : 11 testes (100% passed)
@@ -338,14 +338,17 @@ Testes de Integração:
   ✅ AuthController (Refresh)  : 10 testes (100% passed)
   ✅ GoogleAuthController      : 8 testes (100% passed)
   ✅ JwtAuthentication         : 8 testes (100% passed)
+  ✅ AdminAuthorization        : 3 testes (100% passed)
+  ✅ ShoppingListController    : 21 testes (100% passed)
   ✅ HealthController          : 1 teste  (100% passed)
-  Total: 43 testes de integração
+  Total: 67 testes de integração
 
-📈 Total Geral: 168+ testes | 168+ passing | 0 failures
-⚡ Tempo médio de execução: ~25 segundos
+📈 Total Geral: 195+ testes | 195+ passing | 0 failures
+⚡ Tempo médio de execução: ~30 segundos
 🎯 Modelo de domínio: 100% cobertura das regras de negócio
 🎯 Camada de aplicação: 100% cobertura dos use cases
 🎯 Persistência JPA: 100% cobertura com banco real
+🎯 Controllers REST: 100% cobertura end-to-end
 **Documentação detalhada:** Veja `GOOGLE_OAUTH_TESTING.md` na raiz do projeto.
 
 ### Modelo de Domínio - Shopping List (Domain-Driven Design)
@@ -916,23 +919,154 @@ public interface JpaShoppingListRepository
 [INFO] Tests run: 11, Failures: 0, Errors: 0
 ```
 
+### **Controllers REST (Implementado)**
+
+Endpoints REST completos para gerenciamento de listas de compras.
+
+**Endpoints implementados:**
+```http
+POST   /api/v1/lists        - Criar nova lista
+GET    /api/v1/lists        - Listar minhas listas
+PATCH  /api/v1/lists/{id}   - Atualizar lista (título e/ou descrição)
+DELETE /api/v1/lists/{id}   - Deletar lista
+```
+
+**Características:**
+- Autenticação JWT obrigatória em todas as rotas
+- OwnerId extraído automaticamente do SecurityContext
+- Validação de ownership (apenas dono pode modificar)
+- Atualização parcial no PATCH (envia apenas campos a alterar)
+- Respostas padronizadas (201, 200, 204, 400, 401, 403, 404)
+- Logging estruturado em todas as operações
+
+**Exemplos de uso:**
+
+```bash
+# Criar lista
+curl -X POST http://localhost:8080/api/v1/lists \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{"title": "Lista da Feira", "description": "Compras semanais"}'
+
+# Listar minhas listas
+curl -X GET http://localhost:8080/api/v1/lists \
+  -H "Authorization: Bearer {token}"
+
+# Atualizar título
+curl -X PATCH http://localhost:8080/api/v1/lists/1 \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{"title": "Novo Título"}'
+
+# Atualizar descrição
+curl -X PATCH http://localhost:8080/api/v1/lists/1 \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{"description": "Nova Descrição"}'
+
+# Atualizar ambos
+curl -X PATCH http://localhost:8080/api/v1/lists/1 \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{"title": "Título", "description": "Descrição"}'
+
+# Deletar lista
+curl -X DELETE http://localhost:8080/api/v1/lists/1 \
+  -H "Authorization: Bearer {token}"
+```
+
+**Respostas:**
+
+POST /api/v1/lists (201 Created):
+```json
+{
+  "id": 1,
+  "ownerId": 1,
+  "title": "Lista da Feira",
+  "description": "Compras semanais",
+  "itemsCount": 0,
+  "pendingItemsCount": 0,
+  "purchasedItemsCount": 0,
+  "createdAt": "2025-12-29T10:00:00.000Z",
+  "updatedAt": "2025-12-29T10:00:00.000Z"
+}
+```
+
+GET /api/v1/lists (200 OK):
+```json
+[
+  {
+    "id": 1,
+    "title": "Lista da Feira",
+    "itemsCount": 0,
+    "pendingItemsCount": 0,
+    "purchasedItemsCount": 0,
+    "createdAt": "2025-12-29T10:00:00.000Z",
+    "updatedAt": "2025-12-29T10:00:00.000Z"
+  }
+]
+```
+
+**Validações:**
+- Título: mínimo 3, máximo 100 caracteres (obrigatório no POST)
+- Descrição: máximo 255 caracteres (opcional)
+- PATCH: pelo menos um campo deve ser fornecido
+
+**Tratamento de erros:**
+```json
+// 400 Bad Request - Validação falha
+{
+  "message": "Título deve ter entre 3 e 100 caracteres",
+  "status": 400,
+  "timestamp": "2025-12-29T10:00:00.000Z"
+}
+
+// 401 Unauthorized - Sem JWT
+{
+  "status": 401,
+  "error": "Unauthorized",
+  "message": "Token JWT inválido ou ausente"
+}
+
+// 403 Forbidden - Sem permissão
+{
+  "message": "Usuário não tem permissão para acessar esta lista",
+  "status": 403,
+  "timestamp": "2025-12-29T10:00:00.000Z"
+}
+
+// 404 Not Found - Lista não existe
+{
+  "message": "Lista de compras não encontrada: id=999",
+  "status": 404,
+  "timestamp": "2025-12-29T10:00:00.000Z"
+}
+```
+
+**Testes de Integração:** 21 cenários end-to-end
+- POST: criar lista, validações, autenticação (5 testes)
+- GET: listar vazia, com dados, apenas minhas listas, autenticação (4 testes)
+- PATCH: atualizar título, descrição, ambos, validações, ownership, autenticação (8 testes)
+- DELETE: deletar, cascata, validações, ownership, autenticação (4 testes)
+
+**Validação:**
+```
+./mvnw test -Dtest="ShoppingListControllerTest"
+[INFO] Tests run: 21, Failures: 0, Errors: 0
+```
+
 ### **Próximos Passos**
 
-O modelo de domínio, camada de aplicação e persistência JPA estão prontos. As próximas etapas são:
+O backend está completo para operações de listas. As próximas etapas são:
 
-**Sprint Atual - API REST:**
-- 🚧 **Controllers REST**: ShoppingListController com endpoints CRUD
-- 🚧 **Autorização JWT**: Extrair userId do token nos controllers
-- 🚧 **Testes de Integração E2E**: End-to-end com MockMvc
-- 🚧 **Documentação API**: Swagger/OpenAPI para endpoints
-
-**Próxima Sprint - Gerenciamento de Itens:**
+**Sprint Atual - Gerenciamento de Itens:**
 - 🚧 **Use Cases de Itens**: Adicionar, remover, atualizar, marcar como comprado
 - 🚧 **DTOs de Itens**: Request/Response para operações de itens
 - 🚧 **Endpoints REST**: Gerenciar itens dentro de uma lista
 - 🚧 **Operações em Lote**: Limpar itens comprados, marcar todos
+- 🚧 **Testes E2E**: End-to-end com MockMvc para itens
 
-**Sprint Seguinte - Recursos Avançados:**
+**Próxima Sprint - Recursos Avançados:**
 - 🚧 **Filtros e Ordenação**: Buscar listas por status, ordenar por data
 - 🚧 **Paginação**: Para listagens grandes
 - 🚧 **Compartilhamento**: Compartilhar listas entre usuários
@@ -970,10 +1104,9 @@ backend/
     │   │       │   │   │   └── RegisterResponse.java
     │   │       │   │   ├── shoppinglist/
     │   │       │   │   │   ├── CreateShoppingListRequest.java
-    │   │       │   │   │   ├── DeleteShoppingListRequest.java
-    │   │       │   │   │   ├── RenameShoppingListRequest.java
     │   │       │   │   │   ├── ShoppingListResponse.java
-    │   │       │   │   │   └── ShoppingListSummaryResponse.java
+    │   │       │   │   │   ├── ShoppingListSummaryResponse.java
+    │   │       │   │   │   └── UpdateShoppingListRequest.java
     │   │       │   │   └── user/
     │   │       │   │       └── UserMeResponse.java
     │   │       │   └── usecase
@@ -986,7 +1119,7 @@ backend/
     │   │       │       ├── LogoutUseCase.java
     │   │       │       ├── RefreshTokenUseCase.java
     │   │       │       ├── RegisterUserUseCase.java
-    │   │       │       └── RenameShoppingListUseCase.java
+    │   │       │       └── UpdateShoppingListUseCase.java
                 │   │       ├── domain
                 │   │       │   ├── user
                 │   │       │   │   ├── AuthProvider.java
@@ -1030,9 +1163,10 @@ backend/
     │   │       └── interfaces
     │   │           └── rest
     │   │               └── v1
+    │   │                   ├── AdminController.java
     │   │                   ├── AuthController.java
     │   │                   ├── HealthController.java
-    │   │                   ├── ProtectedTestController.java
+    │   │                   ├── ShoppingListController.java
     │   │                   └── UserController.java
     │   └── resources
     │       ├── application.yml
@@ -1063,7 +1197,7 @@ backend/
                 │       ├── LogoutUseCaseTest.java
                 │       ├── RefreshTokenUseCaseTest.java
                 │       ├── RegisterUserUseCaseTest.java
-                │       └── RenameShoppingListUseCaseTest.java
+                │       └── UpdateShoppingListUseCaseTest.java
                 ├── domain
                 │   └── shoppinglist
                 │       ├── ItemNameTest.java
@@ -1080,12 +1214,14 @@ backend/
                 └── interfaces
                     └── rest
                         └── v1
+                            ├── AdminAuthorizationIntegrationTest.java
                             ├── AuthControllerLoginTest.java
                             ├── AuthControllerRefreshTest.java
                             ├── AuthControllerTest.java
                             ├── GoogleAuthControllerIntegrationTest.java
                             ├── HealthControllerTest.java
-                            └── JwtAuthenticationIntegrationTest.java
+                            ├── JwtAuthenticationIntegrationTest.java
+                            └── ShoppingListControllerTest.java
 ```
 
 ---
@@ -1673,12 +1809,12 @@ Para testar rapidamente sem frontend:
 - ✅ **100% cobertura** das regras de negócio
 
 #### **📝 Camada de Aplicação Shopping List**
-- ✅ **Use Cases**: CreateShoppingList, GetMyShoppingLists, RenameShoppingList, DeleteShoppingList
-- ✅ **DTOs**: 5 DTOs com validações Jakarta (request/response)
+- ✅ **Use Cases**: CreateShoppingList, GetMyShoppingLists, UpdateShoppingList, DeleteShoppingList
+- ✅ **DTOs**: 4 DTOs com validações Jakarta (request/response)
 - ✅ **Exceções Customizadas**: ShoppingListNotFoundException, UnauthorizedShoppingListAccessException
 - ✅ **Validação de Ownership**: Apenas o dono pode modificar suas listas
 - ✅ **Logging Estruturado**: INFO/WARN/DEBUG em todas as operações
-- ✅ **14 testes unitários** (100% cobertura dos use cases)
+- ✅ **17 testes unitários** (100% cobertura dos use cases)
 - ✅ **Zero dependência de web/JPA** (apenas mocks)
 
 #### **💾 Persistência JPA Shopping List**
@@ -1692,49 +1828,55 @@ Para testar rapidamente sem frontend:
 - ✅ **11 testes de integração** com MySQL real via Testcontainers
 - ✅ **100% cobertura** de operações CRUD e relacionamentos
 
+#### **🌐 Controllers REST Shopping List**
+- ✅ **Endpoints CRUD**: POST, GET, PATCH, DELETE em /api/v1/lists
+- ✅ **Autenticação JWT**: Obrigatória em todas as rotas
+- ✅ **Autorização por Ownership**: Validação de que lista pertence ao usuário
+- ✅ **Atualização Parcial**: PATCH permite atualizar título e/ou descrição
+- ✅ **Respostas Padronizadas**: Status HTTP corretos (201, 200, 204, 400, 401, 403, 404)
+- ✅ **Extração de OwnerId**: Automática do SecurityContext via JWT
+- ✅ **Validações Bean**: Jakarta Validation em todos os DTOs
+- ✅ **Logging Estruturado**: INFO/DEBUG em todas as operações
+- ✅ **21 testes de integração E2E** com MockMvc
+- ✅ **100% cobertura** de cenários (sucesso, validações, erros, auth)
+
 #### **🏗️ Infraestrutura e Qualidade**
 - ✅ Clean Architecture com separação clara de camadas
 - ✅ MySQL + Docker Compose para desenvolvimento
-- ✅ H2 em memória para testes (zero configuração)
-- ✅ Flyway migrations versionadas
+- ✅ Testcontainers para testes de integração (MySQL real)
+- ✅ Flyway migrations versionadas (V1 a V8)
 - ✅ Profiles ambiente (dev/test/prod) configurados
 - ✅ Health checks (Spring Actuator + customizado)
 - ✅ CORS configurado para frontend
 - ✅ Logging estruturado com correlation IDs
+- ✅ **195+ testes** automatizados (unitários + integração)
 
 ### 🚧 **EM DESENVOLVIMENTO**
 
-#### **🌐 Sprint Atual - API REST**
-- 🚧 **Controllers REST**: ShoppingListController com endpoints CRUD
-- 🚧 **Autorização JWT**: Extrair userId do token nos controllers
-- 🚧 **Validação de Ownership**: Validar que usuário só acessa suas listas
-- 🚧 **Testes de Integração E2E**: End-to-end com MockMvc
-- 🚧 **Documentação API**: Swagger/OpenAPI
+#### **🔄 Sprint Atual - Gerenciamento de Itens**
+- 🚧 **Use Cases de Itens**: Adicionar, remover, atualizar quantidade, marcar como comprado
+- 🚧 **DTOs de Itens**: Request/Response para operações de itens
+- 🚧 **Endpoints REST**: POST/PATCH/DELETE em /api/v1/lists/{id}/items
+- 🚧 **Operações em Lote**: Limpar comprados, marcar todos, reordenar
+- 🚧 **Testes E2E**: Integração completa com MockMvc
 
 ### 📅 **ROADMAP - Próximas Funcionalidades**
 
-#### **🔄 Sprint 1 - Gerenciamento de Itens**
-- 🏗️ **Use Cases** para itens (adicionar, remover, atualizar, marcar comprado)
-- 🏗️ **DTOs** para operações de itens
-- 🏗️ **Endpoints REST** para gerenciar itens dentro das listas
-- 🏗️ **Operações em Lote**: Limpar comprados, marcar todos como comprados
-- 🏗️ **Testes** unitários e de integração
-
-#### **🔍 Sprint 2 - Recursos Avançados**
+#### **🔍 Sprint 1 - Recursos Avançados**
 - 🏗️ Paginação e ordenação de listas
 - 🏗️ Filtros de busca (por título, data, status)
 - 🏗️ Busca full-text em itens
 - 🏗️ Compartilhamento de listas entre usuários
 - 🏗️ Categorização de itens
 
-#### **📊 Sprint 3 - Analytics e Relatórios**
+#### **📊 Sprint 2 - Analytics e Relatórios**
 - 🏗️ Dashboard de estatísticas
 - 🏗️ Relatórios de gastos por período
 - 🏗️ Análise de padrões de compra
 - 🏗️ Histórico de compras
 - 🏗️ Exportação de dados (CSV, PDF)
 
-#### **🚀 Sprint 4 - Performance e Produção**
+#### **🚀 Sprint 3 - Performance e Produção**
 - 🏗️ Cache Redis para consultas frequentes
 - 🏗️ Rate limiting por usuário/IP
 - 🏗️ Monitoring com Micrometer + Prometheus
