@@ -2,7 +2,9 @@ import { ShoppingList } from '@/src/domain/entities';
 import { GetMyListsUseCase } from '@/src/domain/use-cases/get-my-lists-use-case';
 import React, { useCallback, useEffect, useState } from 'react';
 import { FlatList, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import FloatingActionButton from '../../components/fab';
 import ListCard from '../../components/list-card';
+import EmptyListSvg from '../../components/list-card/EmptyListSvg';
 import { useAppTheme } from '../../hooks';
 
 // Instanciação direta para exemplo, idealmente usar DI/contexto
@@ -100,26 +102,25 @@ export const ListsDashboardScreen: React.FC = () => {
 
   if (!lists.length) {
     return (
-      <View
-        style={[
-          styles.container,
-          {
-            backgroundColor: theme.colors.background,
-            justifyContent: 'center',
-            alignItems: 'center',
-          },
-        ]}
-      >
-        <Text style={[styles.emptyText, { color: theme.colors.textSecondary }]}>
-          Nenhuma lista encontrada
+      <View style={[styles.emptyContainer, { backgroundColor: theme.colors.background }]}>
+        <EmptyListSvg width={160} height={120} />
+        <Text style={[styles.emptyTitle, { color: theme.colors.text }]}>Sua lista está vazia</Text>
+        <Text style={[styles.emptySubtitle, { color: theme.colors.textSecondary }]}>
+          Crie uma lista para organizar suas compras do dia a dia
         </Text>
         <TouchableOpacity
           style={[styles.ctaButton, { backgroundColor: theme.colors.primary }]}
           onPress={() => {
             /* Navegar para criar lista */
           }}
+          activeOpacity={0.85}
+          testID='cta-create-list'
+          accessibilityRole='button'
+          accessibilityLabel='Criar primeira lista'
         >
-          <Text style={[styles.ctaButtonText, { color: theme.colors.onPrimary }]}>Criar lista</Text>
+          <Text style={[styles.ctaButtonText, { color: theme.colors.onPrimary }]}>
+            Criar primeira lista
+          </Text>
         </TouchableOpacity>
       </View>
     );
@@ -142,6 +143,13 @@ export const ListsDashboardScreen: React.FC = () => {
         showsVerticalScrollIndicator={false}
         accessibilityRole='list'
         testID='lists-flatlist'
+      />
+      <FloatingActionButton
+        onPress={() => {
+          // Navegar para criar lista (abrir modal/tela)
+        }}
+        testID='fab-create-list'
+        accessibilityLabel='Criar nova lista'
       />
     </View>
   );
@@ -168,11 +176,28 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  emptyText: {
-    fontSize: 16,
-    marginBottom: 16,
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    paddingBottom: 32,
+  },
+  emptyTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+    marginTop: 28,
+    marginBottom: 6,
     textAlign: 'center',
-    fontWeight: '500',
+    letterSpacing: 0.2,
+  },
+  emptySubtitle: {
+    fontSize: 15,
+    color: '#888',
+    marginBottom: 22,
+    textAlign: 'center',
+    fontWeight: '400',
+    lineHeight: 22,
   },
   ctaButton: {
     borderRadius: 8,

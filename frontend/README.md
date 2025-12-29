@@ -279,7 +279,38 @@ const { control, handleSubmit } = useForm({
 
 
 
-## 🛒 Listas de Compras - Acesso a Dados
+
+## 🖥️ Dashboard de Listas
+
+Após o login, o usuário autenticado é direcionado automaticamente para a tela principal (dashboard) de listas, acessível na tab Home.
+
+### ListsDashboardScreen
+Arquivo: `src/presentation/screens/lists/index.tsx`
+
+- Exibe as listas do usuário em cards (ListCard) usando FlatList para performance.
+- Integração direta com o use case GetMyListsUseCase.
+- Estados tratados:
+  - **Loading:** skeletons de ListCard
+  - **Empty:** mensagem amigável + botão "Criar lista"
+  - **Erro:** mensagem amigável + botão "Tentar novamente"
+  - **Sucesso:** renderiza ListCard para cada lista
+- Suporte a pull-to-refresh (atualização por gesto)
+- Layout responsivo, acessibilidade básica, uso do tema Fresh Market
+- Sem lógica de rede na UI, apenas consumo do use case
+
+### ListCard
+Arquivo: `src/presentation/components/list-card/index.tsx`
+
+- Componente reutilizável para exibir uma lista em formato de card
+- Props: title, itemsCount, pendingItemsCount, purchasedItemsCount, onPress, loading
+- Usa tokens do tema, responsivo, acessível (testID, roles, labels)
+- Variação skeleton para loading
+
+### Fluxo inicial
+- Ao logar, o usuário é direcionado para a tab Home, que agora exibe o dashboard de listas (ListsDashboardScreen)
+- Navegação e guards de autenticação garantem acesso seguro
+
+---
 
 O acesso às listas do usuário autenticado segue Clean Architecture, desacoplado de UI e com tratamento de erros padronizado.
 
