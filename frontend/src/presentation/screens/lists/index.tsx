@@ -13,6 +13,7 @@ import { Button } from '../../components';
 import FloatingActionButton from '../../components/fab';
 import ListCard from '../../components/list-card';
 import EmptyListSvg from '../../components/list-card/EmptyListSvg';
+import { useAuth } from '../../contexts/auth-context';
 import { useAppTheme } from '../../hooks';
 
 // Instancio use case com repository real
@@ -24,10 +25,21 @@ export const ListsDashboardScreen: React.FC = () => {
   const theme = useAppTheme();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { user } = useAuth();
   const [lists, setLists] = useState<ShoppingList[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Função para obter iniciais do usuário
+  const getUserInitials = () => {
+    if (!user?.name) return '?';
+    const names = user.name.trim().split(' ');
+    if (names.length >= 2) {
+      return `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase();
+    }
+    return names[0][0].toUpperCase();
+  };
 
   const fetchLists = useCallback(async () => {
     setLoading(true);
@@ -135,10 +147,24 @@ export const ListsDashboardScreen: React.FC = () => {
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
-        <Text style={[styles.headerTitle, { color: theme.colors.text }]}>Minhas Listas</Text>
-        <Text style={[styles.headerSubtitle, { color: theme.colors.textSecondary }]}>
-          Organize suas compras
-        </Text>
+        <View style={styles.headerContent}>
+          <View>
+            <Text style={[styles.headerTitle, { color: theme.colors.text }]}>Minhas Listas</Text>
+            <Text style={[styles.headerSubtitle, { color: theme.colors.textSecondary }]}>
+              Organize suas compras
+            </Text>
+          </View>
+          <TouchableOpacity
+            style={[styles.avatar, { backgroundColor: theme.colors.primary }]}
+            onPress={() => router.push('/(tabs)/account' as never)}
+            accessibilityLabel='Ver perfil'
+            accessibilityRole='button'
+          >
+            <Text style={[styles.avatarText, { color: theme.colors.textInverted }]}>
+              {getUserInitials()}
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
       <FlatList
         data={lists}
@@ -173,6 +199,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 16,
   },
+  headerContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
   headerTitle: {
     fontSize: 32,
     fontWeight: '700',
@@ -182,6 +213,23 @@ const styles = StyleSheet.create({
   headerSubtitle: {
     fontSize: 16,
     fontWeight: '400',
+  },
+  avatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+  },
+  avatarText: {
+    fontSize: 18,
+    fontWeight: '700',
+    letterSpacing: 0.5,
   },
   errorText: {
     fontSize: 16,
