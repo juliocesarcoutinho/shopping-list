@@ -117,7 +117,7 @@ export const ShoppingItemRow: React.FC<ShoppingItemRowProps> = ({
         style={[
           styles.checkbox,
           {
-            borderColor: isPurchased ? '#059669' : theme.colors.border,
+            borderColor: isPurchased ? '#059669' : '#A7F3D0',
             backgroundColor: isPurchased ? '#059669' : 'transparent',
           },
         ]}
@@ -160,7 +160,7 @@ export const ShoppingItemRow: React.FC<ShoppingItemRowProps> = ({
           {unitPrice !== undefined && unitPrice !== null && unitPrice > 0 && (
             <>
               <Text
-                style={[styles.unitPrice, { color: theme.colors.text }]}
+                style={[styles.unitPrice, { color: '#10B981' }]}
                 testID={testID ? `${testID}-unit-price` : undefined}
               >
                 $ {formatCurrency(unitPrice)}
