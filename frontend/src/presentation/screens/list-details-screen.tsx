@@ -34,7 +34,7 @@ import {
   ToggleItemPurchasedUseCase,
 } from '@/src/domain/use-cases';
 
-import { AddItemModal, Button, FloatingActionButton, ShoppingItemRow, Toast } from '../components';
+import { AddItemModal, Button, Divider, FloatingActionButton, ShoppingItemRow, Toast } from '../components';
 import { useAppTheme } from '../hooks';
 import { semanticColors } from '../theme/colors';
 
@@ -152,7 +152,19 @@ export const ListDetailsScreen: React.FC = () => {
     }).format(value);
   };
 
-  // Handler para toggle de item com atualização otimista
+  // Função helper para ordenar itens (mesma lógica do GetListDetailsUseCase)
+  const sortItems = useCallback((items: ShoppingItem[]): ShoppingItem[] => {
+    return [...items].sort((a, b) => {
+      // Primeiro critério: isPurchased (false antes de true)
+      if (a.isPurchased !== b.isPurchased) {
+        return a.isPurchased ? 1 : -1;
+      }
+      // Segundo critério: updatedAt desc (mais recente primeiro)
+      return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+    });
+  }, []);
+
+  // Handler para toggle de item com atualização otimista e reordenação automática
   const handleTogglePurchased = useCallback(
     async (itemId: string, newValue: boolean) => {
       if (!id || !list || togglingItemId) {
@@ -165,15 +177,21 @@ export const ListDetailsScreen: React.FC = () => {
       const previousItem = list.items.find(i => i.id === itemId);
       if (!previousItem) return;
 
-      // Atualização otimista: atualiza UI imediatamente
+      // Atualização otimista: atualiza UI imediatamente e reordena
       setTogglingItemId(itemId);
       setList(prevList => {
         if (!prevList) return prevList;
+        // Atualiza o item
+        const updatedItems = prevList.items.map(item =>
+          item.id === itemId
+            ? { ...item, isPurchased: newValue, updatedAt: new Date().toISOString() }
+            : item
+        );
+        // Reordena os itens automaticamente
+        const sortedItems = sortItems(updatedItems);
         return {
           ...prevList,
-          items: prevList.items.map(item =>
-            item.id === itemId ? { ...item, isPurchased: newValue } : item
-          ),
+          items: sortedItems,
         };
       });
 
@@ -185,7 +203,7 @@ export const ListDetailsScreen: React.FC = () => {
           isPurchased: newValue,
         });
 
-        // Sucesso: mantém estado otimista e mostra toast
+        // Sucesso: mantém estado otimista (já ordenado) e mostra toast
         setToastMessage(newValue ? 'Item marcado como comprado' : 'Item marcado como não comprado');
         setToastType('success');
         setToastVisible(true);
@@ -214,7 +232,7 @@ export const ListDetailsScreen: React.FC = () => {
         setTogglingItemId(null);
       }
     },
-    [id, list, togglingItemId]
+    [id, list, togglingItemId, sortItems]
   );
 
   // Handler para editar item (placeholder - será implementado no próximo épico)
@@ -273,22 +291,36 @@ export const ListDetailsScreen: React.FC = () => {
 
   // Renderiza item na FlatList
   const renderItem = useCallback(
-    ({ item }: { item: ShoppingList['items'][0] }) => {
+    ({ item, index }: { item: ShoppingList['items'][0]; index: number }) => {
+      // Verifica se precisa mostrar divisor (transição de não comprado para comprado)
+      const showDivider =
+        index > 0 &&
+        list?.items[index - 1] &&
+        !list.items[index - 1].isPurchased &&
+        item.isPurchased;
+
       return (
-        <ShoppingItemRow
-          id={item.id}
-          name={item.name}
-          quantity={item.quantity}
-          unitPrice={item.unitPrice}
-          isPurchased={item.isPurchased}
-          loading={togglingItemId === item.id}
-          onPress={() => handleEditItem(item.id)}
-          onTogglePurchased={handleTogglePurchased}
-          testID={`item-${item.id}`}
-        />
+        <>
+          {showDivider && (
+            <View style={styles.dividerContainer}>
+              <Divider orientation='horizontal' color={theme.colors.border} margin={16} />
+            </View>
+          )}
+          <ShoppingItemRow
+            id={item.id}
+            name={item.name}
+            quantity={item.quantity}
+            unitPrice={item.unitPrice}
+            isPurchased={item.isPurchased}
+            loading={togglingItemId === item.id}
+            onPress={() => handleEditItem(item.id)}
+            onTogglePurchased={handleTogglePurchased}
+            testID={`item-${item.id}`}
+          />
+        </>
       );
     },
-    [handleEditItem, handleTogglePurchased, togglingItemId]
+    [handleEditItem, handleTogglePurchased, togglingItemId, list]
   );
 
   // Estado Loading: skeleton/loader
@@ -443,7 +475,7 @@ export const ListDetailsScreen: React.FC = () => {
       <FlatList
         data={list.items}
         keyExtractor={item => item.id}
-        renderItem={renderItem}
+        renderItem={({ item, index }) => renderItem({ item, index })}
         contentContainerStyle={{
           paddingHorizontal: 20,
           paddingTop: 16,
@@ -598,6 +630,9 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     lineHeight: 22,
   },
+  dividerContainer: {
+    marginVertical: 8,
+  } as ViewStyle,
 });
 
 export default ListDetailsScreen;
