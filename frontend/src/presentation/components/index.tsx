@@ -120,6 +120,7 @@ export interface TextFieldProps extends Omit<TextInputProps, 'style'> {
   error?: string;
   disabled?: boolean;
   variant?: 'outlined' | 'filled';
+  labelColor?: string; // Cor customizada para o label
 }
 
 export function TextField({
@@ -127,6 +128,7 @@ export function TextField({
   error,
   disabled = false,
   variant = 'outlined',
+  labelColor,
   ...textInputProps
 }: TextFieldProps) {
   const theme = useAppTheme();
@@ -170,7 +172,11 @@ export function TextField({
           style={[
             styles.textFieldLabel,
             {
-              color: error ? theme.colors.error : theme.colors.text,
+              color: error
+                ? theme.colors.error
+                : labelColor
+                  ? labelColor
+                  : theme.colors.text,
               marginBottom: theme.spacing[2],
             },
           ]}

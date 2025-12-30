@@ -26,6 +26,9 @@ import { z } from 'zod';
 import { Button, TextField } from '../index';
 import { useAppTheme } from '../../hooks';
 
+// Cor verde bem escuro, quase preto para os textos do modal
+const darkGreenText = '#0A2E1A'; // Verde muito escuro, quase preto
+
 // Schema de validação Zod
 const addItemSchema = z.object({
   name: z
@@ -144,7 +147,7 @@ export const AddItemModal: React.FC<AddItemModalProps> = ({
             >
               {/* Header */}
               <View style={styles.header}>
-                <Text style={[styles.title, { color: theme.colors.text }]}>Adicionar Item</Text>
+                <Text style={[styles.title, { color: '#0A2E1A' }]}>Adicionar Item</Text>
                 <TouchableOpacity
                   onPress={onClose}
                   hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
@@ -189,6 +192,7 @@ export const AddItemModal: React.FC<AddItemModalProps> = ({
                         returnKeyType='next'
                         autoFocus
                         disabled={loading}
+                        labelColor={darkGreenText}
                       />
                     )}
                   />
@@ -214,6 +218,7 @@ export const AddItemModal: React.FC<AddItemModalProps> = ({
                         keyboardType='numeric'
                         returnKeyType='next'
                         disabled={loading}
+                        labelColor={darkGreenText}
                       />
                     )}
                   />
@@ -241,6 +246,7 @@ export const AddItemModal: React.FC<AddItemModalProps> = ({
                         keyboardType='decimal-pad'
                         returnKeyType='done'
                         disabled={loading}
+                        labelColor={darkGreenText}
                       />
                     )}
                   />
