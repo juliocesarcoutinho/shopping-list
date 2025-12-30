@@ -218,7 +218,7 @@ export const ListDetailsScreen: React.FC = () => {
         });
 
         // Sucesso: mantém estado otimista (já ordenado) e mostra toast
-        setToastMessage(newValue ? 'Item marcado como comprado' : 'Item marcado como não comprado');
+        setToastMessage(newValue ? 'Marcar como comprado' : 'Marcar como não comprado');
         setToastType('success');
         setToastVisible(true);
       } catch (err) {

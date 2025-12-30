@@ -102,7 +102,7 @@ export const ShoppingItemRow: React.FC<ShoppingItemRowProps> = ({
           backgroundColor: theme.colors.surface,
           borderColor: theme.colors.border,
         },
-        isPurchased && { opacity: 0.6 },
+        isPurchased && { opacity: 0.85 },
       ]}
       onPress={handlePress}
       activeOpacity={0.7}
@@ -230,7 +230,7 @@ const styles = StyleSheet.create({
   },
   strikethrough: {
     textDecorationLine: 'line-through',
-    opacity: 0.6,
+    opacity: 0.85,
   },
   detailsRow: {
     flexDirection: 'row',
