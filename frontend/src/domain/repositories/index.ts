@@ -25,6 +25,7 @@ export interface ShoppingListRepository {
   delete(id: string): Promise<void>;
   addItem(listId: string, item: { name: string; quantity: number; unit?: string; unitPrice?: number }): Promise<ShoppingItem>;
   updateItem(listId: string, itemId: string, data: { status?: 'PENDING' | 'PURCHASED'; name?: string; quantity?: number; unit?: string; unitPrice?: number }): Promise<ShoppingItem>;
+  deleteItem(listId: string, itemId: string): Promise<void>;
 }
 
 export interface ShoppingItemRepository {

@@ -92,4 +92,13 @@ export class ShoppingListRepositoryImpl {
       throw error;
     }
   }
+
+  async deleteItem(listId: string, itemId: string): Promise<void> {
+    try {
+      await this.remote.deleteItem(listId, itemId);
+    } catch (error) {
+      // Repassa erro já normalizado
+      throw error;
+    }
+  }
 }

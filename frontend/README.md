@@ -274,7 +274,8 @@ Sistema completo de componentes com estados, variações e validações:
   - Preço unitário e subtotal opcionais (formatação BRL)
   - Estado loading com skeleton placeholder
   - Acessibilidade completa (roles, labels, testIDs)
-  - Suporte a callbacks: `onPress` (editar) e `onTogglePurchased` (checkbox)
+  - Suporte a callbacks: `onPress` (editar), `onTogglePurchased` (checkbox) e `onDelete` (excluir)
+  - Botão de menu (3 pontinhos) para exclusão de item
   - 22 testes cobrindo props, cálculos e formatação
   - Textos em verde bem escuro (#064E3B)
 
@@ -600,6 +601,7 @@ Navegação para tela de detalhes ao clicar em um card de lista.
 - Total estimado calculado automaticamente no topo
 - Divisor visual entre itens não comprados e comprados
 - Reordenação automática: item comprado desce para baixo imediatamente ao marcar
+- Botão de menu (3 pontinhos) no item para exclusão
 
 ✅ **FAB (Floating Action Button):**
 - Botão circular verde (#059669) no canto inferior direito
@@ -622,6 +624,16 @@ Navegação para tela de detalhes ao clicar em um card de lista.
 - Prevenção de double tap com loading state
 - Tratamento de erros (401/403/404/500) com mensagens específicas
 - Reversão automática em caso de erro
+
+✅ **Excluir Item:**
+- Botão de menu (3 pontinhos) no item (removido do header)
+- ConfirmModal destrutivo para confirmação
+- DELETE funciona via API
+- Em sucesso: remove item da UI imediatamente
+- Em erro: mantém item e mostra toast
+- 404: remove da UI (idempotência)
+- Toast de feedback (sucesso/erro)
+- Fluxo consistente com exclusão de lista
 
 ✅ **Placeholder "Em Construção":**
 - Ícone e mensagem informando que é visualização mockada
@@ -1855,6 +1867,12 @@ Loading (ActivityIndicator)
 - [x] **Toast de feedback integrado (sucesso/erro) com cor #059669**
 - [x] **Prevenção de double tap bug com loading state**
 - [x] **Testes unitários do ToggleItemPurchasedUseCase (11 testes)**
+- [x] **DeleteShoppingItemUseCase - Caso de uso para excluir item**
+- [x] **DELETE deleteItem - Endpoint para excluir item (datasource + repository)**
+- [x] **Botão de menu (3 pontinhos) no item para exclusão**
+- [x] **ConfirmModal destrutivo integrado**
+- [x] **Tratamento de 404 com idempotência (remove da UI mesmo se já foi deletado)**
+- [x] **Testes unitários do DeleteShoppingItemUseCase (12 testes)**
 
 ### **🚀 Próximas Features:**
 
@@ -1887,10 +1905,16 @@ Loading (ActivityIndicator)
 - [x] **Divisor visual** entre itens comprados e não comprados
 - [x] **Toast de feedback** integrado (sucesso/erro)
 - [x] **Prevenção de double tap** com loading state
-- [ ] Repository e Data Source para operações de itens (editar/remover)
-- [ ] Use Cases para editar/remover itens
+- [x] **Excluir item** (com ConfirmModal destrutivo e toast)
+- [x] **DeleteShoppingItemUseCase** implementado e funcional
+- [x] **DELETE deleteItem** no datasource e repository
+- [x] **Botão de menu (3 pontinhos)** no item (removido do header)
+- [x] **Tratamento de 404** com idempotência
+- [ ] Repository e Data Source para operações de itens (editar)
+- [ ] Use Cases para editar itens
 - [ ] Editar lista existente
 - [x] Marcar itens como comprados (toggle com atualização otimista e reordenação automática)
+- [x] Excluir itens (com ConfirmModal destrutivo e toast)
 - [ ] Compartilhar listas com outros usuários
 - [ ] Categorias de produtos
 

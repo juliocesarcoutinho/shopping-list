@@ -13,6 +13,7 @@ export interface ShoppingItemRowProps {
   loading?: boolean;
   onPress?: () => void;
   onTogglePurchased?: (id: string, newValue: boolean) => void;
+  onDelete?: (id: string) => void;
   testID?: string;
 }
 
@@ -40,6 +41,7 @@ export const ShoppingItemRow: React.FC<ShoppingItemRowProps> = ({
   loading = false,
   onPress,
   onTogglePurchased,
+  onDelete,
   testID,
 }) => {
   const theme = useAppTheme();
@@ -175,6 +177,20 @@ export const ShoppingItemRow: React.FC<ShoppingItemRowProps> = ({
           )}
         </View>
       </View>
+
+      {/* Menu Button (3 pontinhos) */}
+      {onDelete && (
+        <TouchableOpacity
+          onPress={() => onDelete(id)}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          accessibilityLabel='Excluir item'
+          accessibilityRole='button'
+          testID={testID ? `${testID}-menu` : undefined}
+          style={styles.menuButton}
+        >
+          <Ionicons name='ellipsis-vertical' size={20} color={theme.colors.textSecondary} />
+        </TouchableOpacity>
+      )}
     </TouchableOpacity>
   );
 };
@@ -261,5 +277,11 @@ const styles = StyleSheet.create({
     width: 60,
     borderRadius: 4,
     marginLeft: 8,
+  },
+  menuButton: {
+    padding: 8,
+    marginLeft: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });

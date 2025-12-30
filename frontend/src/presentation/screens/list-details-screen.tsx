@@ -30,11 +30,20 @@ import { ShoppingListRepositoryImpl } from '@/src/data/repositories/shopping-lis
 import { ShoppingItem, ShoppingList } from '@/src/domain/entities';
 import {
   AddItemToListUseCase,
+  DeleteShoppingItemUseCase,
   GetListDetailsUseCase,
   ToggleItemPurchasedUseCase,
 } from '@/src/domain/use-cases';
 
-import { AddItemModal, Button, Divider, FloatingActionButton, ShoppingItemRow, Toast } from '../components';
+import {
+  AddItemModal,
+  Button,
+  ConfirmModal,
+  Divider,
+  FloatingActionButton,
+  ShoppingItemRow,
+  Toast,
+} from '../components';
 import { useAppTheme } from '../hooks';
 import { semanticColors } from '../theme/colors';
 
@@ -44,6 +53,7 @@ const repository = new ShoppingListRepositoryImpl(remoteDataSource);
 const getListDetailsUseCase = new GetListDetailsUseCase(repository);
 const addItemToListUseCase = new AddItemToListUseCase(repository);
 const toggleItemPurchasedUseCase = new ToggleItemPurchasedUseCase(repository);
+const deleteShoppingItemUseCase = new DeleteShoppingItemUseCase(repository);
 
 export const ListDetailsScreen: React.FC = () => {
   const theme = useAppTheme();
@@ -63,6 +73,10 @@ export const ListDetailsScreen: React.FC = () => {
   const [toastVisible, setToastVisible] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState<'success' | 'error'>('success');
+  // Estados para exclusão de item
+  const [confirmModalVisible, setConfirmModalVisible] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<{ id: string; name: string } | null>(null);
+  const [isDeletingItem, setIsDeletingItem] = useState(false);
 
   // Função para carregar dados da lista
   const fetchListDetails = useCallback(async () => {
@@ -241,6 +255,78 @@ export const ListDetailsScreen: React.FC = () => {
     console.log('Edit item:', itemId);
   }, []);
 
+  // Handler para abrir modal de confirmação de exclusão
+  const handleDeleteItem = useCallback(
+    (itemId: string) => {
+      if (!list) return;
+      const item = list.items.find(i => i.id === itemId);
+      if (!item) return;
+      setSelectedItem({ id: itemId, name: item.name });
+      setConfirmModalVisible(true);
+    },
+    [list]
+  );
+
+  // Handler para confirmar exclusão
+  const confirmDeleteItem = useCallback(async () => {
+    if (!id || !selectedItem) return;
+
+    setIsDeletingItem(true);
+    try {
+      await deleteShoppingItemUseCase.execute(id, selectedItem.id);
+      // Remove da UI imediatamente
+      setList(prevList => {
+        if (!prevList) return prevList;
+        return {
+          ...prevList,
+          items: prevList.items.filter(item => item.id !== selectedItem.id),
+        };
+      });
+      // Fecha modal
+      setConfirmModalVisible(false);
+      setSelectedItem(null);
+      // Exibe toast de sucesso
+      setToastMessage('Item excluído com sucesso');
+      setToastType('success');
+      setToastVisible(true);
+    } catch (err: any) {
+      // Tratamento de erros específicos
+      setConfirmModalVisible(false);
+      setSelectedItem(null);
+
+      if (err?.status === 404) {
+        // Já foi deletado, remove da UI (idempotência)
+        setList(prevList => {
+          if (!prevList) return prevList;
+          return {
+            ...prevList,
+            items: prevList.items.filter(item => item.id !== selectedItem.id),
+          };
+        });
+        setToastMessage('Item não encontrado (já foi removido)');
+        setToastType('error');
+        setToastVisible(true);
+      } else if (err?.status === 403) {
+        setToastMessage('Você não tem permissão para deletar este item');
+        setToastType('error');
+        setToastVisible(true);
+      } else {
+        const message = err?.message || 'Erro ao deletar item';
+        setToastMessage(message);
+        setToastType('error');
+        setToastVisible(true);
+      }
+    } finally {
+      setIsDeletingItem(false);
+    }
+  }, [id, selectedItem]);
+
+  // Handler para cancelar exclusão
+  const cancelDeleteItem = useCallback(() => {
+    setConfirmModalVisible(false);
+    setSelectedItem(null);
+  }, []);
+
   // Handler para abrir modal de adicionar item
   const handleAddItem = useCallback(() => {
     setIsAddItemModalVisible(true);
@@ -315,12 +401,13 @@ export const ListDetailsScreen: React.FC = () => {
             loading={togglingItemId === item.id}
             onPress={() => handleEditItem(item.id)}
             onTogglePurchased={handleTogglePurchased}
+            onDelete={handleDeleteItem}
             testID={`item-${item.id}`}
           />
         </>
       );
     },
-    [handleEditItem, handleTogglePurchased, togglingItemId, list]
+    [handleEditItem, handleTogglePurchased, handleDeleteItem, togglingItemId, list]
   );
 
   // Estado Loading: skeleton/loader
@@ -406,15 +493,7 @@ export const ListDetailsScreen: React.FC = () => {
                 0 itens
               </Text>
             </View>
-            <TouchableOpacity
-              onPress={() => {
-                /* Abrir menu de opções */
-              }}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-              accessibilityLabel='Menu de opções'
-            >
-              <Ionicons name='ellipsis-vertical' size={24} color={theme.colors.text} />
-            </TouchableOpacity>
+            <View style={{ width: 24 }} />
           </View>
         </View>
         <View style={styles.emptyContainer}>
@@ -460,15 +539,7 @@ export const ListDetailsScreen: React.FC = () => {
             </Text>
           </View>
 
-          <TouchableOpacity
-            onPress={() => {
-              /* Abrir menu de opções */
-            }}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            accessibilityLabel='Menu de opções'
-          >
-            <Ionicons name='ellipsis-vertical' size={24} color={theme.colors.text} />
-          </TouchableOpacity>
+          <View style={{ width: 24 }} />
         </View>
       </View>
 
@@ -524,6 +595,19 @@ export const ListDetailsScreen: React.FC = () => {
         onSubmit={handleSubmitAddItem}
         loading={isAddingItem}
         error={addItemError}
+      />
+
+      {/* Modal de Confirmação de Exclusão */}
+      <ConfirmModal
+        visible={confirmModalVisible}
+        title='Excluir item?'
+        message={`Tem certeza que deseja excluir o item "${selectedItem?.name}"? Essa ação não pode ser desfeita.`}
+        confirmText='Excluir item'
+        cancelText='Cancelar'
+        confirmVariant='destructive'
+        onConfirm={confirmDeleteItem}
+        onCancel={cancelDeleteItem}
+        loading={isDeletingItem}
       />
 
       {/* Toast de feedback */}

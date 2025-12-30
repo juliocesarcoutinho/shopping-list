@@ -95,4 +95,17 @@ export class ShoppingListRemoteDataSource {
       throw error;
     }
   }
+
+  /**
+   * Remove um item de uma lista de compras
+   * DELETE /api/v1/lists/{listId}/items/{itemId}
+   */
+  async deleteItem(listId: string, itemId: string): Promise<void> {
+    try {
+      await apiClient.delete(`/lists/${listId}/items/${itemId}`);
+    } catch (error) {
+      // Repasso erro já normalizado pelo apiClient
+      throw error;
+    }
+  }
 }
