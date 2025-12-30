@@ -90,7 +90,7 @@ export function CreateListScreen() {
           styles.header,
           {
             paddingTop: Math.max(insets.top, 8) + 8, // Garante padding mínimo mesmo sem notch
-            backgroundColor: theme.dark ? '#111827' : '#F9FAF7',
+            backgroundColor: theme.colors.background, // Usa a cor de fundo do tema (adapta automaticamente)
             minHeight: 56, // Altura mínima padrão do Material Design
           },
         ]}
@@ -102,12 +102,12 @@ export function CreateListScreen() {
             accessibilityLabel='Voltar'
             accessibilityRole='button'
           >
-            <Ionicons name='arrow-back' size={24} color={theme.dark ? '#FFFFFF' : '#064E3B'} />
+            <Ionicons name='arrow-back' size={24} color={theme.colors.text} />
           </TouchableOpacity>
 
           <View style={styles.headerCenter}>
             <Text
-              style={[styles.headerTitle, { color: theme.dark ? '#FFFFFF' : '#064E3B' }]}
+              style={[styles.headerTitle, { color: theme.colors.text }]}
               numberOfLines={1}
               adjustsFontSizeToFit
               minimumFontScale={0.8}
@@ -192,8 +192,9 @@ const styles = StyleSheet.create({
   header: {
     paddingHorizontal: 20,
     paddingBottom: 16,
-    // Sem divisor/borda
-    borderBottomWidth: 0,
+    // Divisor bem sutil
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0,0,0,0.05)',
     // Garante que o header não seja comprimido
     justifyContent: 'flex-end',
   } as ViewStyle,
