@@ -40,13 +40,16 @@ function getNumberEnvVar(key: string, defaultValue: number): number {
 }
 
 export const env: EnvConfig = {
-  apiUrl: getEnvVar('API_URL', 'http://localhost:3000/api'),
+  apiUrl: getEnvVar('API_URL', 'http://localhost:8080/api/v1'),
   apiTimeout: getNumberEnvVar('API_TIMEOUT', 30000),
   appName: getEnvVar('APP_NAME', 'Shopping List'),
   appEnv: getEnvVar('APP_ENV', 'development') as EnvConfig['appEnv'],
   enableMockApi: getBooleanEnvVar('ENABLE_MOCK_API', true),
   enableDebugLogs: getBooleanEnvVar('ENABLE_DEBUG_LOGS', false),
-  googleClientId: getEnvVar('GOOGLE_CLIENT_ID', ''),
+  googleClientId: getEnvVar(
+    'GOOGLE_CLIENT_ID',
+    '702911695224-9iv91ihjngqfjh761kd12gncul3sq89u.apps.googleusercontent.com'
+  ),
 };
 
 export const isDevelopment = env.appEnv === 'development';
