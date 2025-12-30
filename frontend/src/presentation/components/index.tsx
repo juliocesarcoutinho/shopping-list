@@ -21,6 +21,8 @@ import { useAppTheme } from '../hooks';
 export { AddItemModal } from './add-item-modal';
 export type { AddItemModalProps } from './add-item-modal';
 export { ConfirmModal } from './confirm-modal';
+export { EditItemModal } from './edit-item-modal';
+export type { EditItemModalProps } from './edit-item-modal';
 export { FloatingActionButton } from './fab';
 export type { FloatingActionButtonProps } from './fab';
 export { ShoppingItemRow } from './shopping-item-row';

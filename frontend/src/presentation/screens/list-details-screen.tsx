@@ -33,6 +33,7 @@ import {
   DeleteShoppingItemUseCase,
   GetListDetailsUseCase,
   ToggleItemPurchasedUseCase,
+  UpdateShoppingItemUseCase,
 } from '@/src/domain/use-cases';
 
 import {
@@ -40,6 +41,7 @@ import {
   Button,
   ConfirmModal,
   Divider,
+  EditItemModal,
   FloatingActionButton,
   ShoppingItemRow,
   Toast,
@@ -54,6 +56,7 @@ const getListDetailsUseCase = new GetListDetailsUseCase(repository);
 const addItemToListUseCase = new AddItemToListUseCase(repository);
 const toggleItemPurchasedUseCase = new ToggleItemPurchasedUseCase(repository);
 const deleteShoppingItemUseCase = new DeleteShoppingItemUseCase(repository);
+const updateShoppingItemUseCase = new UpdateShoppingItemUseCase(repository);
 
 export const ListDetailsScreen: React.FC = () => {
   const theme = useAppTheme();
@@ -77,6 +80,11 @@ export const ListDetailsScreen: React.FC = () => {
   const [confirmModalVisible, setConfirmModalVisible] = useState(false);
   const [selectedItem, setSelectedItem] = useState<{ id: string; name: string } | null>(null);
   const [isDeletingItem, setIsDeletingItem] = useState(false);
+  // Estados para edição de item
+  const [isEditItemModalVisible, setIsEditItemModalVisible] = useState(false);
+  const [editingItem, setEditingItem] = useState<{ id: string; name: string; quantity: number; unitPrice?: number } | null>(null);
+  const [isUpdatingItem, setIsUpdatingItem] = useState(false);
+  const [updateItemError, setUpdateItemError] = useState<string | null>(null);
 
   // Função para carregar dados da lista
   const fetchListDetails = useCallback(async () => {
@@ -249,11 +257,64 @@ export const ListDetailsScreen: React.FC = () => {
     [id, list, togglingItemId, sortItems]
   );
 
-  // Handler para editar item (placeholder - será implementado no próximo épico)
-  const handleEditItem = useCallback((itemId: string) => {
-    // TODO: Implementar navegação para edição no próximo épico
-    console.log('Edit item:', itemId);
+  // Handler para abrir modal de edição
+  const handleEditItem = useCallback(
+    (itemId: string) => {
+      if (!list) return;
+      const item = list.items.find(i => i.id === itemId);
+      if (!item) return;
+      setEditingItem({
+        id: item.id,
+        name: item.name,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+      });
+      setIsEditItemModalVisible(true);
+      setUpdateItemError(null);
+    },
+    [list]
+  );
+
+  // Handler para fechar modal de edição
+  const handleCloseEditModal = useCallback(() => {
+    setIsEditItemModalVisible(false);
+    setEditingItem(null);
+    setUpdateItemError(null);
   }, []);
+
+  // Handler para submeter edição de item
+  const handleSubmitEditItem = useCallback(
+    async (data: { name: string; quantity: number; unitPrice?: number }) => {
+      if (!id || !editingItem) return;
+
+      setIsUpdatingItem(true);
+      setUpdateItemError(null);
+      try {
+        await updateShoppingItemUseCase.execute({
+          listId: id,
+          itemId: editingItem.id,
+          name: data.name,
+          quantity: data.quantity,
+          unitPrice: data.unitPrice,
+        });
+
+        // Fecha modal e recarrega lista
+        setIsEditItemModalVisible(false);
+        setEditingItem(null);
+        setUpdateItemError(null);
+        // Recarrega a lista para mostrar o item atualizado
+        await fetchListDetails();
+      } catch (err) {
+        const error = err as Error & { status?: number; data?: { message?: string } };
+        // Captura mensagem de erro da API ou do use case
+        const apiMessage = error?.message || error?.data?.message;
+        setUpdateItemError(apiMessage || 'Erro ao atualizar item. Tente novamente.');
+      } finally {
+        setIsUpdatingItem(false);
+      }
+    },
+    [id, editingItem, fetchListDetails]
+  );
 
   // Handler para abrir modal de confirmação de exclusão
   const handleDeleteItem = useCallback(
@@ -595,6 +656,16 @@ export const ListDetailsScreen: React.FC = () => {
         onSubmit={handleSubmitAddItem}
         loading={isAddingItem}
         error={addItemError}
+      />
+
+      {/* Modal de editar item */}
+      <EditItemModal
+        visible={isEditItemModalVisible}
+        item={editingItem}
+        onClose={handleCloseEditModal}
+        onSubmit={handleSubmitEditItem}
+        loading={isUpdatingItem}
+        error={updateItemError}
       />
 
       {/* Modal de Confirmação de Exclusão */}

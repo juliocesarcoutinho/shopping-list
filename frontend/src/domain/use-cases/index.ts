@@ -15,6 +15,7 @@ export * from './delete-shopping-item-use-case';
 export * from './get-list-details-use-case';
 export * from './get-my-lists-use-case';
 export * from './toggle-item-purchased-use-case';
+export * from './update-shopping-item-use-case';
 
 export class GetShoppingListsUseCase {
   constructor(private shoppingListRepository: ShoppingListRepository) {}
