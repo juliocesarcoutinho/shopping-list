@@ -14,9 +14,9 @@ export const baseColors = {
   // Fresh Market Background
   backgroundLight: '#F9FAF7',
 
-  // Text Colors
-  textDark: '#2C3E50',
-  textMuted: '#7F8C8D',
+  // Text Colors - Verde bem escuro, quase preto
+  textDark: '#0A2E1A', // Verde muito escuro, quase preto
+  textMuted: '#1A4D2A', // Verde escuro um pouco mais claro para textos secundários
 
   // Escala de Cinzas (mantida para compatibilidade)
   gray50: '#F9FAFB',
@@ -71,9 +71,9 @@ export const lightColors = {
   backgroundSecondary: baseColors.white,
   backgroundTertiary: baseColors.gray50,
 
-  // Text - Escuro e legível
-  text: baseColors.textDark, // #2C3E50
-  textSecondary: baseColors.textMuted, // #7F8C8D
+  // Text - Verde bem escuro, quase preto
+  text: baseColors.textDark, // #0A2E1A - Verde muito escuro, quase preto
+  textSecondary: baseColors.textMuted, // #1A4D2A - Verde escuro para textos secundários
   textTertiary: baseColors.gray400,
   textInverted: baseColors.white,
 
