@@ -3,7 +3,7 @@
 
 import { apiClient } from '@/src/infrastructure/http/apiClient';
 
-import { AddItemRequestDto, ShoppingItemDto, ShoppingListDto } from '../models';
+import { AddItemRequestDto, ShoppingItemDto, ShoppingListDto, UpdateItemRequestDto } from '../models';
 
 export interface CreateListDto {
   title: string;
@@ -73,6 +73,23 @@ export class ShoppingListRemoteDataSource {
   async addItem(listId: string, data: AddItemRequestDto): Promise<ShoppingItemDto> {
     try {
       return await apiClient.post<ShoppingItemDto>(`/lists/${listId}/items`, data);
+    } catch (error) {
+      // Repasso erro já normalizado pelo apiClient
+      throw error;
+    }
+  }
+
+  /**
+   * Atualiza um item existente em uma lista de compras
+   * PATCH /api/v1/lists/{listId}/items/{itemId}
+   */
+  async updateItem(
+    listId: string,
+    itemId: string,
+    data: UpdateItemRequestDto
+  ): Promise<ShoppingItemDto> {
+    try {
+      return await apiClient.patch<ShoppingItemDto>(`/lists/${listId}/items/${itemId}`, data);
     } catch (error) {
       // Repasso erro já normalizado pelo apiClient
       throw error;

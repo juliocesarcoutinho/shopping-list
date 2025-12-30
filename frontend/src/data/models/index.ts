@@ -116,8 +116,10 @@ export interface AddItemRequestDto {
   unitPrice?: number;
 }
 
-export interface UpdateShoppingItemRequest {
+export interface UpdateItemRequestDto {
   name?: string;
   quantity?: number;
-  is_completed?: boolean;
+  unit?: string;
+  unitPrice?: number;
+  status?: 'PENDING' | 'PURCHASED';
 }

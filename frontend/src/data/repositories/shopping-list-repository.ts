@@ -6,7 +6,7 @@ import { ShoppingItem, ShoppingList } from '@/src/domain/entities';
 import { ShoppingListRemoteDataSource } from '../data-sources/shopping-list-remote-data-source';
 import { mapShoppingItemDtoToDomain } from '../mappers/shopping-item-mapper';
 import { mapShoppingListDtoToDomain } from '../mappers/shopping-list-mapper';
-import { AddItemRequestDto } from '../models';
+import { AddItemRequestDto, UpdateItemRequestDto } from '../models';
 
 export class ShoppingListRepositoryImpl {
   constructor(private readonly remote: ShoppingListRemoteDataSource) {}
@@ -72,6 +72,20 @@ export class ShoppingListRepositoryImpl {
   async addItem(listId: string, item: AddItemRequestDto): Promise<ShoppingItem> {
     try {
       const dto = await this.remote.addItem(listId, item);
+      return mapShoppingItemDtoToDomain(dto);
+    } catch (error) {
+      // Repassa erro já normalizado
+      throw error;
+    }
+  }
+
+  async updateItem(
+    listId: string,
+    itemId: string,
+    data: UpdateItemRequestDto
+  ): Promise<ShoppingItem> {
+    try {
+      const dto = await this.remote.updateItem(listId, itemId, data);
       return mapShoppingItemDtoToDomain(dto);
     } catch (error) {
       // Repassa erro já normalizado

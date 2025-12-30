@@ -27,10 +27,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ShoppingListRemoteDataSource } from '@/src/data/data-sources/shopping-list-remote-data-source';
 import { ShoppingListRepositoryImpl } from '@/src/data/repositories/shopping-list-repository';
-import { ShoppingList } from '@/src/domain/entities';
-import { AddItemToListUseCase, GetListDetailsUseCase } from '@/src/domain/use-cases';
+import { ShoppingItem, ShoppingList } from '@/src/domain/entities';
+import {
+  AddItemToListUseCase,
+  GetListDetailsUseCase,
+  ToggleItemPurchasedUseCase,
+} from '@/src/domain/use-cases';
 
-import { AddItemModal, Button, FloatingActionButton, ShoppingItemRow } from '../components';
+import { AddItemModal, Button, FloatingActionButton, ShoppingItemRow, Toast } from '../components';
 import { useAppTheme } from '../hooks';
 import { semanticColors } from '../theme/colors';
 
@@ -39,6 +43,7 @@ const remoteDataSource = new ShoppingListRemoteDataSource();
 const repository = new ShoppingListRepositoryImpl(remoteDataSource);
 const getListDetailsUseCase = new GetListDetailsUseCase(repository);
 const addItemToListUseCase = new AddItemToListUseCase(repository);
+const toggleItemPurchasedUseCase = new ToggleItemPurchasedUseCase(repository);
 
 export const ListDetailsScreen: React.FC = () => {
   const theme = useAppTheme();
@@ -53,6 +58,11 @@ export const ListDetailsScreen: React.FC = () => {
   const [isAddItemModalVisible, setIsAddItemModalVisible] = useState(false);
   const [isAddingItem, setIsAddingItem] = useState(false);
   const [addItemError, setAddItemError] = useState<string | null>(null);
+  // Estados para toggle de item
+  const [togglingItemId, setTogglingItemId] = useState<string | null>(null);
+  const [toastVisible, setToastVisible] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastType, setToastType] = useState<'success' | 'error'>('success');
 
   // Função para carregar dados da lista
   const fetchListDetails = useCallback(async () => {
@@ -142,11 +152,70 @@ export const ListDetailsScreen: React.FC = () => {
     }).format(value);
   };
 
-  // Handler para toggle de item (placeholder - será implementado no próximo épico)
-  const handleTogglePurchased = useCallback((itemId: string, newValue: boolean) => {
-    // TODO: Implementar UpdateItemUseCase no próximo épico
-    console.log('Toggle item:', itemId, newValue);
-  }, []);
+  // Handler para toggle de item com atualização otimista
+  const handleTogglePurchased = useCallback(
+    async (itemId: string, newValue: boolean) => {
+      if (!id || !list || togglingItemId) {
+        // Previne double tap: se já está processando, ignora
+        return;
+      }
+
+      // Salva estado anterior para reversão em caso de erro
+      const previousList = list;
+      const previousItem = list.items.find(i => i.id === itemId);
+      if (!previousItem) return;
+
+      // Atualização otimista: atualiza UI imediatamente
+      setTogglingItemId(itemId);
+      setList(prevList => {
+        if (!prevList) return prevList;
+        return {
+          ...prevList,
+          items: prevList.items.map(item =>
+            item.id === itemId ? { ...item, isPurchased: newValue } : item
+          ),
+        };
+      });
+
+      try {
+        // Chama API para persistir mudança
+        await toggleItemPurchasedUseCase.execute({
+          listId: id,
+          itemId,
+          isPurchased: newValue,
+        });
+
+        // Sucesso: mantém estado otimista e mostra toast
+        setToastMessage(newValue ? 'Item marcado como comprado' : 'Item marcado como não comprado');
+        setToastType('success');
+        setToastVisible(true);
+      } catch (err) {
+        // Erro: reverte para estado anterior
+        setList(previousList);
+
+        const error = err as Error & { status?: number };
+        let errorMessage = 'Erro ao atualizar item';
+
+        // Tratamento de erros conforme padrão
+        if (error?.status === 401) {
+          errorMessage = 'Sessão expirada. Faça login novamente.';
+        } else if (error?.status === 403) {
+          errorMessage = 'Você não tem permissão para atualizar este item.';
+        } else if (error?.status === 404) {
+          errorMessage = 'Item não encontrado.';
+        } else {
+          errorMessage = error?.message || 'Erro ao atualizar item. Tente novamente.';
+        }
+
+        setToastMessage(errorMessage);
+        setToastType('error');
+        setToastVisible(true);
+      } finally {
+        setTogglingItemId(null);
+      }
+    },
+    [id, list, togglingItemId]
+  );
 
   // Handler para editar item (placeholder - será implementado no próximo épico)
   const handleEditItem = useCallback((itemId: string) => {
@@ -212,13 +281,14 @@ export const ListDetailsScreen: React.FC = () => {
           quantity={item.quantity}
           unitPrice={item.unitPrice}
           isPurchased={item.isPurchased}
+          loading={togglingItemId === item.id}
           onPress={() => handleEditItem(item.id)}
           onTogglePurchased={handleTogglePurchased}
           testID={`item-${item.id}`}
         />
       );
     },
-    [handleEditItem, handleTogglePurchased]
+    [handleEditItem, handleTogglePurchased, togglingItemId]
   );
 
   // Estado Loading: skeleton/loader
@@ -422,6 +492,16 @@ export const ListDetailsScreen: React.FC = () => {
         onSubmit={handleSubmitAddItem}
         loading={isAddingItem}
         error={addItemError}
+      />
+
+      {/* Toast de feedback */}
+      <Toast
+        visible={toastVisible}
+        message={toastMessage}
+        type={toastType}
+        duration={3000}
+        onHide={() => setToastVisible(false)}
+        position='bottom'
       />
     </View>
   );
