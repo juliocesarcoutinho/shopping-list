@@ -102,7 +102,7 @@ export function AccountScreen() {
               },
             ]}
           >
-            <Text style={[styles.avatarText, { color: '#FFFFFF' }]}>
+            <Text style={styles.avatarText}>
               {user.name
                 .split(' ')
                 .map(n => n[0])
@@ -215,7 +215,7 @@ const styles = StyleSheet.create({
   avatarText: {
     fontSize: 36,
     fontWeight: '700',
-    // Cor será definida inline para garantir branco em ambos os modos
+    color: '#2ECC71', // Verde como estava antes
   },
   userName: {
     fontSize: 24,

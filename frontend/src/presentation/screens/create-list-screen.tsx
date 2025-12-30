@@ -4,10 +4,12 @@
  */
 
 import { zodResolver } from '@hookform/resolvers/zod';
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View, ViewStyle } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { z } from 'zod';
 
 import { ShoppingListRemoteDataSource } from '@/src/data/data-sources/shopping-list-remote-data-source';
@@ -41,6 +43,7 @@ const createListUseCase = new CreateListUseCase(repository);
 export function CreateListScreen() {
   const theme = useAppTheme();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
 
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
@@ -81,10 +84,47 @@ export function CreateListScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      {/* Header Customizado - Responsivo para Android/iOS e diferentes tamanhos */}
+      <View
+        style={[
+          styles.header,
+          {
+            paddingTop: Math.max(insets.top, 8) + 8, // Garante padding mínimo mesmo sem notch
+            backgroundColor: theme.dark ? '#111827' : '#F9FAF7',
+            minHeight: 56, // Altura mínima padrão do Material Design
+          },
+        ]}
+      >
+        <View style={styles.headerContent}>
+          <TouchableOpacity
+            onPress={() => router.back()}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            accessibilityLabel='Voltar'
+            accessibilityRole='button'
+          >
+            <Ionicons name='arrow-back' size={24} color={theme.dark ? '#FFFFFF' : '#064E3B'} />
+          </TouchableOpacity>
+
+          <View style={styles.headerCenter}>
+            <Text
+              style={[styles.headerTitle, { color: theme.dark ? '#FFFFFF' : '#064E3B' }]}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.8}
+            >
+              Nova Lista
+            </Text>
+          </View>
+
+          <View style={styles.headerSpacer} />
+        </View>
+      </View>
+
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps='handled'
         showsVerticalScrollIndicator={false}
+        style={styles.scrollView}
       >
         {errorMessage ? (
           <View style={[styles.errorBanner, { backgroundColor: theme.colors.error }]}>
@@ -148,10 +188,45 @@ export function CreateListScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  } as ViewStyle,
+  header: {
+    paddingHorizontal: 20,
+    paddingBottom: 16,
+    // Sem divisor/borda
+    borderBottomWidth: 0,
+    // Garante que o header não seja comprimido
+    justifyContent: 'flex-end',
+  } as ViewStyle,
+  headerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+    // Garante alinhamento consistente
+    minHeight: 40,
+  } as ViewStyle,
+  headerCenter: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    // Permite que o texto seja truncado em telas muito pequenas
+    minWidth: 0,
+  } as ViewStyle,
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    letterSpacing: 0.2,
+    // Garante que o texto não quebre em telas pequenas
+    textAlign: 'center',
+  },
+  headerSpacer: {
+    width: 24,
+    // Garante espaço igual ao botão de voltar para centralização perfeita
+  } as ViewStyle,
+  scrollView: {
+    flex: 1,
   },
   scrollContent: {
     padding: 24,
-    paddingTop: 16,
     gap: 24,
   },
   form: {

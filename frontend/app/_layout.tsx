@@ -42,7 +42,18 @@ function NavigationContent() {
   }
 
   return (
-    <Stack>
+    <Stack
+      screenOptions={{
+        headerShadowVisible: false, // Remove sombra de todos os headers
+        headerStyle: {
+          elevation: 0,
+          shadowOpacity: 0,
+          shadowOffset: { width: 0, height: 0 },
+          shadowRadius: 0,
+          borderBottomWidth: 0,
+        },
+      }}
+    >
       <Stack.Screen name='login' options={{ headerShown: false }} />
       <Stack.Screen name='register' options={{ headerShown: false }} />
       <Stack.Screen name='(tabs)' options={{ headerShown: false }} />
@@ -52,16 +63,7 @@ function NavigationContent() {
         name='create-list'
         options={{
           presentation: 'modal',
-          title: 'Nova Lista',
-          headerShown: true,
-          headerStyle: {
-            backgroundColor: colorScheme === 'dark' ? '#111827' : '#F9FAF7', // gray900 no dark, backgroundLight no light
-          },
-          headerTintColor: colorScheme === 'dark' ? '#FFFFFF' : '#064E3B', // Branco no dark, textDark no light
-          headerTitleStyle: {
-            color: colorScheme === 'dark' ? '#FFFFFF' : '#064E3B', // Branco no dark, textDark no light
-            fontWeight: '700',
-          },
+          headerShown: false, // Esconde header do React Navigation - vamos criar customizado na tela
         }}
       />
       <Stack.Screen
@@ -77,8 +79,19 @@ function NavigationContent() {
 export default function RootLayout() {
   const colorScheme = useColorScheme();
 
+  // Tema customizado sem borda no header
+  const customTheme = {
+    ...(colorScheme === 'dark' ? DarkTheme : DefaultTheme),
+    colors: {
+      ...(colorScheme === 'dark' ? DarkTheme.colors : DefaultTheme.colors),
+      border: 'transparent', // Remove bordas padrão
+    },
+    // Remove sombras e bordas de todos os headers por padrão
+    headerShadowVisible: false,
+  };
+
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+    <ThemeProvider value={customTheme}>
       <AuthProvider>
         <NavigationContent />
         <StatusBar style='auto' />
