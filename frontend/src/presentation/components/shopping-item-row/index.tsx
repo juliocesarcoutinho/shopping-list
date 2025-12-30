@@ -115,8 +115,8 @@ export const ShoppingItemRow: React.FC<ShoppingItemRowProps> = ({
         style={[
           styles.checkbox,
           {
-            borderColor: isPurchased ? theme.colors.success : theme.colors.border,
-            backgroundColor: isPurchased ? theme.colors.success : 'transparent',
+            borderColor: isPurchased ? '#059669' : theme.colors.border,
+            backgroundColor: isPurchased ? '#059669' : 'transparent',
           },
         ]}
         onPress={handleToggleCheckbox}
