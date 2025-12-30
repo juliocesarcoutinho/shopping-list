@@ -171,6 +171,10 @@ Design minimalista focado em frescor e naturalidade, ideal para aplicações de 
 
 ### **Tokens Disponíveis:**
 - **Cores:** Paleta Fresh Market light/dark (60+ tokens)
+  - Texto principal: #064E3B (verde bem escuro)
+  - Texto secundário: #0F766E (verde escuro)
+  - Botões/FAB/Avatar: #059669 (verde suave)
+  - Card total estimado: #E8F8F0 (verde bem suave)
 - **Tipografia:** Inter + fallbacks (14 presets)
 - **Espaçamento:** Escala baseada em 4px (13 níveis)
 - **Bordas:** Border radius (8 variações)
@@ -201,9 +205,9 @@ Sistema completo de componentes com estados, variações e validações:
 
 - **Button** 
   - 3 tamanhos (small, medium, large)
-  - 2 variantes (primary Fresh Market, secondary outlined)
+  - 2 variantes (primary verde #059669, secondary outlined)
   - Estados: loading, disabled
-  - Cores dinâmicas do tema
+  - Cor primária: #059669 (verde suave)
 
 - **TextField** 
   - 2 variantes (outlined, filled)
@@ -243,6 +247,21 @@ Sistema completo de componentes com estados, variações e validações:
   - Posicionamento configurável (topo/rodapé)
   - Auto-desaparece após duração configurável (padrão: 3s)
   - 3 tipos: `success` (verde), `error` (vermelho), `info` (azul)
+
+- **AddItemModal**
+  - Modal que desliza de baixo para cima com animação suave
+  - Validação RHF + Zod (nome 2-80, quantidade >=1, preço >=0)
+  - Campos: Nome, Quantidade, Preço Unitário (opcional)
+  - Loading durante submit
+  - Exibição de erros do backend
+  - Fecha automaticamente após sucesso e atualiza lista
+  - Textos em verde bem escuro (#064E3B)
+
+- **FloatingActionButton (FAB)**
+  - Botão circular flutuante no canto inferior direito
+  - Cor verde (#059669)
+  - Ícone de "+" branco
+  - Sombra e elevação para destaque visual
   - Não bloqueia navegação ou interação
   - Design alinhado ao Fresh Market
 
@@ -563,19 +582,33 @@ Navegação para tela de detalhes ao clicar em um card de lista.
 - Menu (⋮) para ações futuras
 
 ✅ **Card de Total Estimado:**
-- Background verde claro (primary + 15% opacity)
-- "Total estimado: R$ XX,XX"
-- Border sutil com cor primária
+- Background verde bem suave e claro (#E8F8F0 - primary50)
+- Borda verde suave (#D1F2E1 - primary100)
+- "Total estimado:" em verde bem escuro (#064E3B)
+- Valor em verde suave (#059669)
 
 ✅ **Lista de Itens:**
 - Checkbox circular (verde quando marcado)
-- Nome do item em verde (strikethrough quando completo)
+- Nome do item em verde bem escuro (#064E3B) (strikethrough quando completo)
 - Quantidade: # 2x, # 1x
-- Preço unitário: $ R$ X.XX (em verde, quando disponível)
+- Preço unitário: $ R$ X.XX (em verde bem escuro, quando disponível)
 - Total calculado: (total: R$ XX.XX) quando há preço
 - Cards brancos com border sutil
 - Gap de 12px entre itens
 - Total estimado calculado automaticamente no topo
+
+✅ **FAB (Floating Action Button):**
+- Botão circular verde (#059669) no canto inferior direito
+- Ícone de "+" branco
+- Abre modal de adicionar item ao clicar
+
+✅ **Modal de Adicionar Item:**
+- Desliza de baixo para cima com animação suave
+- Campos: Nome (obrigatório, 2-80 chars), Quantidade (obrigatório, >=1), Preço Unitário (opcional, >=0)
+- Validação RHF + Zod em tempo real
+- Loading durante submit
+- Exibição de erros do backend
+- Fecha automaticamente após sucesso e recarrega lista
 
 ✅ **Placeholder "Em Construção":**
 - Ícone e mensagem informando que é visualização mockada
@@ -597,7 +630,11 @@ Navegação para tela de detalhes ao clicar em um card de lista.
 - ✅ Design profissional seguindo Fresh Market
 - ✅ Parâmetros tipados (listId)
 - ✅ Integração completa com API real
-- ⏳ Gerenciamento de itens (adicionar/editar/remover - próximo épico)
+- ✅ **Adicionar item à lista** (modal com validação RHF + Zod)
+- ✅ **FAB (Floating Action Button)** para adicionar item
+- ✅ **AddItemModal** - Modal que desliza de baixo para cima
+- ✅ **AddItemToListUseCase** - Caso de uso completo para adicionar itens
+- ⏳ Editar/remover itens (próximo épico)
 
 ### Fluxo inicial
 - Ao logar, o usuário é direcionado para a tab Home, que agora exibe o dashboard de listas (ListsDashboardScreen)
@@ -1786,6 +1823,18 @@ Loading (ActivityIndicator)
 - [x] **Estratégia híbrida - Cards usam contadores da API, detalhes calculam de items**
 - [x] **ShoppingItemRow - Componente reutilizável para exibição de itens (22 testes)**
 - [x] **Checkbox interativo com formatação BRL e subtotal automático**
+- [x] **AddItemToListUseCase - Caso de uso para adicionar item à lista**
+- [x] **AddItemModal - Modal de adicionar item com validação RHF + Zod**
+- [x] **FAB integrado na ListDetailsScreen para adicionar item**
+- [x] **Validação completa: nome (2-80), quantidade (>=1), preço (>=0)**
+- [x] **Fluxo completo: abrir modal → validar → adicionar → atualizar lista automaticamente**
+- [x] **Cores atualizadas: textos #064E3B, botões/FAB #059669, card total #E8F8F0**
+- [x] **AddItemToListUseCase - Caso de uso para adicionar item à lista**
+- [x] **AddItemModal - Modal de adicionar item com validação RHF + Zod**
+- [x] **FAB integrado na ListDetailsScreen para adicionar item**
+- [x] **Validação completa: nome (2-80), quantidade (>=1), preço (>=0)**
+- [x] **Fluxo completo: abrir modal → validar → adicionar → atualizar lista automaticamente**
+- [x] **Cores atualizadas: textos #064E3B, botões/FAB #059669, card total #E8F8F0**
 
 ### **🚀 Próximas Features:**
 
@@ -1805,8 +1854,14 @@ Loading (ActivityIndicator)
 - [x] useFocusEffect para recarregar ao voltar de outras telas
 - [x] Exibição de preços unitários e cálculo de total estimado
 - [x] Card de total estimado sempre visível (mostra R$ 0,00 quando não há preços)
-- [ ] Repository e Data Source para operações de itens (CRUD)
-- [ ] Use Cases para adicionar/editar/remover itens
+- [x] **Adicionar item à lista** (modal com validação RHF + Zod)
+- [x] **AddItemToListUseCase** implementado e funcional
+- [x] **AddItemModal** com animação slide up e validação completa
+- [x] **FAB** integrado para adicionar item
+- [x] **Atualização automática** da lista após adicionar item
+- [x] **Cores atualizadas:** textos #064E3B, botões/FAB #059669, card total #E8F8F0
+- [ ] Repository e Data Source para operações de itens (editar/remover)
+- [ ] Use Cases para editar/remover itens
 - [ ] Editar lista existente
 - [ ] Marcar itens como comprados
 - [ ] Compartilhar listas com outros usuários
