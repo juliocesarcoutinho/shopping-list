@@ -32,6 +32,7 @@ import { AddItemToListUseCase, GetListDetailsUseCase } from '@/src/domain/use-ca
 
 import { AddItemModal, Button, FloatingActionButton, ShoppingItemRow } from '../components';
 import { useAppTheme } from '../hooks';
+import { semanticColors } from '../theme/colors';
 
 // Instancio use cases com repository real
 const remoteDataSource = new ShoppingListRemoteDataSource();
@@ -351,7 +352,7 @@ export const ListDetailsScreen: React.FC = () => {
           </TouchableOpacity>
 
           <View style={styles.headerCenter}>
-            <Text style={[styles.headerTitle, { color: theme.colors.primary }]}>{list.title}</Text>
+            <Text style={[styles.headerTitle, { color: theme.colors.text }]}>{list.title}</Text>
             <Text style={[styles.headerSubtitle, { color: theme.colors.textSecondary }]}>
               {purchasedItems} de {totalItems} itens
             </Text>
@@ -383,15 +384,16 @@ export const ListDetailsScreen: React.FC = () => {
             style={[
               styles.totalCard,
               {
-                backgroundColor: theme.colors.primary + '20',
-                borderColor: theme.colors.primary + '40',
+                backgroundColor: semanticColors.primary50, // Verde bem suave e claro
+                borderColor: semanticColors.primary100, // Verde suave para borda
+                borderWidth: 1,
               },
             ]}
           >
-            <Text style={[styles.totalLabel, { color: theme.colors.primary }]}>
+            <Text style={[styles.totalLabel, { color: semanticColors.primary500 }]}>
               Total estimado:
             </Text>
-            <Text style={[styles.totalValue, { color: theme.colors.primary }]}>
+            <Text style={[styles.totalValue, { color: semanticColors.primary500 }]}>
               {estimatedTotal > 0 ? formatCurrency(estimatedTotal) : 'R$ 0,00'}
             </Text>
           </View>

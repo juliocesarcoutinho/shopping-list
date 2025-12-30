@@ -137,7 +137,7 @@ export const ShoppingItemRow: React.FC<ShoppingItemRowProps> = ({
         <Text
           style={[
             styles.name,
-            { color: isPurchased ? theme.colors.textSecondary : theme.colors.primary },
+            { color: isPurchased ? theme.colors.textSecondary : theme.colors.text },
             isPurchased && styles.strikethrough,
           ]}
           numberOfLines={2}
@@ -158,7 +158,7 @@ export const ShoppingItemRow: React.FC<ShoppingItemRowProps> = ({
           {unitPrice !== undefined && unitPrice !== null && unitPrice > 0 && (
             <>
               <Text
-                style={[styles.unitPrice, { color: theme.colors.primary }]}
+                style={[styles.unitPrice, { color: theme.colors.text }]}
                 testID={testID ? `${testID}-unit-price` : undefined}
               >
                 $ {formatCurrency(unitPrice)}
