@@ -390,10 +390,8 @@ export const ListDetailsScreen: React.FC = () => {
               },
             ]}
           >
-            <Text style={[styles.totalLabel, { color: semanticColors.primary500 }]}>
-              Total estimado:
-            </Text>
-            <Text style={[styles.totalValue, { color: semanticColors.primary500 }]}>
+            <Text style={[styles.totalLabel, { color: theme.colors.text }]}>Total estimado:</Text>
+            <Text style={[styles.totalValue, { color: '#059669' }]}>
               {estimatedTotal > 0 ? formatCurrency(estimatedTotal) : 'R$ 0,00'}
             </Text>
           </View>

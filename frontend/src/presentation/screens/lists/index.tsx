@@ -229,7 +229,7 @@ export const ListsDashboardScreen: React.FC = () => {
             </Text>
           </View>
           <TouchableOpacity
-            style={[styles.avatar, { backgroundColor: theme.colors.primary }]}
+            style={[styles.avatar, { backgroundColor: '#059669' }]}
             onPress={() => router.push('/(tabs)/account' as never)}
             accessibilityLabel='Ver perfil'
             accessibilityRole='button'

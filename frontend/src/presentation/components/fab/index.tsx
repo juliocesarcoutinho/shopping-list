@@ -30,8 +30,8 @@ export const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
         style={[
           styles.fab,
           {
-            backgroundColor: theme.colors.primary,
-            shadowColor: theme.colors.primary,
+            backgroundColor: '#059669',
+            shadowColor: '#059669',
           },
         ]}
         activeOpacity={0.85}
