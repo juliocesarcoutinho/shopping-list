@@ -268,6 +268,7 @@ Sistema completo de componentes com estados, variações e validações:
 - **ShoppingItemRow** 
   - Componente de exibição de item de lista de compras
   - Checkbox interativo (marcar/desmarcar comprado)
+  - Checkbox marcado com cor #059669 (verde suave)
   - Nome com strike-through quando comprado
   - Quantidade formatada (ex: "2x")
   - Preço unitário e subtotal opcionais (formatação BRL)
@@ -275,6 +276,7 @@ Sistema completo de componentes com estados, variações e validações:
   - Acessibilidade completa (roles, labels, testIDs)
   - Suporte a callbacks: `onPress` (editar) e `onTogglePurchased` (checkbox)
   - 22 testes cobrindo props, cálculos e formatação
+  - Textos em verde bem escuro (#064E3B)
 
 **Exportação centralizada:**
 ```tsx
@@ -588,7 +590,7 @@ Navegação para tela de detalhes ao clicar em um card de lista.
 - Valor em verde suave (#059669)
 
 ✅ **Lista de Itens:**
-- Checkbox circular (verde quando marcado)
+- Checkbox circular (verde #059669 quando marcado)
 - Nome do item em verde bem escuro (#064E3B) (strikethrough quando completo)
 - Quantidade: # 2x, # 1x
 - Preço unitário: $ R$ X.XX (em verde bem escuro, quando disponível)
@@ -596,6 +598,8 @@ Navegação para tela de detalhes ao clicar em um card de lista.
 - Cards brancos com border sutil
 - Gap de 12px entre itens
 - Total estimado calculado automaticamente no topo
+- Divisor visual entre itens não comprados e comprados
+- Reordenação automática: item comprado desce para baixo imediatamente ao marcar
 
 ✅ **FAB (Floating Action Button):**
 - Botão circular verde (#059669) no canto inferior direito
@@ -609,6 +613,15 @@ Navegação para tela de detalhes ao clicar em um card de lista.
 - Loading durante submit
 - Exibição de erros do backend
 - Fecha automaticamente após sucesso e recarrega lista
+
+✅ **Toggle de Item (Marcar/Desmarcar como Comprado):**
+- Checkbox interativo com atualização otimista
+- Reordenação automática: item comprado desce para baixo imediatamente
+- Divisor visual entre itens não comprados e comprados
+- Toast de feedback (sucesso/erro) com cor #059669
+- Prevenção de double tap com loading state
+- Tratamento de erros (401/403/404/500) com mensagens específicas
+- Reversão automática em caso de erro
 
 ✅ **Placeholder "Em Construção":**
 - Ícone e mensagem informando que é visualização mockada
@@ -1835,6 +1848,13 @@ Loading (ActivityIndicator)
 - [x] **Validação completa: nome (2-80), quantidade (>=1), preço (>=0)**
 - [x] **Fluxo completo: abrir modal → validar → adicionar → atualizar lista automaticamente**
 - [x] **Cores atualizadas: textos #064E3B, botões/FAB #059669, card total #E8F8F0**
+- [x] **ToggleItemPurchasedUseCase - Caso de uso para marcar/desmarcar item como comprado**
+- [x] **PATCH updateItem - Endpoint para atualizar item (datasource + repository)**
+- [x] **Atualização otimista com reordenação automática**
+- [x] **Divisor visual entre itens comprados e não comprados**
+- [x] **Toast de feedback integrado (sucesso/erro) com cor #059669**
+- [x] **Prevenção de double tap bug com loading state**
+- [x] **Testes unitários do ToggleItemPurchasedUseCase (11 testes)**
 
 ### **🚀 Próximas Features:**
 
@@ -1860,10 +1880,17 @@ Loading (ActivityIndicator)
 - [x] **FAB** integrado para adicionar item
 - [x] **Atualização automática** da lista após adicionar item
 - [x] **Cores atualizadas:** textos #064E3B, botões/FAB #059669, card total #E8F8F0
+- [x] **Marcar/desmarcar item como comprado** (toggle com atualização otimista)
+- [x] **ToggleItemPurchasedUseCase** implementado e funcional
+- [x] **PATCH updateItem** no datasource e repository
+- [x] **Reordenação automática** após toggle (item desce para baixo imediatamente)
+- [x] **Divisor visual** entre itens comprados e não comprados
+- [x] **Toast de feedback** integrado (sucesso/erro)
+- [x] **Prevenção de double tap** com loading state
 - [ ] Repository e Data Source para operações de itens (editar/remover)
 - [ ] Use Cases para editar/remover itens
 - [ ] Editar lista existente
-- [ ] Marcar itens como comprados
+- [x] Marcar itens como comprados (toggle com atualização otimista e reordenação automática)
 - [ ] Compartilhar listas com outros usuários
 - [ ] Categorias de produtos
 
