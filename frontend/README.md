@@ -762,10 +762,200 @@ export function mapShoppingListDtoToDomain(dto: ShoppingListDto): ShoppingList {
 }
 ```
 
+---
+
+## 🛒 Shopping Item - Itens de Compras
+
+O projeto implementa entidades, DTOs e mappers robustos para itens individuais de compras com validações completas.
+
+### Entidade de Domínio
+
+Arquivo: `src/domain/entities/index.ts`
+
+```typescript
+export interface ShoppingItem {
+  id: string;
+  name: string;
+  quantity: number;
+  unitPrice?: number;      // Preço unitário opcional
+  isPurchased: boolean;    // Status de compra (renomeado de isCompleted)
+  createdAt: string;
+  updatedAt: string;
+}
+```
+
+**Decisões de Design:**
+- `isPurchased` (não `isCompleted`): Melhor semântica para contexto de compras
+- `unitPrice` opcional: Permite itens sem preço definido
+- Todos os campos tipados estritamente para segurança
+
+### DTO/Model (API)
+
+Arquivo: `src/data/models/index.ts`
+
+Suporta múltiplas variações de nomenclatura para máxima compatibilidade:
+
+```typescript
+export interface ShoppingItemDto {
+  id: string | number;
+  name: string;
+  quantity: number;
+  unit_price?: number;
+  unitPrice?: number;
+  is_purchased?: boolean;
+  isPurchased?: boolean;
+  is_completed?: boolean;   // Sinônimo aceito
+  isCompleted?: boolean;    // Sinônimo aceito
+  created_at?: string;
+  createdAt?: string;
+  updated_at?: string;
+  updatedAt?: string;
+}
+```
+
+**Flexibilidade:**
+- Aceita `id` como string ou number (converte para string no mapper)
+- Suporta snake_case e camelCase simultaneamente
+- Campos de status: `is_purchased`, `isPurchased`, `is_completed`, `isCompleted`
+- Timestamps: `created_at`/`createdAt`, `updated_at`/`updatedAt`
+
+### Mapper DTO → Domain
+
+Arquivo: `src/data/mappers/shopping-item-mapper.ts`
+
+Mapper robusto com validações completas e mensagens de erro claras:
+
+```typescript
+export function mapShoppingItemDtoToDomain(dto: ShoppingItemDto): ShoppingItem {
+  // Suporto tanto camelCase quanto snake_case para compatibilidade
+  const id = dto.id ? String(dto.id) : undefined;
+  const createdAt = dto.createdAt || dto.created_at;
+  const updatedAt = dto.updatedAt || dto.updated_at;
+  const unitPrice = dto.unitPrice ?? dto.unit_price;
+  
+  // Suporto variações de nome do campo de status
+  const isPurchased = 
+    dto.isPurchased ?? 
+    dto.is_purchased ?? 
+    dto.isCompleted ?? 
+    dto.is_completed ?? 
+    false;
+
+  // Valido campos obrigatórios
+  if (!id || !dto.name || dto.quantity === undefined || !createdAt || !updatedAt) {
+    const missingFields = [];
+    if (!id) missingFields.push('id');
+    if (!dto.name) missingFields.push('name');
+    if (dto.quantity === undefined) missingFields.push('quantity');
+    if (!createdAt) missingFields.push('createdAt/created_at');
+    if (!updatedAt) missingFields.push('updatedAt/updated_at');
+
+    throw new Error(
+      `Campos obrigatórios ausentes em ShoppingItemDto: ${missingFields.join(', ')}`
+    );
+  }
+
+  // Valido tipos básicos
+  if (typeof dto.name !== 'string') {
+    throw new Error('Campo name deve ser uma string');
+  }
+
+  if (typeof dto.quantity !== 'number' || dto.quantity < 0) {
+    throw new Error('Campo quantity deve ser um número positivo');
+  }
+
+  if (unitPrice !== undefined && (typeof unitPrice !== 'number' || unitPrice < 0)) {
+    throw new Error('Campo unitPrice deve ser um número positivo quando fornecido');
+  }
+
+  return {
+    id,
+    name: dto.name.trim(),
+    quantity: dto.quantity,
+    unitPrice,
+    isPurchased,
+    createdAt,
+    updatedAt,
+  };
+}
+```
+
+**Validações Implementadas:**
+- ✅ Campos obrigatórios: `id`, `name`, `quantity`, `createdAt`, `updatedAt`
+- ✅ Tipo string para `name`
+- ✅ Tipo number positivo para `quantity`
+- ✅ Tipo number positivo para `unitPrice` (quando fornecido)
+- ✅ Mensagens de erro detalhadas listando campos ausentes
+- ✅ Trim automático no nome do item
+- ✅ Default `false` para `isPurchased` quando não fornecido
+
 ### Testes Unitários
+
+**Mapper Tests:** `src/data/mappers/__tests__/shopping-item-mapper.test.ts`
+
+**18 testes cobrindo:**
+
+1. **Mapeamento válido (7 testes):**
+   - ShoppingItemDto completo com snake_case
+   - ShoppingItemDto com camelCase
+   - unitPrice undefined
+   - unitPrice = 0 (permitido)
+   - Sinônimos: `is_completed` como `is_purchased`
+   - Trim do nome do item
+   - Default `false` para isPurchased
+
+2. **Validação de campos obrigatórios (6 testes):**
+   - id ausente
+   - name ausente
+   - quantity ausente
+   - createdAt/created_at ausentes
+   - updatedAt/updated_at ausentes
+   - Múltiplos campos ausentes (mensagem detalhada)
+
+3. **Validação de tipos (5 testes):**
+   - name não-string
+   - quantity não-number
+   - quantity negativo
+   - unitPrice não-number
+   - unitPrice negativo
+
+**Exemplo de teste:**
+
+```typescript
+it('deve mapear corretamente um ShoppingItemDto completo com snake_case', () => {
+  const dto: ShoppingItemDto = {
+    id: '1',
+    name: 'Leite Integral',
+    quantity: 2,
+    unit_price: 4.5,
+    is_purchased: false,
+    created_at: '2025-12-30T10:00:00Z',
+    updated_at: '2025-12-30T10:00:00Z',
+  };
+
+  const domain = mapShoppingItemDtoToDomain(dto);
+
+  expect(domain).toEqual({
+    id: '1',
+    name: 'Leite Integral',
+    quantity: 2,
+    unitPrice: 4.5,
+    isPurchased: false,
+    createdAt: '2025-12-30T10:00:00Z',
+    updatedAt: '2025-12-30T10:00:00Z',
+  });
+});
+```
+
+---
+
+### Testes Unitários - Resumo Geral
 
 **Mapper Tests:** `src/data/mappers/__tests__/shopping-list-mapper.test.ts`
 - Cobertura: Mapeamento válido e ausência de campos obrigatórios (4 tests)
+
+**Mapper Tests:** `src/data/mappers/__tests__/shopping-item-mapper.test.ts`
+- Cobertura: Mapeamento válido, validações de campos obrigatórios, validações de tipos (18 tests)
 
 **Repository Tests:** `src/data/repositories/__tests__/shopping-list-repository.test.ts`
 - Cobertura: getMyLists success/error (2 tests)
@@ -776,7 +966,10 @@ export function mapShoppingListDtoToDomain(dto: ShoppingListDto): ShoppingList {
 **Create List Use Case Tests:** `src/domain/use-cases/__tests__/create-list-use-case.test.ts`
 - Cobertura: validação de título (min/max/trim), descrição (opcional/max), integração com repositório (8 tests)
 
-Total: 16 testes automatizados
+**Delete List Use Case Tests:** `src/domain/use-cases/__tests__/delete-shopping-list-use-case.test.ts`
+- Cobertura: validações, sucesso, 404, 403, 401, 500 (11 tests)
+
+Total: 45 testes automatizados (anteriormente 27)
 
 ### Padrões Seguidos
 - Sem dependência de UI/React em domain/data
@@ -1367,6 +1560,10 @@ Loading (ActivityIndicator)
 - [x] **Navegação para detalhes da lista - Rota dinâmica /lists/[id]**
 - [x] **ListDetailsScreen - Tela de detalhes (placeholder) com design profissional**
 - [x] **Parâmetros tipados - useLocalSearchParams com TypeScript**
+- [x] **ShoppingItem - Entidade de domínio para itens de compras**
+- [x] **ShoppingItemDto - DTO com suporte snake_case e camelCase**
+- [x] **shopping-item-mapper - Mapper robusto com 18 testes (validações completas)**
+- [x] **Validações de tipos e campos obrigatórios com mensagens claras**
 
 ### **🚀 Próximas Features:**
 
@@ -1375,6 +1572,9 @@ Loading (ActivityIndicator)
 - [x] Listar listas do usuário
 - [x] Excluir lista (com modal de confirmação customizado + toast)
 - [x] Visualizar detalhes de uma lista (navegação + placeholder)
+- [x] Base de domínio para ShoppingItem (entity + DTO + mapper)
+- [ ] Repository e Data Source para itens
+- [ ] Use Cases CRUD para itens
 - [ ] Editar lista existente
 - [ ] Adicionar/remover itens
 - [ ] Marcar itens como comprados
