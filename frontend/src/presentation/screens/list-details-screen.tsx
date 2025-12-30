@@ -601,8 +601,8 @@ export const ListDetailsScreen: React.FC = () => {
       <ConfirmModal
         visible={confirmModalVisible}
         title='Excluir item?'
-        message={`Tem certeza que deseja excluir o item "${selectedItem?.name}"? Essa ação não pode ser desfeita.`}
-        confirmText='Excluir item'
+        message={`Excluir "${selectedItem?.name}"?\nEssa ação não pode ser desfeita.`}
+        confirmText='Excluir'
         cancelText='Cancelar'
         confirmVariant='destructive'
         onConfirm={confirmDeleteItem}

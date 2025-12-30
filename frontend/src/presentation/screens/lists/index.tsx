@@ -266,8 +266,8 @@ export const ListsDashboardScreen: React.FC = () => {
       <ConfirmModal
         visible={confirmModalVisible}
         title='Excluir lista?'
-        message={`Tem certeza que deseja excluir a lista "${selectedList?.title}"? Essa ação não pode ser desfeita.`}
-        confirmText='Excluir lista'
+        message={`Excluir "${selectedList?.title}"?\nEssa ação não pode ser desfeita.`}
+        confirmText='Excluir'
         cancelText='Cancelar'
         confirmVariant='destructive'
         onConfirm={confirmDelete}
