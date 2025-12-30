@@ -12,6 +12,7 @@ function NavigationContent() {
   const { isAuthenticated, isLoading } = useAuth();
   const segments = useSegments();
   const router = useRouter();
+  const colorScheme = useColorScheme();
 
   useEffect(() => {
     // Aguardo o carregamento da sessão antes de decidir navegação
@@ -53,6 +54,14 @@ function NavigationContent() {
           presentation: 'modal',
           title: 'Nova Lista',
           headerShown: true,
+          headerStyle: {
+            backgroundColor: colorScheme === 'dark' ? '#111827' : '#F9FAF7', // gray900 no dark, backgroundLight no light
+          },
+          headerTintColor: colorScheme === 'dark' ? '#FFFFFF' : '#064E3B', // Branco no dark, textDark no light
+          headerTitleStyle: {
+            color: colorScheme === 'dark' ? '#FFFFFF' : '#064E3B', // Branco no dark, textDark no light
+            fontWeight: '700',
+          },
         }}
       />
       <Stack.Screen

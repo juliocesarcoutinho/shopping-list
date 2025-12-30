@@ -5,6 +5,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useColorScheme } from 'react-native';
 
 import { User } from '@/src/domain/entities';
 import { userService } from '@/src/infrastructure/services';
@@ -16,6 +17,7 @@ import { useAppTheme } from '../hooks';
 export function AccountScreen() {
   const theme = useAppTheme();
   const { signOut } = useAuth();
+  const colorScheme = useColorScheme();
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
@@ -100,7 +102,7 @@ export function AccountScreen() {
               },
             ]}
           >
-            <Text style={styles.avatarText}>
+            <Text style={[styles.avatarText, { color: '#FFFFFF' }]}>
               {user.name
                 .split(' ')
                 .map(n => n[0])
@@ -213,7 +215,7 @@ const styles = StyleSheet.create({
   avatarText: {
     fontSize: 36,
     fontWeight: '700',
-    color: '#2ECC71',
+    // Cor será definida inline para garantir branco em ambos os modos
   },
   userName: {
     fontSize: 24,

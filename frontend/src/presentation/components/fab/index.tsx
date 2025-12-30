@@ -1,5 +1,6 @@
 import React from 'react';
 import { Platform, StyleSheet, TouchableOpacity, View, ViewStyle } from 'react-native';
+import { useColorScheme } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Line } from 'react-native-svg';
 
@@ -20,6 +21,7 @@ export const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
 }) => {
   const theme = useAppTheme();
   const insets = useSafeAreaInsets();
+  const colorScheme = useColorScheme();
 
   return (
     <View
@@ -47,7 +49,7 @@ export const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
               y1='6'
               x2='14'
               y2='22'
-              stroke={theme.colors.textInverted}
+              stroke='#FFFFFF'
               strokeWidth='3.2'
               strokeLinecap='round'
             />
@@ -56,7 +58,7 @@ export const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
               y1='14'
               x2='22'
               y2='14'
-              stroke={theme.colors.textInverted}
+              stroke='#FFFFFF'
               strokeWidth='3.2'
               strokeLinecap='round'
             />

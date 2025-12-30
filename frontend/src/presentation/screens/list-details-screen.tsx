@@ -24,6 +24,7 @@ import {
   ViewStyle,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useColorScheme } from 'react-native';
 
 import { ShoppingListRemoteDataSource } from '@/src/data/data-sources/shopping-list-remote-data-source';
 import { ShoppingListRepositoryImpl } from '@/src/data/repositories/shopping-list-repository';
@@ -62,6 +63,7 @@ export const ListDetailsScreen: React.FC = () => {
   const theme = useAppTheme();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const colorScheme = useColorScheme();
   const { id } = useLocalSearchParams<{ id: string }>();
 
   const [list, setList] = useState<ShoppingList | null>(null);
@@ -623,14 +625,20 @@ export const ListDetailsScreen: React.FC = () => {
             style={[
               styles.totalCard,
               {
-                backgroundColor: semanticColors.primary50, // Verde bem suave e claro
-                borderColor: semanticColors.primary100, // Verde suave para borda
+                backgroundColor:
+                  colorScheme === 'dark'
+                    ? theme.colors.surfaceSecondary // Fundo escuro no dark mode
+                    : semanticColors.primary50, // Verde bem suave e claro no light mode
+                borderColor:
+                  colorScheme === 'dark'
+                    ? theme.colors.border // Borda adaptada no dark mode
+                    : semanticColors.primary100, // Verde suave para borda no light mode
                 borderWidth: 1,
               },
             ]}
           >
             <Text style={[styles.totalLabel, { color: theme.colors.text }]}>Total estimado:</Text>
-            <Text style={[styles.totalValue, { color: '#059669' }]}>
+            <Text style={[styles.totalValue, { color: theme.colors.primary }]}>
               {estimatedTotal > 0 ? formatCurrency(estimatedTotal) : 'R$ 0,00'}
             </Text>
           </View>

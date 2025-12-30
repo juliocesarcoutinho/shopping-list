@@ -234,7 +234,7 @@ export const ListsDashboardScreen: React.FC = () => {
             accessibilityLabel='Ver perfil'
             accessibilityRole='button'
           >
-            <Text style={[styles.avatarText, { color: theme.colors.textInverted }]}>
+            <Text style={[styles.avatarText, { color: '#FFFFFF' }]}>
               {getUserInitials()}
             </Text>
           </TouchableOpacity>
