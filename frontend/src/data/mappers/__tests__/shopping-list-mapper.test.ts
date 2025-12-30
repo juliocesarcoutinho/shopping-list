@@ -34,7 +34,7 @@ describe('mapShoppingListDtoToDomain', () => {
           id: 'item1',
           name: 'Arroz',
           quantity: 2,
-          isCompleted: false,
+          isPurchased: false,
           createdAt: '2025-12-29T10:00:00Z',
           updatedAt: '2025-12-29T10:00:00Z',
         },

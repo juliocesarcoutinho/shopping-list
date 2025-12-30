@@ -26,7 +26,8 @@ export interface ShoppingItem {
   id: string;
   name: string;
   quantity: number;
-  isCompleted: boolean;
+  unitPrice?: number;
+  isPurchased: boolean;
   createdAt: string;
   updatedAt: string;
 }

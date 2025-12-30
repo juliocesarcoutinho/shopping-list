@@ -67,12 +67,19 @@ export interface UserMeResponseDto {
 }
 
 export interface ShoppingItemDto {
-  id: string;
+  id: string | number;
   name: string;
   quantity: number;
-  is_completed: boolean;
-  created_at: string;
-  updated_at: string;
+  unit_price?: number;
+  unitPrice?: number;
+  is_purchased?: boolean;
+  isPurchased?: boolean;
+  is_completed?: boolean;
+  isCompleted?: boolean;
+  created_at?: string;
+  createdAt?: string;
+  updated_at?: string;
+  updatedAt?: string;
 }
 
 export interface ShoppingListDto {

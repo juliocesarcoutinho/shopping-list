@@ -2,18 +2,9 @@
 // Sigo o padrão do projeto, mantendo o domínio desacoplado dos DTOs e sem dependências externas.
 
 import { ShoppingList } from '../../domain/entities';
-import { ShoppingItemDto, ShoppingListDto } from '../models';
+import { ShoppingListDto } from '../models';
 
-function mapShoppingItemDtoToDomain(dto: ShoppingItemDto) {
-  return {
-    id: dto.id,
-    name: dto.name,
-    quantity: dto.quantity,
-    isCompleted: dto.is_completed,
-    createdAt: dto.created_at,
-    updatedAt: dto.updated_at,
-  };
-}
+import { mapShoppingItemDtoToDomain } from './shopping-item-mapper';
 
 export function mapShoppingListDtoToDomain(dto: ShoppingListDto): ShoppingList {
   // Suporto tanto camelCase quanto snake_case para compatibilidade
@@ -22,7 +13,6 @@ export function mapShoppingListDtoToDomain(dto: ShoppingListDto): ShoppingList {
 
   // Valido apenas campos realmente obrigatórios
   if (!dto.id || !dto.title || !createdAt || !updatedAt) {
-    console.error('[Mapper] DTO recebido:', JSON.stringify(dto, null, 2));
     throw new Error('Campos obrigatórios ausentes em ShoppingListDto');
   }
 

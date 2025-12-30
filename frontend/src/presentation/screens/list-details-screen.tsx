@@ -32,14 +32,14 @@ export const ListDetailsScreen: React.FC = () => {
     completedItems: 3,
     estimatedTotal: 79.8,
     items: [
-      { id: '1', name: 'Leite', quantity: 2, unitPrice: 4.5, isCompleted: true },
-      { id: '2', name: 'Pão', quantity: 1, unitPrice: 6.0, isCompleted: true },
-      { id: '3', name: 'Ovos', quantity: 2, unitPrice: 12.9, isCompleted: false },
-      { id: '4', name: 'Manteiga', quantity: 1, unitPrice: 0, isCompleted: false },
-      { id: '5', name: 'Queijo', quantity: 1, unitPrice: 25.0, isCompleted: false },
-      { id: '6', name: 'Iogurte', quantity: 4, unitPrice: 3.5, isCompleted: false },
-      { id: '7', name: 'Maçã', quantity: 6, unitPrice: 0, isCompleted: true },
-      { id: '8', name: 'Banana', quantity: 3, unitPrice: 4.2, isCompleted: false },
+      { id: '1', name: 'Leite', quantity: 2, unitPrice: 4.5, isPurchased: true },
+      { id: '2', name: 'Pão', quantity: 1, unitPrice: 6.0, isPurchased: true },
+      { id: '3', name: 'Ovos', quantity: 2, unitPrice: 12.9, isPurchased: false },
+      { id: '4', name: 'Manteiga', quantity: 1, unitPrice: 0, isPurchased: false },
+      { id: '5', name: 'Queijo', quantity: 1, unitPrice: 25.0, isPurchased: false },
+      { id: '6', name: 'Iogurte', quantity: 4, unitPrice: 3.5, isPurchased: false },
+      { id: '7', name: 'Maçã', quantity: 6, unitPrice: 0, isPurchased: true },
+      { id: '8', name: 'Banana', quantity: 3, unitPrice: 4.2, isPurchased: false },
     ],
   };
 
@@ -120,15 +120,15 @@ export const ListDetailsScreen: React.FC = () => {
                 style={[
                   styles.checkbox,
                   {
-                    borderColor: item.isCompleted ? theme.colors.success : theme.colors.border,
-                    backgroundColor: item.isCompleted ? theme.colors.success : 'transparent',
+                    borderColor: item.isPurchased ? theme.colors.success : theme.colors.border,
+                    backgroundColor: item.isPurchased ? theme.colors.success : 'transparent',
                   },
                 ]}
                 onPress={() => {
                   /* Toggle item */
                 }}
               >
-                {item.isCompleted && <Ionicons name='checkmark' size={16} color='white' />}
+                {item.isPurchased && <Ionicons name='checkmark' size={16} color='white' />}
               </TouchableOpacity>
 
               {/* Conteúdo do Item */}
@@ -138,8 +138,8 @@ export const ListDetailsScreen: React.FC = () => {
                     styles.itemName,
                     {
                       color: theme.colors.text,
-                      textDecorationLine: item.isCompleted ? 'line-through' : 'none',
-                      opacity: item.isCompleted ? 0.6 : 1,
+                      textDecorationLine: item.isPurchased ? 'line-through' : 'none',
+                      opacity: item.isPurchased ? 0.6 : 1,
                     },
                   ]}
                 >

@@ -58,7 +58,7 @@ export class AddItemToListUseCase {
     return this.shoppingItemRepository.create(listId, {
       name: itemName.trim(),
       quantity,
-      isCompleted: false,
+      isPurchased: false,
     });
   }
 }
@@ -68,7 +68,7 @@ export class ToggleItemCompletionUseCase {
 
   async execute(itemId: string): Promise<ShoppingItem> {
     return this.shoppingItemRepository.update(itemId, {
-      isCompleted: true, // This would typically fetch current state and toggle
+      isPurchased: true, // This would typically fetch current state and toggle
     });
   }
 }

@@ -7,6 +7,9 @@
 // Models and DTOs
 export * from './models';
 
+// Mappers
+export * from './mappers';
+
 // Data sources
 export * from './data-sources';
 

@@ -145,7 +145,7 @@ export const ListsDashboardScreen: React.FC = () => {
       <ListCard
         title={item.title}
         itemsCount={item.items.length}
-        purchasedItemsCount={item.items.filter(i => i.isCompleted).length}
+        purchasedItemsCount={item.items.filter(i => i.isPurchased).length}
         onPress={() => router.push(`/lists/${item.id}` as never)}
         onMenuPress={() => handleDeleteList(item)}
         testID={`list-card-${item.id}`}
