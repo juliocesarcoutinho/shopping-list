@@ -8,6 +8,7 @@
 import { ShoppingItem, ShoppingList } from '../entities';
 import { ShoppingItemRepository, ShoppingListRepository } from '../repositories';
 
+export * from './add-item-to-list-use-case';
 export * from './create-list-use-case';
 export * from './delete-shopping-list-use-case';
 export * from './get-list-details-use-case';

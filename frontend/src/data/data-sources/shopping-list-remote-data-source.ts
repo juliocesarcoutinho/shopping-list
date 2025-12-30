@@ -3,7 +3,7 @@
 
 import { apiClient } from '@/src/infrastructure/http/apiClient';
 
-import { ShoppingListDto } from '../models';
+import { AddItemRequestDto, ShoppingItemDto, ShoppingListDto } from '../models';
 
 export interface CreateListDto {
   title: string;
@@ -60,6 +60,19 @@ export class ShoppingListRemoteDataSource {
   async deleteList(listId: string): Promise<void> {
     try {
       await apiClient.delete(`/lists/${listId}`);
+    } catch (error) {
+      // Repasso erro já normalizado pelo apiClient
+      throw error;
+    }
+  }
+
+  /**
+   * Adiciona um novo item em uma lista de compras
+   * POST /api/v1/lists/{listId}/items
+   */
+  async addItem(listId: string, data: AddItemRequestDto): Promise<ShoppingItemDto> {
+    try {
+      return await apiClient.post<ShoppingItemDto>(`/lists/${listId}/items`, data);
     } catch (error) {
       // Repasso erro já normalizado pelo apiClient
       throw error;

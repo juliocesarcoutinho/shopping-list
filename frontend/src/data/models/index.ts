@@ -109,9 +109,11 @@ export interface CreateShoppingListRequest {
   title: string;
 }
 
-export interface CreateShoppingItemRequest {
+export interface AddItemRequestDto {
   name: string;
   quantity: number;
+  unit?: string;
+  unitPrice?: number;
 }
 
 export interface UpdateShoppingItemRequest {

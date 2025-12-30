@@ -1,10 +1,12 @@
 // Implementação concreta do repositório de listas de compras
 // Usa o data source remoto e faz o mapeamento DTO -> domínio
 
-import { ShoppingList } from '@/src/domain/entities';
+import { ShoppingItem, ShoppingList } from '@/src/domain/entities';
 
 import { ShoppingListRemoteDataSource } from '../data-sources/shopping-list-remote-data-source';
+import { mapShoppingItemDtoToDomain } from '../mappers/shopping-item-mapper';
 import { mapShoppingListDtoToDomain } from '../mappers/shopping-list-mapper';
+import { AddItemRequestDto } from '../models';
 
 export class ShoppingListRepositoryImpl {
   constructor(private readonly remote: ShoppingListRemoteDataSource) {}
@@ -61,6 +63,16 @@ export class ShoppingListRepositoryImpl {
   async delete(id: string): Promise<void> {
     try {
       await this.remote.deleteList(id);
+    } catch (error) {
+      // Repassa erro já normalizado
+      throw error;
+    }
+  }
+
+  async addItem(listId: string, item: AddItemRequestDto): Promise<ShoppingItem> {
+    try {
+      const dto = await this.remote.addItem(listId, item);
+      return mapShoppingItemDtoToDomain(dto);
     } catch (error) {
       // Repassa erro já normalizado
       throw error;

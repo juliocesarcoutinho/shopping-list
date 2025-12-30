@@ -18,7 +18,11 @@ import {
 import { useAppTheme } from '../hooks';
 
 // Export custom components
+export { AddItemModal } from './add-item-modal';
+export type { AddItemModalProps } from './add-item-modal';
 export { ConfirmModal } from './confirm-modal';
+export { FloatingActionButton } from './fab';
+export type { FloatingActionButtonProps } from './fab';
 export { ShoppingItemRow } from './shopping-item-row';
 export type { ShoppingItemRowProps } from './shopping-item-row';
 export { Toast } from './toast';

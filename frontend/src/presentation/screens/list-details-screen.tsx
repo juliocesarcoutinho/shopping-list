@@ -28,15 +28,16 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ShoppingListRemoteDataSource } from '@/src/data/data-sources/shopping-list-remote-data-source';
 import { ShoppingListRepositoryImpl } from '@/src/data/repositories/shopping-list-repository';
 import { ShoppingList } from '@/src/domain/entities';
-import { GetListDetailsUseCase } from '@/src/domain/use-cases/get-list-details-use-case';
+import { AddItemToListUseCase, GetListDetailsUseCase } from '@/src/domain/use-cases';
 
-import { Button, ShoppingItemRow } from '../components';
+import { AddItemModal, Button, FloatingActionButton, ShoppingItemRow } from '../components';
 import { useAppTheme } from '../hooks';
 
-// Instancio use case com repository real
+// Instancio use cases com repository real
 const remoteDataSource = new ShoppingListRemoteDataSource();
 const repository = new ShoppingListRepositoryImpl(remoteDataSource);
 const getListDetailsUseCase = new GetListDetailsUseCase(repository);
+const addItemToListUseCase = new AddItemToListUseCase(repository);
 
 export const ListDetailsScreen: React.FC = () => {
   const theme = useAppTheme();
@@ -48,6 +49,9 @@ export const ListDetailsScreen: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isAddItemModalVisible, setIsAddItemModalVisible] = useState(false);
+  const [isAddingItem, setIsAddingItem] = useState(false);
+  const [addItemError, setAddItemError] = useState<string | null>(null);
 
   // Função para carregar dados da lista
   const fetchListDetails = useCallback(async () => {
@@ -149,11 +153,53 @@ export const ListDetailsScreen: React.FC = () => {
     console.log('Edit item:', itemId);
   }, []);
 
-  // Handler para adicionar item (placeholder - será implementado no próximo épico)
+  // Handler para abrir modal de adicionar item
   const handleAddItem = useCallback(() => {
-    // TODO: Implementar modal de adicionar item no próximo épico
-    console.log('Add item');
+    setIsAddItemModalVisible(true);
+    setAddItemError(null);
   }, []);
+
+  // Handler para fechar modal
+  const handleCloseModal = useCallback(() => {
+    if (!isAddingItem) {
+      setIsAddItemModalVisible(false);
+      setAddItemError(null);
+    }
+  }, [isAddingItem]);
+
+  // Handler para submeter formulário de adicionar item
+  const handleSubmitAddItem = useCallback(
+    async (data: { name: string; quantity: number; unit?: string; unitPrice?: number }) => {
+      if (!id) return;
+
+      setIsAddingItem(true);
+      setAddItemError(null);
+
+      try {
+        await addItemToListUseCase.execute({
+          listId: id,
+          name: data.name,
+          quantity: data.quantity,
+          unit: data.unit,
+          unitPrice: data.unitPrice,
+        });
+
+        // Fecha modal e recarrega lista
+        setIsAddItemModalVisible(false);
+        setAddItemError(null);
+        // Recarrega a lista para mostrar o novo item
+        await fetchListDetails();
+      } catch (err) {
+        const error = err as Error & { status?: number; data?: { message?: string } };
+        // Captura mensagem de erro da API ou do use case
+        const apiMessage = error?.message || error?.data?.message;
+        setAddItemError(apiMessage || 'Erro ao adicionar item. Tente novamente.');
+      } finally {
+        setIsAddingItem(false);
+      }
+    },
+    [id, fetchListDetails]
+  );
 
   // Renderiza item na FlatList
   const renderItem = useCallback(
@@ -276,6 +322,15 @@ export const ListDetailsScreen: React.FC = () => {
           </Text>
           <Button title='Adicionar item' onPress={handleAddItem} variant='primary' size='large' />
         </View>
+
+        {/* Modal de adicionar item (também disponível no estado vazio) */}
+        <AddItemModal
+          visible={isAddItemModalVisible}
+          onClose={handleCloseModal}
+          onSubmit={handleSubmitAddItem}
+          loading={isAddingItem}
+          error={addItemError}
+        />
       </View>
     );
   }
@@ -351,6 +406,22 @@ export const ListDetailsScreen: React.FC = () => {
         showsVerticalScrollIndicator={false}
         accessibilityRole='list'
         testID='list-items-flatlist'
+      />
+
+      {/* FAB para adicionar item */}
+      <FloatingActionButton
+        onPress={handleAddItem}
+        testID='fab-add-item'
+        accessibilityLabel='Adicionar item à lista'
+      />
+
+      {/* Modal de adicionar item */}
+      <AddItemModal
+        visible={isAddItemModalVisible}
+        onClose={handleCloseModal}
+        onSubmit={handleSubmitAddItem}
+        loading={isAddingItem}
+        error={addItemError}
       />
     </View>
   );
