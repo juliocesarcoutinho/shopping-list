@@ -199,27 +199,63 @@ export const AddItemModal: React.FC<AddItemModalProps> = ({
                   <Controller
                     control={control}
                     name='quantity'
-                    render={({ field: { onChange, onBlur, value } }) => (
-                      <TextField
-                        label='Quantidade'
-                        placeholder='Ex: 2'
-                        value={value?.toString() || ''}
-                        onChangeText={text => {
-                          const num = parseFloat(text);
-                          if (!isNaN(num) && num > 0) {
-                            onChange(num);
-                          } else if (text === '') {
-                            onChange(1);
+                    render={({ field: { onChange, onBlur, value } }) => {
+                      // Estado local para manter o valor como string durante a digitação
+                      const [displayValue, setDisplayValue] = useState<string>(value?.toString() || '1');
+
+                      // Sincroniza displayValue com value quando value muda externamente (reset do form)
+                      useEffect(() => {
+                        if (value !== undefined && value !== null) {
+                          const newDisplayValue = value.toString();
+                          if (displayValue !== newDisplayValue) {
+                            setDisplayValue(newDisplayValue);
                           }
-                        }}
-                        onBlur={onBlur}
-                        error={errors.quantity?.message}
-                        keyboardType='numeric'
-                        returnKeyType='next'
-                        disabled={loading}
-                        labelColor={theme.colors.text}
-                      />
-                    )}
+                        }
+                        // eslint-disable-next-line react-hooks/exhaustive-deps
+                      }, [value]);
+
+                      const handleQuantityChange = (text: string) => {
+                        // Remove caracteres não numéricos
+                        const digits = text.replace(/\D/g, '');
+                        
+                        // Permite campo vazio temporariamente durante a digitação
+                        if (digits === '') {
+                          setDisplayValue('');
+                          return;
+                        }
+                        
+                        // Converte para número e atualiza display
+                        const num = parseFloat(digits);
+                        if (!isNaN(num) && num > 0) {
+                          setDisplayValue(digits);
+                          onChange(num);
+                        }
+                      };
+
+                      const handleQuantityBlur = () => {
+                        // Se o campo estiver vazio ou inválido, define como 1
+                        if (displayValue === '' || parseFloat(displayValue) <= 0 || isNaN(parseFloat(displayValue))) {
+                          setDisplayValue('1');
+                          onChange(1);
+                        }
+                        onBlur();
+                      };
+
+                      return (
+                        <TextField
+                          label='Quantidade'
+                          placeholder='Ex: 2'
+                          value={displayValue}
+                          onChangeText={handleQuantityChange}
+                          onBlur={handleQuantityBlur}
+                          error={errors.quantity?.message}
+                          keyboardType='numeric'
+                          returnKeyType='next'
+                          disabled={loading}
+                          labelColor={theme.colors.text}
+                        />
+                      );
+                    }}
                   />
 
                   <Controller
