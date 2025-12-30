@@ -23,8 +23,21 @@ export interface ShoppingListRepository {
   create(list: Omit<ShoppingList, 'id' | 'createdAt' | 'updatedAt'>): Promise<ShoppingList>;
   update(id: string, list: Partial<ShoppingList>): Promise<ShoppingList>;
   delete(id: string): Promise<void>;
-  addItem(listId: string, item: { name: string; quantity: number; unit?: string; unitPrice?: number }): Promise<ShoppingItem>;
-  updateItem(listId: string, itemId: string, data: { status?: 'PENDING' | 'PURCHASED'; name?: string; quantity?: number; unit?: string; unitPrice?: number }): Promise<ShoppingItem>;
+  addItem(
+    listId: string,
+    item: { name: string; quantity: number; unit?: string; unitPrice?: number }
+  ): Promise<ShoppingItem>;
+  updateItem(
+    listId: string,
+    itemId: string,
+    data: {
+      status?: 'PENDING' | 'PURCHASED';
+      name?: string;
+      quantity?: number;
+      unit?: string;
+      unitPrice?: number;
+    }
+  ): Promise<ShoppingItem>;
   deleteItem(listId: string, itemId: string): Promise<void>;
 }
 

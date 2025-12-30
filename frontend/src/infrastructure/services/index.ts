@@ -6,11 +6,11 @@
 
 import { LocalDataSource, RemoteDataSource } from '../../data/data-sources';
 import {
-  CreateShoppingItemRequest,
+  AddItemRequestDto,
   CreateShoppingListRequest,
   ShoppingItemDto,
   ShoppingListDto,
-  UpdateShoppingItemRequest,
+  UpdateItemRequestDto,
   UserDto,
 } from '../../data/models';
 import { HttpClient } from '../http';
@@ -48,17 +48,11 @@ export class ApiRemoteDataSource implements RemoteDataSource {
     await this.httpClient.delete(`/shopping-lists/${id}`);
   }
 
-  async createShoppingItem(
-    listId: string,
-    request: CreateShoppingItemRequest
-  ): Promise<ShoppingItemDto> {
+  async createShoppingItem(listId: string, request: AddItemRequestDto): Promise<ShoppingItemDto> {
     return this.httpClient.post<ShoppingItemDto>(`/shopping-lists/${listId}/items`, request);
   }
 
-  async updateShoppingItem(
-    id: string,
-    request: UpdateShoppingItemRequest
-  ): Promise<ShoppingItemDto> {
+  async updateShoppingItem(id: string, request: UpdateItemRequestDto): Promise<ShoppingItemDto> {
     return this.httpClient.put<ShoppingItemDto>(`/shopping-items/${id}`, request);
   }
 
@@ -96,7 +90,7 @@ export class CacheLocalDataSource implements LocalDataSource {
     await this.cacheService.clear();
   }
 
-  async saveOfflineItem(listId: string, item: CreateShoppingItemRequest): Promise<void> {
+  async saveOfflineItem(listId: string, item: AddItemRequestDto): Promise<void> {
     const existingItems = await this.getOfflineItems();
     const newItem = { listId, item };
     const updatedItems = [...existingItems, newItem];
@@ -104,10 +98,10 @@ export class CacheLocalDataSource implements LocalDataSource {
     await this.cacheService.set(CacheLocalDataSource.OFFLINE_ITEMS_KEY, updatedItems);
   }
 
-  async getOfflineItems(): Promise<{ listId: string; item: CreateShoppingItemRequest }[]> {
-    const items = await this.cacheService.get<
-      { listId: string; item: CreateShoppingItemRequest }[]
-    >(CacheLocalDataSource.OFFLINE_ITEMS_KEY);
+  async getOfflineItems(): Promise<{ listId: string; item: AddItemRequestDto }[]> {
+    const items = await this.cacheService.get<{ listId: string; item: AddItemRequestDto }[]>(
+      CacheLocalDataSource.OFFLINE_ITEMS_KEY
+    );
     return items || [];
   }
 

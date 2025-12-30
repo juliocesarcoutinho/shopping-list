@@ -26,6 +26,8 @@ describe('AddItemToListUseCase', () => {
       update: jest.fn(),
       delete: jest.fn(),
       addItem: jest.fn(),
+      updateItem: jest.fn(),
+      deleteItem: jest.fn(),
     };
     useCase = new AddItemToListUseCase(mockRepository);
   });
@@ -580,4 +582,3 @@ describe('AddItemToListUseCase', () => {
     });
   });
 });
-

@@ -174,11 +174,7 @@ export function TextField({
           style={[
             styles.textFieldLabel,
             {
-              color: error
-                ? theme.colors.error
-                : labelColor
-                  ? labelColor
-                  : theme.colors.text,
+              color: error ? theme.colors.error : labelColor ? labelColor : theme.colors.text,
               marginBottom: theme.spacing[2],
             },
           ]}

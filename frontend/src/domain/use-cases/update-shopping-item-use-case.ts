@@ -95,4 +95,3 @@ export class UpdateShoppingItemUseCase {
     return this.repository.updateItem(input.listId.trim(), input.itemId.trim(), updateData);
   }
 }
-

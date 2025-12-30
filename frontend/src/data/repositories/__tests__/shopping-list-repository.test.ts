@@ -5,6 +5,16 @@ import { ShoppingListRemoteDataSource } from '../../data-sources/shopping-list-r
 import { ShoppingListDto } from '../../models';
 import { ShoppingListRepositoryImpl } from '../shopping-list-repository';
 
+jest.mock('expo-constants', () => ({
+  default: {
+    expoConfig: {
+      extra: {
+        apiUrl: 'http://localhost:3000',
+      },
+    },
+  },
+}));
+
 jest.mock('../../data-sources/shopping-list-remote-data-source');
 
 const mockLists: ShoppingListDto[] = [

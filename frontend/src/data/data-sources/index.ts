@@ -10,8 +10,8 @@ import {
   ShoppingItemDto,
   UserDto,
   CreateShoppingListRequest,
-  CreateShoppingItemRequest,
-  UpdateShoppingItemRequest,
+  AddItemRequestDto,
+  UpdateItemRequestDto,
 } from '@/src';
 
 export * from './auth-data-source';
@@ -28,8 +28,8 @@ export interface RemoteDataSource {
   deleteShoppingList(id: string): Promise<void>;
 
   // Shopping Items
-  createShoppingItem(listId: string, request: CreateShoppingItemRequest): Promise<ShoppingItemDto>;
-  updateShoppingItem(id: string, request: UpdateShoppingItemRequest): Promise<ShoppingItemDto>;
+  createShoppingItem(listId: string, request: AddItemRequestDto): Promise<ShoppingItemDto>;
+  updateShoppingItem(id: string, request: UpdateItemRequestDto): Promise<ShoppingItemDto>;
   deleteShoppingItem(id: string): Promise<void>;
 
   // User
@@ -44,7 +44,7 @@ export interface LocalDataSource {
   clearCache(): Promise<void>;
 
   // Offline storage
-  saveOfflineItem(listId: string, item: CreateShoppingItemRequest): Promise<void>;
-  getOfflineItems(): Promise<{ listId: string; item: CreateShoppingItemRequest }[]>;
+  saveOfflineItem(listId: string, item: AddItemRequestDto): Promise<void>;
+  getOfflineItems(): Promise<{ listId: string; item: AddItemRequestDto }[]>;
   clearOfflineItems(): Promise<void>;
 }

@@ -20,4 +20,3 @@ export class DeleteShoppingItemUseCase {
     await this.repository.deleteItem(listId.trim(), itemId.trim());
   }
 }
-

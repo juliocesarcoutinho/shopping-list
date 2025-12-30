@@ -40,7 +40,6 @@ export class CreateShoppingListUseCase {
   }
 }
 
-
 export class ToggleItemCompletionUseCase {
   constructor(private shoppingItemRepository: ShoppingItemRepository) {}
 

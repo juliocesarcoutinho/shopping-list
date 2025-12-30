@@ -48,8 +48,8 @@ export class AddItemToListUseCase {
       name: input.name.trim(),
       quantity: input.quantity,
       unit: input.unit?.trim() || undefined,
-      unitPrice: input.unitPrice !== undefined && input.unitPrice !== null ? input.unitPrice : undefined,
+      unitPrice:
+        input.unitPrice !== undefined && input.unitPrice !== null ? input.unitPrice : undefined,
     });
   }
 }
-

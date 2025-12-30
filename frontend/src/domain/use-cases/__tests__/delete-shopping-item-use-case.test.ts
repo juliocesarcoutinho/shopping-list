@@ -22,8 +22,12 @@ describe('DeleteShoppingItemUseCase', () => {
     });
 
     it('lança erro se listId não for string', async () => {
-      await expect(useCase.execute(null as any, 'item-1')).rejects.toThrow('ID da lista é obrigatório');
-      await expect(useCase.execute(undefined as any, 'item-1')).rejects.toThrow('ID da lista é obrigatório');
+      await expect(useCase.execute(null as any, 'item-1')).rejects.toThrow(
+        'ID da lista é obrigatório'
+      );
+      await expect(useCase.execute(undefined as any, 'item-1')).rejects.toThrow(
+        'ID da lista é obrigatório'
+      );
     });
 
     it('lança erro se itemId for vazio', async () => {
@@ -35,8 +39,12 @@ describe('DeleteShoppingItemUseCase', () => {
     });
 
     it('lança erro se itemId não for string', async () => {
-      await expect(useCase.execute('list-1', null as any)).rejects.toThrow('ID do item é obrigatório');
-      await expect(useCase.execute('list-1', undefined as any)).rejects.toThrow('ID do item é obrigatório');
+      await expect(useCase.execute('list-1', null as any)).rejects.toThrow(
+        'ID do item é obrigatório'
+      );
+      await expect(useCase.execute('list-1', undefined as any)).rejects.toThrow(
+        'ID do item é obrigatório'
+      );
     });
   });
 
@@ -81,4 +89,3 @@ describe('DeleteShoppingItemUseCase', () => {
     });
   });
 });
-

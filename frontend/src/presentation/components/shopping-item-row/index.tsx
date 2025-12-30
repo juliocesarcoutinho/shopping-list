@@ -154,8 +154,7 @@ export const ShoppingItemRow: React.FC<ShoppingItemRowProps> = ({
             style={[styles.quantity, { color: theme.colors.textSecondary }]}
             testID={testID ? `${testID}-quantity` : undefined}
           >
-            #{' '}
-            {quantity}x
+            # {quantity}x
           </Text>
           {unitPrice !== undefined && unitPrice !== null && unitPrice > 0 && (
             <>

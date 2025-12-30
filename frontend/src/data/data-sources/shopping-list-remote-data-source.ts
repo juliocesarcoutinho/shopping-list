@@ -3,7 +3,12 @@
 
 import { apiClient } from '@/src/infrastructure/http/apiClient';
 
-import { AddItemRequestDto, ShoppingItemDto, ShoppingListDto, UpdateItemRequestDto } from '../models';
+import {
+  AddItemRequestDto,
+  ShoppingItemDto,
+  ShoppingListDto,
+  UpdateItemRequestDto,
+} from '../models';
 
 export interface CreateListDto {
   title: string;

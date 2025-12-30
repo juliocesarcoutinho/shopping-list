@@ -5,9 +5,10 @@
  * Validação com RHF + Zod (reaproveitando schema do AddItemModal).
  */
 
-import { zodResolver } from '@hookform/resolvers/zod';
 import { Ionicons } from '@expo/vector-icons';
+import { zodResolver } from '@hookform/resolvers/zod';
 import React, { useEffect, useState } from 'react';
+import { Controller, useForm } from 'react-hook-form';
 import {
   Animated,
   Dimensions,
@@ -20,11 +21,154 @@ import {
   View,
   ViewStyle,
 } from 'react-native';
-import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
 
-import { Button, TextField } from '../index';
 import { useAppTheme } from '../../hooks';
+import { Button, TextField } from '../index';
+
+// Componente para campo de quantidade com estado local
+const QuantityField: React.FC<{
+  value: number | undefined;
+  onChange: (value: number) => void;
+  onBlur: () => void;
+  error?: string;
+  loading?: boolean;
+  labelColor?: string;
+}> = ({ value, onChange, onBlur, error, loading, labelColor }) => {
+  const [displayValue, setDisplayValue] = useState<string>(value?.toString() || '1');
+
+  useEffect(() => {
+    if (value !== undefined && value !== null) {
+      const newDisplayValue = value.toString();
+      if (displayValue !== newDisplayValue) {
+        setDisplayValue(newDisplayValue);
+      }
+    }
+  }, [value, displayValue]);
+
+  const handleQuantityChange = (text: string) => {
+    const digits = text.replace(/\D/g, '');
+    if (digits === '') {
+      setDisplayValue('');
+      return;
+    }
+    const num = parseFloat(digits);
+    if (!isNaN(num) && num > 0) {
+      setDisplayValue(digits);
+      onChange(num);
+    }
+  };
+
+  const handleQuantityBlur = () => {
+    if (displayValue === '' || parseFloat(displayValue) <= 0 || isNaN(parseFloat(displayValue))) {
+      setDisplayValue('1');
+      onChange(1);
+    }
+    onBlur();
+  };
+
+  return (
+    <TextField
+      label='Quantidade'
+      placeholder='Ex: 2'
+      value={displayValue}
+      onChangeText={handleQuantityChange}
+      onBlur={handleQuantityBlur}
+      error={error}
+      keyboardType='numeric'
+      returnKeyType='next'
+      disabled={loading}
+      labelColor={labelColor}
+    />
+  );
+};
+
+// Componente para campo de preço com estado local
+const PriceField: React.FC<{
+  value: number | undefined;
+  onChange: (value: number | undefined) => void;
+  onBlur: () => void;
+  error?: string;
+  loading?: boolean;
+  labelColor?: string;
+}> = ({ value, onChange, onBlur, error, loading, labelColor }) => {
+  const [displayValue, setDisplayValue] = useState<string>('');
+
+  useEffect(() => {
+    if (value === undefined || value === null) {
+      if (displayValue !== '') {
+        setDisplayValue('');
+      }
+    } else {
+      const formatted = formatForDisplay(value);
+      if (displayValue !== formatted) {
+        setDisplayValue(formatted);
+      }
+    }
+  }, [value, displayValue]);
+
+  const formatForDisplay = (num: number): string => {
+    const parts = num.toFixed(2).split('.');
+    const reais = parts[0];
+    const centavos = parts[1];
+    const reaisFormatados = reais.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    return `${reaisFormatados},${centavos}`;
+  };
+
+  const formatInput = (input: string): string => {
+    let digits = input.replace(/\D/g, '');
+    if (digits === '') return '';
+    digits = digits.replace(/^0+/, '') || '0';
+    if (digits.length === 1) {
+      return `0,0${digits}`;
+    }
+    if (digits.length === 2) {
+      return `0,${digits}`;
+    }
+    const reais = digits.slice(0, -2);
+    const centavos = digits.slice(-2);
+    const reaisFormatados = reais.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    return `${reaisFormatados},${centavos}`;
+  };
+
+  const handlePriceChange = (text: string) => {
+    const digits = text.replace(/\D/g, '');
+    if (digits === '') {
+      setDisplayValue('');
+      onChange(undefined);
+      return;
+    }
+    const formatted = formatInput(digits);
+    setDisplayValue(formatted);
+    const numString = formatted.replace(/\./g, '').replace(',', '.');
+    const numValue = parseFloat(numString);
+    if (!isNaN(numValue) && numValue >= 0) {
+      onChange(numValue);
+    }
+  };
+
+  const handleFocus = () => {
+    if (value !== undefined && value !== null && displayValue === '') {
+      setDisplayValue(formatForDisplay(value));
+    }
+  };
+
+  return (
+    <TextField
+      label='Preço (R$)'
+      placeholder='Ex: 4,99'
+      value={displayValue}
+      onChangeText={handlePriceChange}
+      onFocus={handleFocus}
+      onBlur={onBlur}
+      error={error}
+      keyboardType='numeric'
+      returnKeyType='done'
+      disabled={loading}
+      labelColor={labelColor}
+    />
+  );
+};
 
 // Schema de validação Zod (reaproveitado do AddItemModal)
 const editItemSchema = z.object({
@@ -37,25 +181,22 @@ const editItemSchema = z.object({
     .number()
     .min(1, 'Quantidade deve ser maior ou igual a 1')
     .positive('Quantidade deve ser positiva'),
-  unitPrice: z.preprocess(
-    val => {
-      if (val === '' || val === undefined || val === null) return undefined;
-      if (typeof val === 'string') {
-        // Remove espaços e converte vírgula para ponto
-        const cleaned = val.trim().replace(',', '.');
-        const num = parseFloat(cleaned);
-        return isNaN(num) ? undefined : num;
-      }
-      return val;
-    },
-    z
-      .number()
-      .min(0, 'Preço unitário não pode ser negativo')
-      .optional()
-  ),
+  unitPrice: z.preprocess(val => {
+    if (val === '' || val === undefined || val === null) return undefined;
+    if (typeof val === 'string') {
+      const cleaned = val.trim().replace(',', '.');
+      const num = parseFloat(cleaned);
+      return isNaN(num) ? undefined : num;
+    }
+    return typeof val === 'number' ? val : undefined;
+  }, z.number().min(0, 'Preço unitário não pode ser negativo').optional()),
 });
 
-type EditItemFormData = z.infer<typeof editItemSchema>;
+type EditItemFormData = {
+  name: string;
+  quantity: number;
+  unitPrice?: number;
+};
 
 export interface EditItemModalProps {
   visible: boolean;
@@ -89,7 +230,7 @@ export const EditItemModal: React.FC<EditItemModalProps> = ({
     formState: { errors },
     reset,
   } = useForm<EditItemFormData>({
-    resolver: zodResolver(editItemSchema),
+    resolver: zodResolver(editItemSchema) as any,
     defaultValues: {
       name: '',
       quantity: 1,
@@ -103,7 +244,10 @@ export const EditItemModal: React.FC<EditItemModalProps> = ({
       reset({
         name: item.name,
         quantity: item.quantity,
-        unitPrice: item.unitPrice !== undefined && item.unitPrice !== null && item.unitPrice > 0 ? item.unitPrice : undefined,
+        unitPrice:
+          item.unitPrice !== undefined && item.unitPrice !== null && item.unitPrice > 0
+            ? item.unitPrice
+            : undefined,
       });
     } else if (!visible) {
       reset();
@@ -133,7 +277,7 @@ export const EditItemModal: React.FC<EditItemModalProps> = ({
       await onSubmit({
         name: data.name,
         quantity: data.quantity,
-        unitPrice: data.unitPrice !== undefined && data.unitPrice !== null ? data.unitPrice : undefined,
+        unitPrice: data.unitPrice,
       });
       // Reset form após sucesso
       reset();
@@ -169,7 +313,12 @@ export const EditItemModal: React.FC<EditItemModalProps> = ({
               {/* Header */}
               <View style={styles.header}>
                 <View style={styles.headerTitleContainer}>
-                  <Ionicons name='pencil' size={20} color={theme.colors.text} style={styles.headerIcon} />
+                  <Ionicons
+                    name='pencil'
+                    size={20}
+                    color={theme.colors.text}
+                    style={styles.headerIcon}
+                  />
                   <Text style={[styles.title, { color: theme.colors.text }]}>Editar Item</Text>
                 </View>
                 <TouchableOpacity
@@ -224,183 +373,31 @@ export const EditItemModal: React.FC<EditItemModalProps> = ({
                   <Controller
                     control={control}
                     name='quantity'
-                    render={({ field: { onChange, onBlur, value } }) => {
-                      // Estado local para manter o valor como string durante a digitação
-                      const [displayValue, setDisplayValue] = useState<string>(value?.toString() || '1');
-
-                      // Sincroniza displayValue com value quando value muda externamente (reset do form)
-                      useEffect(() => {
-                        if (value !== undefined && value !== null) {
-                          const newDisplayValue = value.toString();
-                          if (displayValue !== newDisplayValue) {
-                            setDisplayValue(newDisplayValue);
-                          }
-                        }
-                        // eslint-disable-next-line react-hooks/exhaustive-deps
-                      }, [value]);
-
-                      const handleQuantityChange = (text: string) => {
-                        // Remove caracteres não numéricos
-                        const digits = text.replace(/\D/g, '');
-                        
-                        // Permite campo vazio temporariamente durante a digitação
-                        if (digits === '') {
-                          setDisplayValue('');
-                          return;
-                        }
-                        
-                        // Converte para número e atualiza display
-                        const num = parseFloat(digits);
-                        if (!isNaN(num) && num > 0) {
-                          setDisplayValue(digits);
-                          onChange(num);
-                        }
-                      };
-
-                      const handleQuantityBlur = () => {
-                        // Se o campo estiver vazio ou inválido, define como 1
-                        if (displayValue === '' || parseFloat(displayValue) <= 0 || isNaN(parseFloat(displayValue))) {
-                          setDisplayValue('1');
-                          onChange(1);
-                        }
-                        onBlur();
-                      };
-
-                      return (
-                        <TextField
-                          label='Quantidade'
-                          placeholder='Ex: 2'
-                          value={displayValue}
-                          onChangeText={handleQuantityChange}
-                          onBlur={handleQuantityBlur}
-                          error={errors.quantity?.message}
-                          keyboardType='numeric'
-                          returnKeyType='next'
-                          disabled={loading}
-                          labelColor={theme.colors.text}
-                        />
-                      );
-                    }}
+                    render={({ field: { onChange, onBlur, value } }) => (
+                      <QuantityField
+                        value={value}
+                        onChange={onChange}
+                        onBlur={onBlur}
+                        error={errors.quantity?.message}
+                        loading={loading}
+                        labelColor={theme.colors.text}
+                      />
+                    )}
                   />
 
                   <Controller
                     control={control}
                     name='unitPrice'
-                    render={({ field: { onChange, onBlur, value } }) => {
-                      // Estado local para manter o valor formatado (string com vírgula)
-                      const [displayValue, setDisplayValue] = useState<string>('');
-
-                      // Sincroniza displayValue com value quando value muda externamente (reset do form ou item muda)
-                      useEffect(() => {
-                        if (value === undefined || value === null) {
-                          if (displayValue !== '') {
-                            setDisplayValue('');
-                          }
-                        } else {
-                          // Formata o valor para exibição no padrão brasileiro
-                          const formatted = formatForDisplay(value);
-                          if (displayValue !== formatted) {
-                            setDisplayValue(formatted);
-                          }
-                        }
-                        // eslint-disable-next-line react-hooks/exhaustive-deps
-                      }, [value]);
-
-                      // Função para formatar número para exibição no padrão brasileiro (ex: 9900.90 -> "9.900,90")
-                      const formatForDisplay = (num: number): string => {
-                        // Converte para string com 2 casas decimais
-                        const parts = num.toFixed(2).split('.');
-                        const reais = parts[0];
-                        const centavos = parts[1];
-                        
-                        // Formata reais com separador de milhar (ponto)
-                        const reaisFormatados = reais.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-                        
-                        // Retorna no formato brasileiro: reais,centavos
-                        return `${reaisFormatados},${centavos}`;
-                      };
-
-                      // Função para formatar string de entrada no padrão brasileiro
-                      const formatInput = (input: string): string => {
-                        // Remove tudo exceto dígitos
-                        let digits = input.replace(/\D/g, '');
-                        
-                        if (digits === '') return '';
-                        
-                        // Remove zeros à esquerda (exceto se for apenas "0")
-                        digits = digits.replace(/^0+/, '') || '0';
-                        
-                        // Se tem apenas 1 dígito, formata como centavos
-                        if (digits.length === 1) {
-                          return `0,0${digits}`;
-                        }
-                        
-                        // Se tem 2 dígitos, formata como centavos
-                        if (digits.length === 2) {
-                          return `0,${digits}`;
-                        }
-                        
-                        // Separa reais e centavos (últimos 2 dígitos são centavos)
-                        const reais = digits.slice(0, -2);
-                        const centavos = digits.slice(-2);
-                        
-                        // Formata reais com separador de milhar (ponto)
-                        const reaisFormatados = reais.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-                        
-                        // Retorna no formato brasileiro: reais,centavos
-                        return `${reaisFormatados},${centavos}`;
-                      };
-
-                      // Função para validar e formatar input em tempo real
-                      const handlePriceChange = (text: string) => {
-                        // Remove caracteres não numéricos (mantém apenas dígitos)
-                        const digits = text.replace(/\D/g, '');
-                        
-                        if (digits === '') {
-                          setDisplayValue('');
-                          onChange(undefined);
-                          return;
-                        }
-                        
-                        // Formata automaticamente no padrão brasileiro
-                        const formatted = formatInput(digits);
-                        setDisplayValue(formatted);
-                        
-                        // Converte para número: remove pontos de milhar e substitui vírgula por ponto
-                        const numString = formatted.replace(/\./g, '').replace(',', '.');
-                        const numValue = parseFloat(numString);
-                        
-                        if (!isNaN(numValue) && numValue >= 0) {
-                          onChange(numValue);
-                        }
-                      };
-
-                      // Inicializa displayValue quando o campo é focado pela primeira vez ou quando value muda
-                      const handleFocus = () => {
-                        if (value !== undefined && value !== null && value > 0) {
-                          const formatted = formatForDisplay(value);
-                          if (displayValue !== formatted) {
-                            setDisplayValue(formatted);
-                          }
-                        }
-                      };
-
-                      return (
-                        <TextField
-                          label='Preço (R$)'
-                          placeholder='Ex: 4,99'
-                          value={displayValue}
-                          onChangeText={handlePriceChange}
-                          onFocus={handleFocus}
-                          onBlur={onBlur}
-                          error={errors.unitPrice?.message}
-                          keyboardType='numeric'
-                          returnKeyType='done'
-                          disabled={loading}
-                          labelColor={theme.colors.text}
-                        />
-                      );
-                    }}
+                    render={({ field: { onChange, onBlur, value } }) => (
+                      <PriceField
+                        value={value}
+                        onChange={onChange}
+                        onBlur={onBlur}
+                        error={errors.unitPrice?.message}
+                        loading={loading}
+                        labelColor={theme.colors.text}
+                      />
+                    )}
                   />
                 </View>
 
@@ -479,4 +476,3 @@ const styles = StyleSheet.create({
 });
 
 export default EditItemModal;
-

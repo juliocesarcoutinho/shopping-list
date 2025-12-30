@@ -28,6 +28,7 @@ describe('ToggleItemPurchasedUseCase', () => {
       delete: jest.fn(),
       addItem: jest.fn(),
       updateItem: jest.fn(),
+      deleteItem: jest.fn(),
     };
     useCase = new ToggleItemPurchasedUseCase(mockRepository);
   });
@@ -292,4 +293,3 @@ describe('ToggleItemPurchasedUseCase', () => {
     });
   });
 });
-

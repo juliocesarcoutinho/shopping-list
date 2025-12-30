@@ -8,6 +8,7 @@ export default function TabLayout() {
       screenOptions={{
         tabBarActiveTintColor: '#007AFF',
         headerShown: false,
+        tabBarStyle: { display: 'none' }, // Oculta a barra de navegação completamente
       }}
     >
       <Tabs.Screen
@@ -18,26 +19,13 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name='explore'
-        options={{
-          title: 'Explore',
-          tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 24 }}>🔍</Text>,
-        }}
-      />
-      <Tabs.Screen
         name='account'
         options={{
           title: 'Conta',
           tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 24 }}>👤</Text>,
         }}
       />
-      <Tabs.Screen
-        name='playground'
-        options={{
-          title: 'Playground',
-          tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 24 }}>🎮</Text>,
-        }}
-      />
+      {/* Tabs Explore e Playground ocultadas - arquivos mantidos para referência futura */}
     </Tabs>
   );
 }

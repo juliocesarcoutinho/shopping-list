@@ -16,6 +16,9 @@ describe('CreateListUseCase', () => {
       create: jest.fn(),
       update: jest.fn(),
       delete: jest.fn(),
+      addItem: jest.fn(),
+      updateItem: jest.fn(),
+      deleteItem: jest.fn(),
     };
     useCase = new CreateListUseCase(mockRepository);
   });

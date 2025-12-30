@@ -82,7 +82,12 @@ export const ListDetailsScreen: React.FC = () => {
   const [isDeletingItem, setIsDeletingItem] = useState(false);
   // Estados para edição de item
   const [isEditItemModalVisible, setIsEditItemModalVisible] = useState(false);
-  const [editingItem, setEditingItem] = useState<{ id: string; name: string; quantity: number; unitPrice?: number } | null>(null);
+  const [editingItem, setEditingItem] = useState<{
+    id: string;
+    name: string;
+    quantity: number;
+    unitPrice?: number;
+  } | null>(null);
   const [isUpdatingItem, setIsUpdatingItem] = useState(false);
   const [updateItemError, setUpdateItemError] = useState<string | null>(null);
 
