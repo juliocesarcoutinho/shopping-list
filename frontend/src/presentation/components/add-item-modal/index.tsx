@@ -229,55 +229,91 @@ export const AddItemModal: React.FC<AddItemModalProps> = ({
                       // Estado local para manter o valor formatado (string com vírgula)
                       const [displayValue, setDisplayValue] = useState<string>('');
 
-                      // Sincroniza displayValue com value quando value muda externamente
+                      // Sincroniza displayValue com value quando value muda externamente (reset do form)
                       useEffect(() => {
                         if (value === undefined || value === null) {
-                          setDisplayValue('');
-                        } else {
-                          // Formata número para exibição com vírgula
-                          const formatted = value.toString().replace('.', ',');
-                          setDisplayValue(formatted);
+                          if (displayValue !== '') {
+                            setDisplayValue('');
+                          }
                         }
                         // eslint-disable-next-line react-hooks/exhaustive-deps
                       }, [value]);
 
-                      // Função para validar e formatar input
+                      // Função para formatar número para exibição no padrão brasileiro (ex: 9900.90 -> "9.900,90")
+                      const formatForDisplay = (num: number): string => {
+                        // Converte para string com 2 casas decimais
+                        const parts = num.toFixed(2).split('.');
+                        const reais = parts[0];
+                        const centavos = parts[1];
+                        
+                        // Formata reais com separador de milhar (ponto)
+                        const reaisFormatados = reais.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+                        
+                        // Retorna no formato brasileiro: reais,centavos
+                        return `${reaisFormatados},${centavos}`;
+                      };
+
+                      // Função para formatar string de entrada no padrão brasileiro
+                      // Exemplos: "9" -> "0,09" | "99" -> "0,99" | "990" -> "9,90" | "9900" -> "99,00" | "99000" -> "990,00" | "990000" -> "9.900,00"
+                      const formatInput = (input: string): string => {
+                        // Remove tudo exceto dígitos
+                        let digits = input.replace(/\D/g, '');
+                        
+                        if (digits === '') return '';
+                        
+                        // Remove zeros à esquerda (exceto se for apenas "0")
+                        digits = digits.replace(/^0+/, '') || '0';
+                        
+                        // Se tem apenas 1 dígito, formata como centavos
+                        if (digits.length === 1) {
+                          return `0,0${digits}`;
+                        }
+                        
+                        // Se tem 2 dígitos, formata como centavos
+                        if (digits.length === 2) {
+                          return `0,${digits}`;
+                        }
+                        
+                        // Separa reais e centavos (últimos 2 dígitos são centavos)
+                        const reais = digits.slice(0, -2);
+                        const centavos = digits.slice(-2);
+                        
+                        // Formata reais com separador de milhar (ponto)
+                        const reaisFormatados = reais.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+                        
+                        // Retorna no formato brasileiro: reais,centavos
+                        return `${reaisFormatados},${centavos}`;
+                      };
+
+                      // Função para validar e formatar input em tempo real
                       const handlePriceChange = (text: string) => {
-                        // Remove caracteres não numéricos exceto vírgula e ponto
-                        let cleaned = text.replace(/[^\d,.]/g, '');
+                        // Remove caracteres não numéricos (mantém apenas dígitos)
+                        const digits = text.replace(/\D/g, '');
                         
-                        // Converte ponto para vírgula (formato brasileiro)
-                        cleaned = cleaned.replace('.', ',');
-                        
-                        // Permite apenas uma vírgula
-                        const commaIndex = cleaned.indexOf(',');
-                        if (commaIndex !== -1) {
-                          // Remove vírgulas extras
-                          const beforeComma = cleaned.substring(0, commaIndex);
-                          const afterComma = cleaned.substring(commaIndex + 1).replace(/,/g, '');
-                          cleaned = beforeComma + ',' + afterComma;
-                        }
-                        
-                        // Limita a 2 casas decimais após a vírgula
-                        const parts = cleaned.split(',');
-                        if (parts.length > 1 && parts[1].length > 2) {
-                          cleaned = parts[0] + ',' + parts[1].substring(0, 2);
-                        }
-                        
-                        // Atualiza o valor de exibição
-                        setDisplayValue(cleaned);
-                        
-                        if (cleaned === '' || cleaned === ',') {
+                        if (digits === '') {
+                          setDisplayValue('');
                           onChange(undefined);
                           return;
                         }
                         
-                        // Converte vírgula para ponto para parseFloat (formato numérico)
-                        const numValue = parseFloat(cleaned.replace(',', '.'));
+                        // Formata automaticamente no padrão brasileiro
+                        const formatted = formatInput(digits);
+                        setDisplayValue(formatted);
+                        
+                        // Converte para número: remove pontos de milhar e substitui vírgula por ponto
+                        // Ex: "9.900,90" -> "9900.90" -> 9900.90
+                        const numString = formatted.replace(/\./g, '').replace(',', '.');
+                        const numValue = parseFloat(numString);
+                        
                         if (!isNaN(numValue) && numValue >= 0) {
                           onChange(numValue);
-                        } else {
-                          onChange(undefined);
+                        }
+                      };
+
+                      // Inicializa displayValue quando o campo é focado pela primeira vez
+                      const handleFocus = () => {
+                        if (value !== undefined && value !== null && displayValue === '') {
+                          setDisplayValue(formatForDisplay(value));
                         }
                       };
 
@@ -287,9 +323,10 @@ export const AddItemModal: React.FC<AddItemModalProps> = ({
                           placeholder='Ex: 4,99'
                           value={displayValue}
                           onChangeText={handlePriceChange}
+                          onFocus={handleFocus}
                           onBlur={onBlur}
                           error={errors.unitPrice?.message}
-                          keyboardType='decimal-pad'
+                          keyboardType='numeric'
                           returnKeyType='done'
                           disabled={loading}
                           labelColor={theme.colors.text}
