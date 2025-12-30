@@ -252,10 +252,25 @@ Sistema completo de componentes com estados, variações e validações:
   - Modal que desliza de baixo para cima com animação suave
   - Validação RHF + Zod (nome 2-80, quantidade >=1, preço >=0)
   - Campos: Nome, Quantidade, Preço Unitário (opcional)
+  - Formatação automática de preço no padrão brasileiro (ex: "4,99", "99,00", "9.900,00")
   - Loading durante submit
   - Exibição de erros do backend
   - Fecha automaticamente após sucesso e atualiza lista
   - Textos em verde bem escuro (#064E3B)
+
+- **EditItemModal**
+  - Modal de edição que desliza de baixo para cima (similar ao AddItemModal)
+  - Pré-preenchimento automático dos campos (nome, quantidade, preço)
+  - Schema Zod reutilizado (sem duplicação de código)
+  - Validações iguais à criação (nome 2-80, quantidade >=1, preço >=0)
+  - Formatação automática de preço no padrão brasileiro
+  - Botão "Salvar Alterações" com loading state
+  - Banner de erro do backend
+  - Fecha automaticamente após sucesso
+  - Atualiza UI automaticamente após salvar
+  - ScrollView interno para lidar com teclado
+  - Header com ícone de lápis, título "Editar Item" e botão de fechar
+  - Cores de texto em verde bem escuro (#064E3B)
 
 - **FloatingActionButton (FAB)**
   - Botão circular flutuante no canto inferior direito
@@ -269,13 +284,16 @@ Sistema completo de componentes com estados, variações e validações:
   - Componente de exibição de item de lista de compras
   - Checkbox interativo (marcar/desmarcar comprado)
   - Checkbox marcado com cor #059669 (verde suave)
+  - Borda do checkbox não marcado com cor #A7F3D0 (verde claro)
   - Nome com strike-through quando comprado
   - Quantidade formatada (ex: "2x")
-  - Preço unitário e subtotal opcionais (formatação BRL)
+  - Preço unitário em verde claro (#10B981) e subtotal opcional (formatação BRL)
+  - Subtotal exibido apenas quando quantity > 1 (evita duplicação visual)
   - Estado loading com skeleton placeholder
   - Acessibilidade completa (roles, labels, testIDs)
   - Suporte a callbacks: `onPress` (editar), `onTogglePurchased` (checkbox) e `onDelete` (excluir)
   - Botão de menu (3 pontinhos) para exclusão de item
+  - Opacidade reduzida quando comprado (0.85 para melhor acessibilidade)
   - 22 testes cobrindo props, cálculos e formatação
   - Textos em verde bem escuro (#064E3B)
 
@@ -591,17 +609,19 @@ Navegação para tela de detalhes ao clicar em um card de lista.
 - Valor em verde suave (#059669)
 
 ✅ **Lista de Itens:**
-- Checkbox circular (verde #059669 quando marcado)
+- Checkbox circular (verde #059669 quando marcado, borda #A7F3D0 quando não marcado)
 - Nome do item em verde bem escuro (#064E3B) (strikethrough quando completo)
 - Quantidade: # 2x, # 1x
-- Preço unitário: $ R$ X.XX (em verde bem escuro, quando disponível)
-- Total calculado: (total: R$ XX.XX) quando há preço
+- Preço unitário: $ R$ X.XX (em verde claro #10B981, quando disponível)
+- Total calculado: (total: R$ XX.XX) apenas quando quantity > 1 (evita duplicação visual)
 - Cards brancos com border sutil
 - Gap de 12px entre itens
 - Total estimado calculado automaticamente no topo
 - Divisor visual entre itens não comprados e comprados
 - Reordenação automática: item comprado desce para baixo imediatamente ao marcar
 - Botão de menu (3 pontinhos) no item para exclusão
+- Clique no item abre modal de edição
+- Opacidade reduzida quando comprado (0.85 para melhor acessibilidade)
 
 ✅ **FAB (Floating Action Button):**
 - Botão circular verde (#059669) no canto inferior direito
@@ -634,6 +654,15 @@ Navegação para tela de detalhes ao clicar em um card de lista.
 - 404: remove da UI (idempotência)
 - Toast de feedback (sucesso/erro)
 - Fluxo consistente com exclusão de lista
+
+✅ **Editar Item:**
+- Modal de edição que abre ao clicar no item
+- Pré-preenchimento automático dos campos (nome, quantidade, preço)
+- Validações iguais à criação (schema Zod reutilizado)
+- Formatação automática de preço no padrão brasileiro
+- Atualiza UI automaticamente após salvar
+- Exibição de erros do backend
+- UX consistente com modal de criação
 
 ✅ **Placeholder "Em Construção":**
 - Ícone e mensagem informando que é visualização mockada
@@ -1873,6 +1902,15 @@ Loading (ActivityIndicator)
 - [x] **ConfirmModal destrutivo integrado**
 - [x] **Tratamento de 404 com idempotência (remove da UI mesmo se já foi deletado)**
 - [x] **Testes unitários do DeleteShoppingItemUseCase (12 testes)**
+- [x] **UpdateShoppingItemUseCase - Caso de uso para editar item**
+- [x] **EditItemModal - Modal de edição com pré-preenchimento**
+- [x] **PATCH updateItem - Endpoint para editar item (já existia, suporta unitPrice)**
+- [x] **Modal abre ao clicar no item (onPress)**
+- [x] **Schema Zod reutilizado (sem duplicação)**
+- [x] **Testes unitários do UpdateShoppingItemUseCase (20 testes)**
+- [x] **Ajustes visuais: subtotal só exibe quando quantity > 1**
+- [x] **Cores atualizadas: preço unitário #10B981, borda checkbox #A7F3D0**
+- [x] **Opacidade ajustada para melhor acessibilidade (0.85 quando comprado)**
 
 ### **🚀 Próximas Features:**
 
@@ -1910,8 +1948,11 @@ Loading (ActivityIndicator)
 - [x] **DELETE deleteItem** no datasource e repository
 - [x] **Botão de menu (3 pontinhos)** no item (removido do header)
 - [x] **Tratamento de 404** com idempotência
-- [ ] Repository e Data Source para operações de itens (editar)
-- [ ] Use Cases para editar itens
+- [x] **Editar item** (modal com pré-preenchimento e validação)
+- [x] **UpdateShoppingItemUseCase** implementado e funcional
+- [x] **PATCH updateItem** no datasource e repository (suporta unitPrice)
+- [x] **EditItemModal** com schema Zod reutilizado
+- [x] **Modal abre ao clicar no item** (onPress)
 - [ ] Editar lista existente
 - [x] Marcar itens como comprados (toggle com atualização otimista e reordenação automática)
 - [x] Excluir itens (com ConfirmModal destrutivo e toast)

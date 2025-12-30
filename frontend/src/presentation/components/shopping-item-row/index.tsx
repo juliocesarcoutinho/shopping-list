@@ -165,7 +165,7 @@ export const ShoppingItemRow: React.FC<ShoppingItemRowProps> = ({
               >
                 $ {formatCurrency(unitPrice)}
               </Text>
-              {subtotal && subtotal > 0 && (
+              {subtotal && subtotal > 0 && quantity > 1 && (
                 <Text
                   style={[styles.subtotal, { color: theme.colors.textSecondary }]}
                   testID={testID ? `${testID}-subtotal` : undefined}
