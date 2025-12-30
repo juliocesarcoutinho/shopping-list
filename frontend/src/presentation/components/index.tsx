@@ -72,13 +72,13 @@ export function Button({
     return variant === 'primary'
       ? {
           ...baseStyle,
-          backgroundColor: theme.colors.primary,
+          backgroundColor: '#059669',
         }
       : {
           ...baseStyle,
           backgroundColor: 'transparent',
           borderWidth: 1,
-          borderColor: theme.colors.primary,
+          borderColor: '#059669',
         };
   };
 
@@ -92,7 +92,7 @@ export function Button({
     if (disabled || loading) return { ...sizeStyles[size], color: theme.colors.textInverted };
     return variant === 'primary'
       ? { ...sizeStyles[size], color: theme.colors.textInverted }
-      : { ...sizeStyles[size], color: theme.colors.primary };
+      : { ...sizeStyles[size], color: '#059669' };
   };
 
   return (
@@ -105,7 +105,7 @@ export function Button({
       {loading ? (
         <ActivityIndicator
           size='small'
-          color={variant === 'primary' ? theme.colors.textInverted : theme.colors.primary}
+          color={variant === 'primary' ? theme.colors.textInverted : '#059669'}
         />
       ) : (
         <Text style={[{ fontWeight: '600' }, getTextStyle()]}>{title}</Text>
