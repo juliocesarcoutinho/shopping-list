@@ -22,6 +22,9 @@ export function mapShoppingListDtoToDomain(dto: ShoppingListDto): ShoppingList {
     description: dto.description,
     // Items pode ser null/undefined, trato como array vazio
     items: Array.isArray(dto.items) ? dto.items.map(mapShoppingItemDtoToDomain) : [],
+    // Campos de contagem vindos da API (útil quando items não está incluído)
+    itemsCount: dto.itemsCount,
+    pendingItemsCount: dto.pendingItemsCount,
     createdAt,
     updatedAt,
   };

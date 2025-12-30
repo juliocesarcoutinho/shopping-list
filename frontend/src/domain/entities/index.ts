@@ -37,6 +37,8 @@ export interface ShoppingList {
   title: string;
   description?: string;
   items: ShoppingItem[];
+  itemsCount?: number;
+  pendingItemsCount?: number;
   createdAt: string;
   updatedAt: string;
 }

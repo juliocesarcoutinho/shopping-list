@@ -10,6 +10,7 @@ import { ShoppingItemRepository, ShoppingListRepository } from '../repositories'
 
 export * from './create-list-use-case';
 export * from './delete-shopping-list-use-case';
+export * from './get-list-details-use-case';
 export * from './get-my-lists-use-case';
 
 export class GetShoppingListsUseCase {

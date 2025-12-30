@@ -23,9 +23,21 @@ export class ShoppingListRepositoryImpl {
     return this.getMyLists();
   }
 
-  async getById(_id: string): Promise<ShoppingList | null> {
-    // Implementar quando backend tiver endpoint
-    throw new Error('Not implemented');
+  async getById(id: string): Promise<ShoppingList | null> {
+    try {
+      const dto = await this.remote.getListById(id);
+      return mapShoppingListDtoToDomain(dto);
+    } catch (error) {
+      // Se for 404, retorno null conforme contrato
+      if (error && typeof error === 'object' && 'status' in error) {
+        const err = error as { status?: number };
+        if (err.status === 404) {
+          return null;
+        }
+      }
+      // Repassa outros erros já normalizados
+      throw error;
+    }
   }
 
   async create(list: Omit<ShoppingList, 'id' | 'createdAt' | 'updatedAt'>): Promise<ShoppingList> {

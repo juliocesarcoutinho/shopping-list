@@ -27,6 +27,15 @@ export class ShoppingListRemoteDataSource {
     }
   }
 
+  async getListById(listId: string): Promise<ShoppingListDto> {
+    try {
+      return await apiClient.get<ShoppingListDto>(`/lists/${listId}`);
+    } catch (error) {
+      // Repasso erro já normalizado pelo apiClient
+      throw error;
+    }
+  }
+
   async createList(data: CreateListDto): Promise<ShoppingListDto> {
     try {
       return await apiClient.post<ShoppingListDto>('/lists', data);

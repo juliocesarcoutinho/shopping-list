@@ -141,16 +141,27 @@ export const ListsDashboardScreen: React.FC = () => {
   }, []);
 
   const renderItem = useCallback(
-    ({ item }: { item: ShoppingList }) => (
-      <ListCard
-        title={item.title}
-        itemsCount={item.items.length}
-        purchasedItemsCount={item.items.filter(i => i.isPurchased).length}
-        onPress={() => router.push(`/lists/${item.id}` as never)}
-        onMenuPress={() => handleDeleteList(item)}
-        testID={`list-card-${item.id}`}
-      />
-    ),
+    ({ item }: { item: ShoppingList }) => {
+      // Uso itemsCount da API se disponível, senão calculo de items
+      const totalItems = item.itemsCount ?? item.items.length;
+      // pendingItemsCount é quantidade de itens não comprados
+      // purchasedItemsCount = total - pending
+      const purchasedItems =
+        item.pendingItemsCount !== undefined
+          ? totalItems - item.pendingItemsCount
+          : item.items.filter(i => i.isPurchased).length;
+
+      return (
+        <ListCard
+          title={item.title}
+          itemsCount={totalItems}
+          purchasedItemsCount={purchasedItems}
+          onPress={() => router.push(`/lists/${item.id}` as never)}
+          onMenuPress={() => handleDeleteList(item)}
+          testID={`list-card-${item.id}`}
+        />
+      );
+    },
     [handleDeleteList, router]
   );
 

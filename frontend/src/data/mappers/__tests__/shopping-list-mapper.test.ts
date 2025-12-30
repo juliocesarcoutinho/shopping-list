@@ -60,6 +60,8 @@ describe('mapShoppingListDtoToDomain', () => {
       title: 'Lista da Miriã',
       description: undefined,
       items: [],
+      itemsCount: 0,
+      pendingItemsCount: 0,
       createdAt: '2025-12-29T14:40:21.299Z',
       updatedAt: '2025-12-29T14:40:21.299Z',
     });

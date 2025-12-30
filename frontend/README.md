@@ -329,6 +329,20 @@ Arquivo: `src/presentation/screens/lists/index.tsx`
 - Exibe as listas do usuário em cards (ListCard) usando FlatList para performance
 - Integra com Clean Architecture (sem lógica de rede na UI)
 
+**Otimização de Performance - itemsCount:**
+- Backend retorna `itemsCount` e `pendingItemsCount` no endpoint `GET /lists`
+- Cards calculam progresso sem carregar items completos: `purchasedItems = itemsCount - pendingItemsCount`
+- Estratégia híbrida com fallback:
+  - Dashboard: Usa contadores da API (eficiente)
+  - Detalhes: Calcula de items array quando disponível
+  ```typescript
+  const totalItems = item.itemsCount ?? item.items.length;
+  const purchasedItems = item.pendingItemsCount !== undefined
+    ? totalItems - item.pendingItemsCount
+    : item.items.filter(i => i.isPurchased).length;
+  ```
+- Reduz payload da API e melhora tempo de carregamento do dashboard
+
 **Estados tratados:**
 - **Loading:** skeletons de ListCard (3 placeholders animados)
 - **Empty:** SVG + mensagem amigável + botão "Começar minha lista"
@@ -581,7 +595,8 @@ Arquivo: `src/data/data-sources/shopping-list-remote-data-source.ts`
 Responsável por consumir as APIs de listas usando o `apiClient` padrão:
 
 **Endpoints:**
-- `GET /api/v1/lists` - Buscar listas do usuário
+- `GET /api/v1/lists` - Buscar listas do usuário (retorna metadados com itemsCount/pendingItemsCount)
+- `GET /api/v1/lists/{id}` - Buscar detalhes de uma lista específica (retorna lista com items completos)
 - `POST /api/v1/lists` - Criar nova lista
 - `DELETE /api/v1/lists/{id}` - Deletar lista por ID
 
@@ -592,6 +607,15 @@ export class ShoppingListRemoteDataSource {
       return await apiClient.get<ShoppingListDto[]>("/lists");
     } catch (error) {
       // Normalização de erro conforme padrão do projeto
+      throw error;
+    }
+  }
+
+  async getListById(listId: string): Promise<ShoppingListDto> {
+    try {
+      return await apiClient.get<ShoppingListDto>(`/lists/${listId}`);
+    } catch (error) {
+      // Repasso erro já normalizado pelo apiClient
       throw error;
     }
   }
@@ -645,6 +669,23 @@ export class ShoppingListRepositoryImpl {
     }
   }
 
+  async getById(id: string): Promise<ShoppingList | null> {
+    try {
+      const dto = await this.remote.getListById(id);
+      return mapShoppingListDtoToDomain(dto);
+    } catch (error) {
+      // Se for 404, retorno null conforme contrato
+      if (error && typeof error === 'object' && 'status' in error) {
+        const err = error as { status?: number };
+        if (err.status === 404) {
+          return null;
+        }
+      }
+      // Repassa outros erros já normalizados
+      throw error;
+    }
+  }
+
   async delete(id: string): Promise<void> {
     try {
       await this.remote.deleteList(id);
@@ -692,6 +733,67 @@ export class GetMyListsUseCase {
 
 ---
 
+### Use Case: Buscar Detalhes de uma Lista
+
+Arquivo: `src/domain/use-cases/get-list-details-use-case.ts`
+
+Orquestra a busca de uma lista específica por ID, incluindo todos os itens **com ordenação aplicada**:
+
+```typescript
+export class GetListDetailsUseCase {
+  constructor(private readonly repository: ShoppingListRepository) {}
+
+  async execute(listId: string): Promise<ShoppingList | null> {
+    // Valido entrada
+    if (!listId || listId.trim().length === 0) {
+      throw new Error('ID da lista é obrigatório');
+    }
+
+    // Busco no repository (já retorna com items mapeados)
+    const list = await this.repository.getById(listId.trim());
+    if (!list) return null;
+
+    // Aplico ordenação aos itens:
+    // 1. Itens não comprados primeiro (isPurchased: false)
+    // 2. Depois itens comprados (isPurchased: true)
+    // 3. Dentro de cada grupo: por updatedAt desc (mais recente primeiro)
+    const sortedItems = [...list.items].sort((a, b) => {
+      if (a.isPurchased !== b.isPurchased) {
+        return a.isPurchased ? 1 : -1;
+      }
+      return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+    });
+
+    return { ...list, items: sortedItems };
+  }
+}
+```
+
+**Características:**
+- Retorna `ShoppingList` com items completos **ordenados** ou `null` se não encontrada (404)
+- Validação de entrada: ID obrigatório e trim
+- Items automaticamente mapeados de DTO → Domain
+- **Ordenação automática aplicada:**
+  - Itens não comprados aparecem primeiro
+  - Itens comprados aparecem depois
+  - Ambos os grupos ordenados por `updatedAt` desc (mais recente primeiro)
+- Implementação imutável (usa spread operator)
+- Propagação de erros normalizados (401, 500, etc)
+
+#### Testes Unitários (13 testes)
+- ✅ Lista com itens retornada corretamente (ordenados)
+- ✅ Null quando lista não encontrada (404)
+- ✅ Trim do listId antes de buscar
+- ✅ Erro se listId vazio ou apenas espaços
+- ✅ Propagação de erros (401, 500)
+- ✅ Lista com items vazio tratada
+- ✅ **Ordenação: itens não comprados antes dos comprados**
+- ✅ **Ordenação: itens não comprados por updatedAt desc**
+- ✅ **Ordenação: itens comprados por updatedAt desc**
+- ✅ **Ordenação: mistura correta de ambos os grupos**
+
+---
+
 ---
 
 O projeto implementa modelos, entidades e mappers para listas de compras seguindo Clean Architecture e alinhamento com o backend.
@@ -706,10 +808,18 @@ export interface ShoppingList {
   title: string;
   description?: string;  // Opcional
   items: ShoppingItem[];
+  itemsCount?: number;        // Total de itens (útil quando items não está incluído)
+  pendingItemsCount?: number;  // Itens não comprados (útil para cálculo de progresso)
   createdAt: string;
   updatedAt: string;
 }
 ```
+
+**Campos de Contagem:**
+- `itemsCount`: Retornado por `GET /lists` para eficiência (evita carregar todos os items)
+- `pendingItemsCount`: Quantidade de itens não comprados
+- `purchasedItemsCount`: Calculado como `itemsCount - pendingItemsCount`
+- Quando `items` array está presente (ex: `GET /lists/{id}`), os valores podem ser calculados dinamicamente
 
 ### DTO/Model (API)
 
@@ -756,10 +866,18 @@ export function mapShoppingListDtoToDomain(dto: ShoppingListDto): ShoppingList {
     description: dto.description,
     // Items pode ser null/undefined, trato como array vazio
     items: Array.isArray(dto.items) ? dto.items.map(mapShoppingItemDtoToDomain) : [],
+    // Campos de contagem vindos da API (útil quando items não está incluído)
+    itemsCount: dto.itemsCount,
+    pendingItemsCount: dto.pendingItemsCount,
     createdAt,
     updatedAt,
   };
 }
+
+**Estratégia de Mapeamento:**
+- `GET /lists`: DTO tem `itemsCount`/`pendingItemsCount`, items vazio → usa contadores da API
+- `GET /lists/{id}`: DTO tem items completos → pode calcular dinamicamente ou usar contadores
+- Mapper preserva ambos para máxima flexibilidade na UI
 ```
 
 ---
@@ -969,7 +1087,10 @@ it('deve mapear corretamente um ShoppingItemDto completo com snake_case', () => 
 **Delete List Use Case Tests:** `src/domain/use-cases/__tests__/delete-shopping-list-use-case.test.ts`
 - Cobertura: validações, sucesso, 404, 403, 401, 500 (11 tests)
 
-Total: 45 testes automatizados (anteriormente 27)
+**Get List Details Use Case Tests:** `src/domain/use-cases/__tests__/get-list-details-use-case.test.ts`
+- Cobertura: busca com itens, 404, validações, propagação de erros (8 tests)
+
+Total: 51 testes automatizados (excluindo 1 com problema de configuração Jest/expo-constants)
 
 ### Padrões Seguidos
 - Sem dependência de UI/React em domain/data
@@ -1552,7 +1673,7 @@ Loading (ActivityIndicator)
 - [x] **Validação de formulário (título: 3-100 chars, descrição: 0-255 chars)**
 - [x] **Mapper flexível - Suporta camelCase e snake_case da API**
 - [x] **Safe Area Insets - Layout responsivo para dispositivos modernos**
-- [x] **Testes unitários - 25 testes cobrindo use cases, mappers e repositories**
+- [x] **Testes unitários - 56 testes cobrindo use cases, mappers e repositories**
 - [x] **ConfirmModal - Modal de confirmação customizado (substitui Alert nativo)**
 - [x] **Toast - Feedback não bloqueante com animações (success/error)**
 - [x] **DeleteShoppingListUseCase - Exclusão de listas com validações**
@@ -1564,19 +1685,27 @@ Loading (ActivityIndicator)
 - [x] **ShoppingItemDto - DTO com suporte snake_case e camelCase**
 - [x] **shopping-item-mapper - Mapper robusto com 18 testes (validações completas)**
 - [x] **Validações de tipos e campos obrigatórios com mensagens claras**
+- [x] **getListById - Endpoint para buscar lista específica com items completos**
+- [x] **GetListDetailsUseCase - Buscar detalhes de lista com validações (13 testes)**
+- [x] **Ordenação de itens - Não comprados primeiro, depois comprados, por updatedAt desc**
+- [x] **itemsCount e pendingItemsCount - Campos otimizados para dashboard**
+- [x] **Estratégia híbrida - Cards usam contadores da API, detalhes calculam de items**
 
 ### **🚀 Próximas Features:**
 
 **Fase 2 - Listas de Compras:**
 - [x] Criar lista de compras
-- [x] Listar listas do usuário
+- [x] Listar listas do usuário (com itemsCount/pendingItemsCount)
 - [x] Excluir lista (com modal de confirmação customizado + toast)
 - [x] Visualizar detalhes de uma lista (navegação + placeholder)
 - [x] Base de domínio para ShoppingItem (entity + DTO + mapper)
-- [ ] Repository e Data Source para itens
-- [ ] Use Cases CRUD para itens
+- [x] getListById no datasource e repository
+- [x] GetListDetailsUseCase com validações completas
+- [x] Ordenação de itens (não comprados primeiro, por updatedAt desc)
+- [ ] Integrar dados reais no ListDetailsScreen (substituir mockup)
+- [ ] Repository e Data Source para operações de itens (CRUD)
+- [ ] Use Cases para adicionar/editar/remover itens
 - [ ] Editar lista existente
-- [ ] Adicionar/remover itens
 - [ ] Marcar itens como comprados
 - [ ] Compartilhar listas com outros usuários
 - [ ] Categorias de produtos
