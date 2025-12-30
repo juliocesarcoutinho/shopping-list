@@ -7,7 +7,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Ionicons } from '@expo/vector-icons';
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Animated,
   Dimensions,
@@ -41,7 +41,9 @@ const addItemSchema = z.object({
     val => {
       if (val === '' || val === undefined || val === null) return undefined;
       if (typeof val === 'string') {
-        const num = parseFloat(val.replace(',', '.'));
+        // Remove espaços e converte vírgula para ponto
+        const cleaned = val.trim().replace(',', '.');
+        const num = parseFloat(cleaned);
         return isNaN(num) ? undefined : num;
       }
       return val;
@@ -223,29 +225,77 @@ export const AddItemModal: React.FC<AddItemModalProps> = ({
                   <Controller
                     control={control}
                     name='unitPrice'
-                    render={({ field: { onChange, onBlur, value } }) => (
-                      <TextField
-                        label='Preço Unitário (opcional)'
-                        placeholder='Ex: 4.50'
-                        value={value !== undefined && value !== null ? value.toString() : ''}
-                        onChangeText={text => {
-                          if (text === '') {
-                            onChange(undefined);
-                          } else {
-                            const num = parseFloat(text.replace(',', '.'));
-                            if (!isNaN(num) && num >= 0) {
-                              onChange(num);
-                            }
-                          }
-                        }}
-                        onBlur={onBlur}
-                        error={errors.unitPrice?.message}
-                        keyboardType='decimal-pad'
-                        returnKeyType='done'
-                        disabled={loading}
-                        labelColor={theme.colors.text}
-                      />
-                    )}
+                    render={({ field: { onChange, onBlur, value } }) => {
+                      // Estado local para manter o valor formatado (string com vírgula)
+                      const [displayValue, setDisplayValue] = useState<string>('');
+
+                      // Sincroniza displayValue com value quando value muda externamente
+                      useEffect(() => {
+                        if (value === undefined || value === null) {
+                          setDisplayValue('');
+                        } else {
+                          // Formata número para exibição com vírgula
+                          const formatted = value.toString().replace('.', ',');
+                          setDisplayValue(formatted);
+                        }
+                        // eslint-disable-next-line react-hooks/exhaustive-deps
+                      }, [value]);
+
+                      // Função para validar e formatar input
+                      const handlePriceChange = (text: string) => {
+                        // Remove caracteres não numéricos exceto vírgula e ponto
+                        let cleaned = text.replace(/[^\d,.]/g, '');
+                        
+                        // Converte ponto para vírgula (formato brasileiro)
+                        cleaned = cleaned.replace('.', ',');
+                        
+                        // Permite apenas uma vírgula
+                        const commaIndex = cleaned.indexOf(',');
+                        if (commaIndex !== -1) {
+                          // Remove vírgulas extras
+                          const beforeComma = cleaned.substring(0, commaIndex);
+                          const afterComma = cleaned.substring(commaIndex + 1).replace(/,/g, '');
+                          cleaned = beforeComma + ',' + afterComma;
+                        }
+                        
+                        // Limita a 2 casas decimais após a vírgula
+                        const parts = cleaned.split(',');
+                        if (parts.length > 1 && parts[1].length > 2) {
+                          cleaned = parts[0] + ',' + parts[1].substring(0, 2);
+                        }
+                        
+                        // Atualiza o valor de exibição
+                        setDisplayValue(cleaned);
+                        
+                        if (cleaned === '' || cleaned === ',') {
+                          onChange(undefined);
+                          return;
+                        }
+                        
+                        // Converte vírgula para ponto para parseFloat (formato numérico)
+                        const numValue = parseFloat(cleaned.replace(',', '.'));
+                        if (!isNaN(numValue) && numValue >= 0) {
+                          onChange(numValue);
+                        } else {
+                          onChange(undefined);
+                        }
+                      };
+
+                      return (
+                        <TextField
+                          label='Preço Unitário (opcional)'
+                          placeholder='Ex: 4,99'
+                          value={displayValue}
+                          onChangeText={handlePriceChange}
+                          onBlur={onBlur}
+                          error={errors.unitPrice?.message}
+                          keyboardType='decimal-pad'
+                          returnKeyType='done'
+                          disabled={loading}
+                          labelColor={theme.colors.text}
+                        />
+                      );
+                    }}
                   />
                 </View>
 
