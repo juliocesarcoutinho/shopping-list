@@ -246,6 +246,17 @@ Sistema completo de componentes com estados, variações e validações:
   - Não bloqueia navegação ou interação
   - Design alinhado ao Fresh Market
 
+- **ShoppingItemRow** 
+  - Componente de exibição de item de lista de compras
+  - Checkbox interativo (marcar/desmarcar comprado)
+  - Nome com strike-through quando comprado
+  - Quantidade formatada (ex: "2x")
+  - Preço unitário e subtotal opcionais (formatação BRL)
+  - Estado loading com skeleton placeholder
+  - Acessibilidade completa (roles, labels, testIDs)
+  - Suporte a callbacks: `onPress` (editar) e `onTogglePurchased` (checkbox)
+  - 22 testes cobrindo props, cálculos e formatação
+
 **Exportação centralizada:**
 ```tsx
 // Importação de componentes
@@ -791,6 +802,78 @@ export class GetListDetailsUseCase {
 - ✅ **Ordenação: itens não comprados por updatedAt desc**
 - ✅ **Ordenação: itens comprados por updatedAt desc**
 - ✅ **Ordenação: mistura correta de ambos os grupos**
+
+---
+
+### Componente: ShoppingItemRow
+
+Arquivo: `src/presentation/components/shopping-item-row/index.tsx`
+
+Componente reutilizável para exibição de itens em listas de compras:
+
+```tsx
+interface ShoppingItemRowProps {
+  id: string;
+  name: string;
+  quantity: number;
+  unitPrice?: number;
+  isPurchased: boolean;
+  loading?: boolean;
+  onPress?: () => void;
+  onTogglePurchased?: (id: string, newValue: boolean) => void;
+  testID?: string;
+}
+
+// Exemplo de uso
+<ShoppingItemRow
+  id="item1"
+  name="Leite Integral"
+  quantity={2}
+  unitPrice={4.5}
+  isPurchased={false}
+  onTogglePurchased={(id, newValue) => handleToggle(id, newValue)}
+  onPress={() => handleEditItem('item1')}
+  testID="item-leite"
+/>
+```
+
+**Características:**
+- **Checkbox interativo** com ícone checkmark (Ionicons)
+- **Nome com strike-through** quando `isPurchased: true`
+- **Quantidade formatada** (ex: "2x", "5x")
+- **Preço unitário** opcional formatado em BRL (R$ 4,50 / un)
+- **Subtotal calculado** automaticamente (quantity * unitPrice)
+- **Estado loading** com skeleton placeholder simples
+- **Acessibilidade completa:**
+  - `accessibilityRole="button"` na row
+  - `accessibilityRole="checkbox"` no checkbox
+  - `accessibilityLabel` descritivo com status
+  - `accessibilityState.checked` no checkbox
+  - testIDs em todos elementos principais
+
+**Formatação BRL:**
+```typescript
+const formatCurrency = (value: number) => {
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+  }).format(value);
+};
+```
+
+**Layout:**
+- Segue Fresh Market palette (verde #2ECC71 para success)
+- Opacidade reduzida (0.6) quando comprado
+- Borda verde quando comprado
+- Design responsivo com flex layout
+
+#### Testes Unitários (22 testes)
+- ✅ Props interface (5 testes) - mínimas, opcionais, callbacks, loading, testID
+- ✅ Cálculo de subtotal (3 testes) - básico, decimais, zero
+- ✅ Formatação monetária BRL (3 testes) - valores, centavos, inteiros
+- ✅ Estados (2 testes) - purchased, loading
+- ✅ Callbacks (4 testes) - onTogglePurchased com true/false, onPress
+- ✅ Validações de tipos (5 testes) - id, name, quantity, unitPrice, isPurchased
 
 ---
 
@@ -1673,7 +1756,7 @@ Loading (ActivityIndicator)
 - [x] **Validação de formulário (título: 3-100 chars, descrição: 0-255 chars)**
 - [x] **Mapper flexível - Suporta camelCase e snake_case da API**
 - [x] **Safe Area Insets - Layout responsivo para dispositivos modernos**
-- [x] **Testes unitários - 56 testes cobrindo use cases, mappers e repositories**
+- [x] **Testes unitários - 78 testes cobrindo use cases, mappers, repositories e componentes**
 - [x] **ConfirmModal - Modal de confirmação customizado (substitui Alert nativo)**
 - [x] **Toast - Feedback não bloqueante com animações (success/error)**
 - [x] **DeleteShoppingListUseCase - Exclusão de listas com validações**
@@ -1690,6 +1773,8 @@ Loading (ActivityIndicator)
 - [x] **Ordenação de itens - Não comprados primeiro, depois comprados, por updatedAt desc**
 - [x] **itemsCount e pendingItemsCount - Campos otimizados para dashboard**
 - [x] **Estratégia híbrida - Cards usam contadores da API, detalhes calculam de items**
+- [x] **ShoppingItemRow - Componente reutilizável para exibição de itens (22 testes)**
+- [x] **Checkbox interativo com formatação BRL e subtotal automático**
 
 ### **🚀 Próximas Features:**
 
@@ -1702,6 +1787,7 @@ Loading (ActivityIndicator)
 - [x] getListById no datasource e repository
 - [x] GetListDetailsUseCase com validações completas
 - [x] Ordenação de itens (não comprados primeiro, por updatedAt desc)
+- [x] ShoppingItemRow - Componente de exibição de item
 - [ ] Integrar dados reais no ListDetailsScreen (substituir mockup)
 - [ ] Repository e Data Source para operações de itens (CRUD)
 - [ ] Use Cases para adicionar/editar/remover itens
