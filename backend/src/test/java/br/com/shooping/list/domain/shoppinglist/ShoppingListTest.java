@@ -3,6 +3,8 @@ package br.com.shooping.list.domain.shoppinglist;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.math.BigDecimal;
+
 import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
@@ -158,7 +160,7 @@ class ShoppingListTest {
         ItemName name = ItemName.of("Arroz");
         Quantity quantity = Quantity.of(2);
 
-        ListItem item = list.addItem(name, quantity, "kg");
+        ListItem item = list.addItem(name, quantity, "kg", null);
 
         assertThat(list.getItems()).hasSize(1);
         assertThat(list.countTotalItems()).isEqualTo(1);
@@ -170,9 +172,9 @@ class ShoppingListTest {
     void shouldAddMultipleItemsToList() {
         ShoppingList list = ShoppingList.create(1L, "Mercado", null);
 
-        list.addItem(ItemName.of("Arroz"), Quantity.of(2), "kg");
-        list.addItem(ItemName.of("Feijão"), Quantity.of(1), "kg");
-        list.addItem(ItemName.of("Macarrão"), Quantity.of(3), "pacote");
+        list.addItem(ItemName.of("Arroz"), Quantity.of(2), "kg", null);
+        list.addItem(ItemName.of("Feijão"), Quantity.of(1), "kg", null);
+        list.addItem(ItemName.of("Macarrão"), Quantity.of(3), "pacote", null);
 
         assertThat(list.countTotalItems()).isEqualTo(3);
     }
@@ -181,9 +183,9 @@ class ShoppingListTest {
     @DisplayName("Deve lançar exceção ao adicionar item duplicado")
     void shouldThrowExceptionWhenAddingDuplicateItem() {
         ShoppingList list = ShoppingList.create(1L, "Mercado", null);
-        list.addItem(ItemName.of("Arroz"), Quantity.of(2), "kg");
+        list.addItem(ItemName.of("Arroz"), Quantity.of(2), "kg", null);
 
-        assertThatThrownBy(() -> list.addItem(ItemName.of("ARROZ"), Quantity.of(1), "kg"))
+        assertThatThrownBy(() -> list.addItem(ItemName.of("ARROZ"), Quantity.of(1), "kg", BigDecimal.valueOf(35.00)))
                 .isInstanceOf(DuplicateItemException.class)
                 .hasMessageContaining("Item 'ARROZ' já existe nesta lista");
     }
@@ -195,13 +197,13 @@ class ShoppingListTest {
 
         // Adiciona 100 itens (limite máximo)
         for (int i = 1; i <= 100; i++) {
-            list.addItem(ItemName.of("Item " + i), Quantity.of(1), null);
+            list.addItem(ItemName.of("Item " + i), Quantity.of(1), null, null);
         }
 
         assertThat(list.countTotalItems()).isEqualTo(100);
 
         // Tentar adicionar o 101º item deve lançar exceção
-        assertThatThrownBy(() -> list.addItem(ItemName.of("Item 101"), Quantity.of(1), null))
+        assertThatThrownBy(() -> list.addItem(ItemName.of("Item 101"), Quantity.of(1), null, null))
                 .isInstanceOf(ListLimitExceededException.class)
                 .hasMessageContaining("Lista não pode ter mais de 100 itens");
     }
@@ -210,7 +212,7 @@ class ShoppingListTest {
     @DisplayName("Deve remover item da lista")
     void shouldRemoveItemFromList() {
         ShoppingList list = ShoppingList.create(1L, "Mercado", null);
-        ListItem item = list.addItem(ItemName.of("Arroz"), Quantity.of(2), "kg");
+        ListItem item = list.addItem(ItemName.of("Arroz"), Quantity.of(2), "kg", null);
         item.setId(1L);
 
         list.removeItem(1L);
@@ -232,7 +234,7 @@ class ShoppingListTest {
     @DisplayName("Deve marcar item como comprado")
     void shouldMarkItemAsPurchased() {
         ShoppingList list = ShoppingList.create(1L, "Mercado", null);
-        ListItem item = list.addItem(ItemName.of("Café"), Quantity.of(1), "pacote");
+        ListItem item = list.addItem(ItemName.of("Café"), Quantity.of(1), "pacote", null);
         item.setId(1L);
 
         list.markItemAsPurchased(1L);
@@ -246,7 +248,7 @@ class ShoppingListTest {
     @DisplayName("Deve marcar item como pendente")
     void shouldMarkItemAsPending() {
         ShoppingList list = ShoppingList.create(1L, "Mercado", null);
-        ListItem item = list.addItem(ItemName.of("Açúcar"), Quantity.of(1), "kg");
+        ListItem item = list.addItem(ItemName.of("Açúcar"), Quantity.of(1), "kg", null);
         item.setId(1L);
         list.markItemAsPurchased(1L);
 
@@ -261,9 +263,9 @@ class ShoppingListTest {
     @DisplayName("Deve limpar itens comprados")
     void shouldClearPurchasedItems() {
         ShoppingList list = ShoppingList.create(1L, "Mercado", null);
-        ListItem item1 = list.addItem(ItemName.of("Arroz"), Quantity.of(2), "kg");
-        ListItem item2 = list.addItem(ItemName.of("Feijão"), Quantity.of(1), "kg");
-        ListItem item3 = list.addItem(ItemName.of("Macarrão"), Quantity.of(3), "pacote");
+        ListItem item1 = list.addItem(ItemName.of("Arroz"), Quantity.of(2), "kg", BigDecimal.valueOf(35.00));
+        ListItem item2 = list.addItem(ItemName.of("Feijão"), Quantity.of(1), "kg", BigDecimal.valueOf(20.00));
+        ListItem item3 = list.addItem(ItemName.of("Macarrão"), Quantity.of(3), "pacote", BigDecimal.valueOf(5.00));
         item1.setId(1L);
         item2.setId(2L);
         item3.setId(3L);
@@ -283,8 +285,8 @@ class ShoppingListTest {
     @DisplayName("Deve retornar zero ao limpar lista sem itens comprados")
     void shouldReturnZeroWhenClearingListWithoutPurchasedItems() {
         ShoppingList list = ShoppingList.create(1L, "Mercado", null);
-        list.addItem(ItemName.of("Arroz"), Quantity.of(2), "kg");
-        list.addItem(ItemName.of("Feijão"), Quantity.of(1), "kg");
+        list.addItem(ItemName.of("Arroz"), Quantity.of(2), "kg", null);
+        list.addItem(ItemName.of("Feijão"), Quantity.of(1), "kg", null);
 
         int removed = list.clearPurchasedItems();
 
@@ -296,7 +298,7 @@ class ShoppingListTest {
     @DisplayName("Deve atualizar quantidade do item")
     void shouldUpdateItemQuantity() {
         ShoppingList list = ShoppingList.create(1L, "Mercado", null);
-        ListItem item = list.addItem(ItemName.of("Leite"), Quantity.of(1), "litro");
+        ListItem item = list.addItem(ItemName.of("Leite"), Quantity.of(1), "litro", null);
         item.setId(1L);
 
         list.updateItemQuantity(1L, Quantity.of(3));
@@ -308,7 +310,7 @@ class ShoppingListTest {
     @DisplayName("Deve atualizar nome do item")
     void shouldUpdateItemName() {
         ShoppingList list = ShoppingList.create(1L, "Mercado", null);
-        ListItem item = list.addItem(ItemName.of("Feijão Preto"), Quantity.of(1), "kg");
+        ListItem item = list.addItem(ItemName.of("Feijão Preto"), Quantity.of(1), "kg", null);
         item.setId(1L);
 
         list.updateItemName(1L, ItemName.of("Feijão Carioca"));
@@ -320,8 +322,8 @@ class ShoppingListTest {
     @DisplayName("Deve lançar exceção ao atualizar nome para nome duplicado")
     void shouldThrowExceptionWhenUpdatingNameToDuplicateName() {
         ShoppingList list = ShoppingList.create(1L, "Mercado", null);
-        ListItem item1 = list.addItem(ItemName.of("Arroz"), Quantity.of(2), "kg");
-        ListItem item2 = list.addItem(ItemName.of("Feijão"), Quantity.of(1), "kg");
+        ListItem item1 = list.addItem(ItemName.of("Arroz"), Quantity.of(2), "kg", BigDecimal.valueOf(35.00));
+        ListItem item2 = list.addItem(ItemName.of("Feijão"), Quantity.of(1), "kg", BigDecimal.valueOf(20.00));
         item1.setId(1L);
         item2.setId(2L);
 
@@ -334,7 +336,7 @@ class ShoppingListTest {
     @DisplayName("Deve permitir atualizar item para o mesmo nome")
     void shouldAllowUpdatingItemToSameName() {
         ShoppingList list = ShoppingList.create(1L, "Mercado", null);
-        ListItem item = list.addItem(ItemName.of("Arroz Branco"), Quantity.of(2), "kg");
+        ListItem item = list.addItem(ItemName.of("Arroz Branco"), Quantity.of(2), "kg", null);
         item.setId(1L);
 
         // Atualizar para o mesmo nome (mas com capitalização diferente) não deve lançar exceção
@@ -345,7 +347,7 @@ class ShoppingListTest {
     @DisplayName("Deve atualizar unidade do item")
     void shouldUpdateItemUnit() {
         ShoppingList list = ShoppingList.create(1L, "Mercado", null);
-        ListItem item = list.addItem(ItemName.of("Refrigerante"), Quantity.of(2), "litro");
+        ListItem item = list.addItem(ItemName.of("Refrigerante"), Quantity.of(2), "litro", null);
         item.setId(1L);
 
         list.updateItemUnit(1L, "garrafa");
@@ -357,7 +359,7 @@ class ShoppingListTest {
     @DisplayName("Deve buscar item por ID")
     void shouldFindItemById() {
         ShoppingList list = ShoppingList.create(1L, "Mercado", null);
-        ListItem item = list.addItem(ItemName.of("Sal"), Quantity.of(1), "kg");
+        ListItem item = list.addItem(ItemName.of("Sal"), Quantity.of(1), "kg", null);
         item.setId(5L);
 
         ListItem found = list.findItemById(5L);
@@ -369,10 +371,10 @@ class ShoppingListTest {
     @DisplayName("Deve contar itens por status")
     void shouldCountItemsByStatus() {
         ShoppingList list = ShoppingList.create(1L, "Mercado", null);
-        ListItem item1 = list.addItem(ItemName.of("Arroz"), Quantity.of(2), "kg");
-        ListItem item2 = list.addItem(ItemName.of("Feijão"), Quantity.of(1), "kg");
-        ListItem item3 = list.addItem(ItemName.of("Macarrão"), Quantity.of(3), "pacote");
-        ListItem item4 = list.addItem(ItemName.of("Óleo"), Quantity.of(1), "litro");
+        ListItem item1 = list.addItem(ItemName.of("Arroz"), Quantity.of(2), "kg", BigDecimal.valueOf(35.00));
+        ListItem item2 = list.addItem(ItemName.of("Feijão"), Quantity.of(1), "kg", BigDecimal.valueOf(20.00));
+        ListItem item3 = list.addItem(ItemName.of("Macarrão"), Quantity.of(3), "pacote", BigDecimal.valueOf(5.00));
+        ListItem item4 = list.addItem(ItemName.of("Óleo"), Quantity.of(1), "litro", null);
         item1.setId(1L);
         item2.setId(2L);
         item3.setId(3L);
@@ -390,7 +392,7 @@ class ShoppingListTest {
     @DisplayName("Deve retornar cópia imutável dos itens")
     void shouldReturnUnmodifiableCopyOfItems() {
         ShoppingList list = ShoppingList.create(1L, "Mercado", null);
-        list.addItem(ItemName.of("Arroz"), Quantity.of(2), "kg");
+        list.addItem(ItemName.of("Arroz"), Quantity.of(2), "kg", null);
 
         assertThatThrownBy(() -> list.getItems().clear())
                 .isInstanceOf(UnsupportedOperationException.class);
@@ -422,8 +424,8 @@ class ShoppingListTest {
     void shouldHaveToStringWithMainInfo() {
         ShoppingList list = ShoppingList.create(5L, "Mercado Mensal", null);
         list.setId(15L);
-        list.addItem(ItemName.of("Arroz"), Quantity.of(2), "kg");
-        list.addItem(ItemName.of("Feijão"), Quantity.of(1), "kg");
+        list.addItem(ItemName.of("Arroz"), Quantity.of(2), "kg", null);
+        list.addItem(ItemName.of("Feijão"), Quantity.of(1), "kg", null);
 
         String toString = list.toString();
 

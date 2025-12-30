@@ -21,11 +21,22 @@ export function mapShoppingItemDtoToDomain(dto: ShoppingItemDto): ShoppingItem {
   const id = dto.id ? String(dto.id) : undefined;
   const createdAt = dto.createdAt || dto.created_at;
   const updatedAt = dto.updatedAt || dto.updated_at;
-  const unitPrice = dto.unitPrice ?? dto.unit_price;
+  // Trato null como undefined para manter consistência
+  const unitPriceRaw = dto.unitPrice ?? dto.unit_price;
+  const unitPrice = unitPriceRaw !== null && unitPriceRaw !== undefined ? unitPriceRaw : undefined;
 
-  // Suporto variações de nome do campo de status: isPurchased, is_purchased, isCompleted, is_completed
-  const isPurchased =
-    dto.isPurchased ?? dto.is_purchased ?? dto.isCompleted ?? dto.is_completed ?? false;
+  // Suporto múltiplos formatos de status:
+  // 1. Campo status do backend: "PENDING" ou "PURCHASED"
+  // 2. Campos booleanos: isPurchased, is_purchased, isCompleted, is_completed
+  let isPurchased = false;
+  if (dto.status) {
+    // Backend retorna "PENDING" ou "PURCHASED"
+    isPurchased = dto.status === 'PURCHASED';
+  } else {
+    // Fallback para campos booleanos (compatibilidade)
+    isPurchased =
+      dto.isPurchased ?? dto.is_purchased ?? dto.isCompleted ?? dto.is_completed ?? false;
+  }
 
   // Valido campos obrigatórios
   if (!id || !dto.name || dto.quantity === undefined || !createdAt || !updatedAt) {
@@ -48,7 +59,12 @@ export function mapShoppingItemDtoToDomain(dto: ShoppingItemDto): ShoppingItem {
     throw new Error('Campo quantity deve ser um número positivo');
   }
 
-  if (unitPrice !== undefined && (typeof unitPrice !== 'number' || unitPrice < 0)) {
+  // Valida unitPrice apenas se for fornecido (não null/undefined)
+  if (
+    unitPrice !== undefined &&
+    unitPrice !== null &&
+    (typeof unitPrice !== 'number' || unitPrice < 0)
+  ) {
     throw new Error('Campo unitPrice deve ser um número positivo quando fornecido');
   }
 

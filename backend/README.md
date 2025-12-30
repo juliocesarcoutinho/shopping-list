@@ -3,7 +3,7 @@
 Backend da aplicação **Shopping List**, desenvolvido com **Java LTS** e **Spring Boot**, seguindo princípios de **Clean Architecture**, **Domain-Driven Design (DDD)** e boas práticas de desenvolvimento.
 
 > ✅ **Sistema de autenticação completo** e **modelo de domínio implementado** seguindo DDD
-> 
+>
 > 🚧 **API REST em desenvolvimento** - próxima sprint focada na camada de aplicação
 
 ---
@@ -42,6 +42,7 @@ Antes de iniciar, certifique-se de ter instalado:
 - **Docker** e **Docker Compose**
 
 Para verificar:
+
 ```bash
 java -version
 docker --version
@@ -75,7 +76,8 @@ APP_NAME=shopping-list
 PROFILE=dev
 ```
 
-> ⚠️ **Importante:** 
+> ⚠️ **Importante:**
+>
 > - O arquivo `.env` contém credenciais sensíveis e **não deve ser commitado** no repositório
 > - Use o arquivo `.env.example` como referência
 > - **JWT_SECRET deve ter no mínimo 32 caracteres** (256 bits) para HS256
@@ -84,26 +86,31 @@ PROFILE=dev
 ### Comandos Docker
 
 #### Subir o container MySQL
+
 ```bash
 docker compose up -d
 ```
 
 #### Verificar status do container
+
 ```bash
 docker compose ps
 ```
 
 #### Ver logs do MySQL
+
 ```bash
 docker compose logs -f mysql
 ```
 
 #### Parar o container
+
 ```bash
 docker compose down
 ```
 
 #### Remover container e dados (⚠️ cuidado: apaga todos os dados)
+
 ```bash
 docker compose down -v
 ```
@@ -119,6 +126,7 @@ Após subir o container, você pode conectar ao MySQL usando:
 - **Senha:** `admin`
 
 **String de conexão:**
+
 ```
 jdbc:mysql://localhost:3306/shoppinglist_db
 ```
@@ -132,11 +140,13 @@ O container possui verificação automática de saúde (healthcheck) que testa a
 No perfil `dev`, a aplicação está configurada para conectar automaticamente ao MySQL usando as variáveis de ambiente do `.env`:
 
 #### **Datasource**
+
 - **Driver:** MySQL Connector/J (`com.mysql.cj.jdbc.Driver`)
 - **URL:** `jdbc:mysql://${MYSQL_HOST}:${MYSQL_PORT}/${MYSQL_DATABASE}`
 - **Pool de Conexões:** HikariCP
 
 #### **HikariCP (Connection Pool)**
+
 - `maximum-pool-size`: 10 conexões
 - `minimum-idle`: 5 conexões ociosas
 - `connection-timeout`: 30 segundos
@@ -144,6 +154,7 @@ No perfil `dev`, a aplicação está configurada para conectar automaticamente a
 - `max-lifetime`: 10 minutos
 
 #### **JPA/Hibernate**
+
 - `ddl-auto`: **update** (cria/atualiza schema automaticamente no dev)
 - `show-sql`: true (exibe SQL no console)
 - `format_sql`: true (formata SQL para melhor legibilidade)
@@ -156,33 +167,40 @@ No perfil `dev`, a aplicação está configurada para conectar automaticamente a
 ## ▶️ Como executar o projeto
 
 ### 1️⃣ Clonar o repositório
+
 ```bash
 git clone <URL_DO_REPOSITORIO>
 cd shopping-list/backend
 ```
 
 ### 2️⃣ Configurar variáveis de ambiente
+
 Copie o arquivo `.env.example` para `.env` e ajuste as credenciais se necessário:
+
 ```bash
 cp .env.example .env
 ```
 
 ### 3️⃣ Subir o banco de dados MySQL
+
 ```bash
 docker compose up -d
 ```
 
 Aguarde alguns segundos para o MySQL inicializar completamente. Você pode verificar o status com:
+
 ```bash
 docker compose logs -f mysql
 ```
 
 ### 4️⃣ Executar a aplicação
+
 ```bash
 ./mvnw spring-boot:run
 ```
 
 > Em ambientes Windows:
+
 ```bash
 mvnw spring-boot:run
 ```
@@ -192,7 +210,9 @@ mvnw spring-boot:run
 A aplicação suporta diferentes perfis de configuração:
 
 #### **test** (padrão)
+
 Perfil para testes automatizados com banco de dados em memória
+
 - **Banco de dados:** H2 em memória (modo MySQL)
 - **Hibernate ddl-auto:** create-drop (recria schema a cada execução)
 - **Isolamento:** Banco zerado a cada execução de teste
@@ -201,7 +221,9 @@ Perfil para testes automatizados com banco de dados em memória
 - **CI/CD friendly:** Funciona em qualquer ambiente
 
 #### **dev**
+
 Perfil para desenvolvimento local com logs detalhados e conexão MySQL
+
 - **Datasource:** Conecta ao MySQL via Docker
 - **Hibernate ddl-auto:** update (gerencia schema automaticamente)
 - **Logs detalhados:**
@@ -223,6 +245,7 @@ Para executar com um perfil específico:
 ```
 
 Ou definindo a variável de ambiente:
+
 ```bash
 export PROFILE=dev
 ./mvnw spring-boot:run
@@ -235,12 +258,15 @@ export PROFILE=dev
 ## 🔎 Verificando se a aplicação está no ar
 
 ### Health Check (Actuator)
+
 Endpoint padrão do Spring Boot Actuator:
+
 ```
 http://localhost:8080/actuator/health
 ```
 
 Resposta esperada:
+
 ```json
 {
   "status": "UP"
@@ -248,12 +274,15 @@ Resposta esperada:
 ```
 
 ### Health Check Customizado (API v1)
+
 Endpoint customizado seguindo a arquitetura da aplicação:
+
 ```
 http://localhost:8080/api/v1/health
 ```
 
 Resposta esperada:
+
 ```json
 {
   "status": "UP"
@@ -267,16 +296,19 @@ Resposta esperada:
 Os testes utilizam **H2 Database em memória**, garantindo isolamento e performance sem depender do MySQL ou Docker.
 
 ### Executar todos os testes
+
 ```bash
 ./mvnw test
 ```
 
 ### Executar em modo silencioso
+
 ```bash
 ./mvnw -q test
 ```
 
 ### Executar testes de uma classe específica
+
 ```bash
 ./mvnw test -Dtest=HealthControllerTest
 ```
@@ -303,7 +335,7 @@ Para inspecionar o banco durante os testes (útil para debug):
 
 ### Estatísticas de Testes
 
-```
+````
 📊 Cobertura de Testes (última execução)
 
 Testes Unitários:
@@ -324,12 +356,13 @@ Testes de Domínio (DDD):
 Testes de Aplicação (Shopping List):
   ✅ CreateShoppingListUseCaseTest   : 3 testes (100% passed)
   ✅ GetMyShoppingListsUseCaseTest   : 3 testes (100% passed)
+  ✅ GetShoppingListByIdUseCaseTest  : (implementado, testes de integração no controller)
   ✅ UpdateShoppingListUseCaseTest   : 7 testes (100% passed)
   ✅ DeleteShoppingListUseCaseTest   : 4 testes (100% passed)
   ✅ AddItemToListUseCaseTest        : 5 testes (100% passed)
   ✅ UpdateItemUseCaseTest           : 9 testes (100% passed)
   ✅ RemoveItemFromListUseCaseTest   : 4 testes (100% passed)
-  Total Aplicação: 35 testes unitários
+  Total Aplicação: 35+ testes unitários
 
 Testes de Persistência (JPA):
   ✅ JpaShoppingListRepositoryIntegrationTest : 11 testes (100% passed)
@@ -342,12 +375,12 @@ Testes de Integração:
   ✅ GoogleAuthController      : 8 testes (100% passed)
   ✅ JwtAuthentication         : 8 testes (100% passed)
   ✅ AdminAuthorization        : 3 testes (100% passed)
-  ✅ ShoppingListController    : 21 testes (100% passed)
+  ✅ ShoppingListController    : 26 testes (100% passed) - inclui GET /api/v1/lists/{id}
   ✅ ShoppingListItemController: 18 testes (100% passed)
   ✅ HealthController          : 1 teste  (100% passed)
-  Total: 85 testes de integração
+  Total: 90 testes de integração
 
-📈 Total Geral: 231+ testes | 231+ passing | 0 failures
+📈 Total Geral: 236+ testes | 236+ passing | 0 failures
 ⚡ Tempo médio de execução: ~35 segundos
 🎯 Modelo de domínio: 100% cobertura das regras de negócio
 🎯 Camada de aplicação: 100% cobertura dos use cases
@@ -370,19 +403,20 @@ Testes de Integração:
 - **Aggregate Root - ShoppingList:**
   ```java
   ShoppingList lista = ShoppingList.create(userId, "Lista da Feira", "Compras semanais");
-  
+
   // Adicionando itens com validação automática
   ItemName arroz = ItemName.of("Arroz");
   Quantity quantidade = Quantity.of(2);
   lista.addItem(arroz, quantidade, "kg");
-  
+
   // Operações do domínio
   lista.markItemAsPurchased(itemId);
   lista.countPendingItems();
   lista.clearPurchasedItems();
-  ```
+````
 
 - **Entidades e Value Objects:**
+
   - **ShoppingList** (Aggregate Root): Gerencia ciclo de vida dos itens
   - **ListItem** (Entity): Representa itens individuais na lista
   - **ItemName** (Value Object): Nome validado com normalização case-insensitive
@@ -390,6 +424,7 @@ Testes de Integração:
   - **ItemStatus** (Enum): Status PENDING/PURCHASED
 
 - **Regras de Negócio Implementadas:**
+
   - ✅ Título obrigatório (3-100 caracteres)
   - ✅ Máximo 100 itens por lista
   - ✅ Não permite duplicatas (comparação case-insensitive)
@@ -399,11 +434,13 @@ Testes de Integração:
   - ✅ Rastreamento de timestamps (criação/modificação)
 
 - **Exceções de Domínio:**
+
   - `DuplicateItemException`: Item com nome duplicado
   - `ItemNotFoundException`: Item não encontrado na lista
   - `ListLimitExceededException`: Limite de 100 itens excedido
 
 - **Cobertura de Testes:**
+
   - **ShoppingListTest**: 25+ cenários (criação, validações, operações)
   - **ListItemTest**: 15+ cenários (estados, modificações)
   - **QuantityTest**: 10+ cenários (validações, comparações)
@@ -411,6 +448,7 @@ Testes de Integração:
   - **Total**: 58+ testes unitários puros (tempo: ~2 segundos)
 
 - **Benefícios da Abordagem:**
+
   - **Testabilidade**: Testes rápidos e isolados sem frameworks
   - **Manutenibilidade**: Lógica centralizada e bem encapsulada
   - **Evolução Segura**: Mudanças controladas via testes abrangentes
@@ -444,6 +482,7 @@ ShoppingList (Aggregate Root)
 Entidade principal que representa uma lista de compras e gerencia o ciclo de vida dos itens.
 
 **Atributos:**
+
 - `id`: Identificador único da lista
 - `ownerId`: ID do usuário proprietário (obrigatório)
 - `title`: Título da lista (3-100 caracteres, obrigatório)
@@ -453,6 +492,7 @@ Entidade principal que representa uma lista de compras e gerencia o ciclo de vid
 - `updatedAt`: Data/hora da última modificação
 
 **Regras de Negócio (Invariantes):**
+
 - ✅ **Título obrigatório** com 3-100 caracteres
 - ✅ **Proprietário obrigatório** (ownerId não pode ser null)
 - ✅ **Máximo 100 itens** por lista
@@ -461,6 +501,7 @@ Entidade principal que representa uma lista de compras e gerencia o ciclo de vid
 - ✅ **Validação de nomes** de itens (2-100 caracteres)
 
 **Funcionalidades:**
+
 ```java
 // Criação
 ShoppingList.create(ownerId, title, description)
@@ -488,6 +529,7 @@ isOwnedBy(userId)
 Representa um item individual dentro de uma lista de compras.
 
 **Atributos:**
+
 - `id`: Identificador único do item
 - `shoppingList`: Referência para lista pai (obrigatório)
 - `name`: Nome do item (Value Object ItemName)
@@ -498,6 +540,7 @@ Representa um item individual dentro de uma lista de compras.
 - `updatedAt`: Data/hora da última modificação
 
 **Regras de Negócio:**
+
 - ✅ **Item deve ter lista pai** (não pode existir sozinho)
 - ✅ **Nome obrigatório** validado pelo Value Object
 - ✅ **Quantidade obrigatória** e maior que zero
@@ -509,12 +552,14 @@ Representa um item individual dentro de uma lista de compras.
 Value Object que garante nomes válidos e fornece normalização para comparação.
 
 **Características:**
+
 - ✅ **Imutável** (final class)
 - ✅ **Validação automática** no construtor
 - ✅ **Normalização case-insensitive** para comparações
 - ✅ **Preserva capitalização original** para exibição
 
 **Regras:**
+
 - Nome deve ter 2-100 caracteres (após trim)
 - Comparação case-insensitive via `normalizedValue`
 - Método `isSameAs()` para detectar duplicatas
@@ -531,12 +576,14 @@ name1.getValue(); // "Arroz" (preserva original)
 Value Object que representa quantidades válidas usando BigDecimal para precisão.
 
 **Características:**
+
 - ✅ **Imutável** (final class)
 - ✅ **BigDecimal** para precisão em decimais
 - ✅ **Sempre maior que zero**
 - ✅ **Factory methods** convenientes
 
 **Métodos:**
+
 ```java
 Quantity.of(BigDecimal.valueOf(2.5))
 Quantity.of(3.0) // Conveniente para doubles
@@ -587,8 +634,8 @@ O modelo possui cobertura completa de testes unitários:
 ```java
 // Criar lista
 ShoppingList lista = ShoppingList.create(
-    userId, 
-    "Compras da Semana", 
+    userId,
+    "Compras da Semana",
     "Lista para feira de domingo"
 );
 
@@ -628,6 +675,7 @@ O contrato de persistência do agregado ShoppingList já está definido seguindo
 **Localização:** `domain/shoppinglist/ShoppingListRepository.java`
 
 **Características:**
+
 - ✅ **Port** definido no domínio (interface pura)
 - ✅ **Zero dependências** de infraestrutura (JPA, Spring, etc)
 - ✅ **Inversão de dependência** respeitada (SOLID)
@@ -655,11 +703,13 @@ void deleteAll();
 **Decisões de Design:**
 
 1. **Separação de Concerns:**
+
    - `findById()` → Busca a entidade
    - `existsByIdAndOwnerId()` → Valida ownership sem carregar entidade
    - Use case orquestra ambos (mais flexível que `findByIdAndOwnerId()`)
 
 2. **Retornos Modernos:**
+
    - `Optional<ShoppingList>` → Buscas que podem falhar
    - `List<ShoppingList>` → Múltiplos resultados
    - `boolean` → Verificações de existência
@@ -678,7 +728,7 @@ public ShoppingList getListByIdAndOwner(Long listId, Long userId) {
     if (!repository.existsByIdAndOwnerId(listId, userId)) {
         throw new UnauthorizedException("Lista não encontrada ou sem permissão");
     }
-    
+
     // Busca a lista
     return repository.findById(listId)
             .orElseThrow(() -> new NotFoundException("Lista não encontrada"));
@@ -691,12 +741,14 @@ public List<ShoppingList> getAllUserLists(Long userId) {
 ```
 
 **Status de Implementação:**
+
 - ✅ **Port (Interface):** Implementado no domínio
 - 🚧 **Adapter (JPA):** Próxima sprint (infraestrutura)
 - 🚧 **Migrations:** Próxima sprint (tabelas no banco)
 - 🚧 **Testes de Persistência:** Próxima sprint
 
 **Conformidade Clean Architecture:**
+
 ```
 ✅ domain/shoppinglist/ShoppingListRepository.java  ← PORT (este arquivo)
       ↑ depende
@@ -712,6 +764,7 @@ A camada de aplicação implementa os casos de uso para gerenciar listas de comp
 **Localização:** `application/usecase/` e `application/dto/shoppinglist/`
 
 **Características:**
+
 - ✅ **Use cases testados** com 14 testes unitários (100% passando)
 - ✅ **Zero dependência de web/JPA** (apenas mocks nos testes)
 - ✅ **DTOs com validação** Jakarta Validation
@@ -722,28 +775,34 @@ A camada de aplicação implementa os casos de uso para gerenciar listas de comp
 **Use Cases Implementados:**
 
 1. **CreateShoppingListUseCase**
+
    ```java
    @Transactional
    public ShoppingListResponse execute(Long ownerId, CreateShoppingListRequest request)
    ```
+
    - Cria nova lista para o usuário autenticado
    - Delega validações ao domínio via `ShoppingList.create()`
    - Retorna lista criada com ID gerado
 
 2. **GetMyShoppingListsUseCase**
+
    ```java
    @Transactional(readOnly = true)
    public List<ShoppingListSummaryResponse> execute(Long ownerId)
    ```
+
    - Busca todas as listas do usuário
    - Retorna resumo otimizado (sem itens detalhados)
    - Lista vazia se usuário não tem listas
 
 3. **RenameShoppingListUseCase**
+
    ```java
    @Transactional
    public ShoppingListResponse execute(Long ownerId, RenameShoppingListRequest request)
    ```
+
    - Renomeia lista validando ownership
    - Lança `UnauthorizedShoppingListAccessException` se não for o dono
    - Delega validação de título ao domínio
@@ -758,23 +817,27 @@ A camada de aplicação implementa os casos de uso para gerenciar listas de comp
    - Remoção em cascata de itens (quando JPA implementado)
 
 **DTOs Request:**
+
 - `CreateShoppingListRequest` - title (3-100 chars), description (0-255 chars)
 - `RenameShoppingListRequest` - listId, newTitle (3-100 chars)
 - `DeleteShoppingListRequest` - listId
 
 **DTOs Response:**
+
 - `ShoppingListResponse` - Completo com id, ownerId, title, description, contadores, timestamps
 - `ShoppingListSummaryResponse` - Resumido para listagem (sem description, ownerId)
 
 **Exceções Customizadas:**
+
 - `ShoppingListNotFoundException` → 404 Not Found
 - `UnauthorizedShoppingListAccessException` → 403 Forbidden
 
 **Exemplo de Uso (Fluxo Completo):**
+
 ```java
 // 1. Criar lista
 CreateShoppingListRequest createRequest = new CreateShoppingListRequest(
-    "Feira de Domingo", 
+    "Feira de Domingo",
     "Compras semanais"
 );
 ShoppingListResponse list = createUseCase.execute(userId, createRequest);
@@ -784,7 +847,7 @@ List<ShoppingListSummaryResponse> myLists = getMyListsUseCase.execute(userId);
 
 // 3. Renomear lista
 RenameShoppingListRequest renameRequest = new RenameShoppingListRequest(
-    list.getId(), 
+    list.getId(),
     "Feira da Semana"
 );
 ShoppingListResponse updated = renameUseCase.execute(userId, renameRequest);
@@ -798,6 +861,7 @@ deleteUseCase.execute(userId, list.getId());
 A validação de que apenas o dono pode modificar a lista é feita de duas formas:
 
 1. **Buscar e validar:** `RenameShoppingListUseCase`
+
    ```java
    ShoppingList list = repository.findById(listId).orElseThrow(...);
    if (!list.isOwnedBy(ownerId)) {
@@ -813,6 +877,7 @@ A validação de que apenas o dono pode modificar a lista é feita de duas forma
    ```
 
 **Testes Unitários:**
+
 ```
 ✅ CreateShoppingListUseCaseTest    : 3 cenários (sucesso, sem descrição, delegação)
 ✅ GetMyShoppingListsUseCaseTest    : 3 cenários (vazio, múltiplas, contadores)
@@ -823,6 +888,7 @@ Total: 14 testes unitários | 14 passando | ~2 segundos
 ```
 
 **Logging Estruturado:**
+
 ```
 INFO  Criando lista de compras: ownerId=1, title=Feira de Domingo
 INFO  Lista criada com sucesso: id=10, ownerId=1
@@ -838,6 +904,7 @@ INFO  Lista deletada com sucesso: listId=10
 ```
 
 **Status de Implementação:**
+
 - ✅ **Use Cases:** 4 implementados (criar, listar, renomear, deletar)
 - ✅ **DTOs:** 5 criados com validações Jakarta
 - ✅ **Exceções:** 2 customizadas + handlers no GlobalExceptionHandler
@@ -851,16 +918,17 @@ INFO  Lista deletada com sucesso: listId=10
 A persistência foi implementada seguindo o padrão pragmático do projeto (anotações JPA no domínio).
 
 **Entidades JPA:**
+
 ```java
 @Entity
 @Table(name = "tb_shopping_list")
 public class ShoppingList {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    
+
     @Column(name = "owner_id", nullable = false)
     private Long ownerId;
-    
+
     @OneToMany(mappedBy = "shoppingList", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ListItem> items;
 }
@@ -870,22 +938,23 @@ public class ShoppingList {
 public class ListItem {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "shopping_list_id", nullable = false)
     private ShoppingList shoppingList;
-    
+
     @Embedded
     private ItemName name;
 }
 ```
 
 **Repository Adapter:**
+
 ```java
 @Repository
-public interface JpaShoppingListRepository 
+public interface JpaShoppingListRepository
     extends JpaRepository<ShoppingList, Long>, ShoppingListRepository {
-    
+
     @Override ShoppingList save(ShoppingList shoppingList);
     @Override Optional<ShoppingList> findById(Long id);
     @Override List<ShoppingList> findByOwnerId(Long ownerId);
@@ -896,10 +965,13 @@ public interface JpaShoppingListRepository
 ```
 
 **Migrations:**
+
 - `V7__create_shopping_lists.sql`: Tabela tb_shopping_list com FK para tb_user
 - `V8__create_shopping_items.sql`: Tabela tb_shopping_item com FK para tb_shopping_list
+- `V9__add_unit_price_to_shopping_items.sql`: Adiciona coluna unit_price (opcional) para cálculo de total estimado
 
 **Características:**
+
 - Relacionamento bidirecional OneToMany/ManyToOne
 - Cascade ALL e orphanRemoval para gerenciar itens
 - ItemName como @Embeddable (name + normalized_name)
@@ -907,6 +979,7 @@ public interface JpaShoppingListRepository
 - FK com ON DELETE CASCADE
 
 **Testes de Integração:** 11 cenários testados
+
 - Salvar lista com sucesso
 - Buscar por ID
 - Buscar por ownerId
@@ -919,6 +992,7 @@ public interface JpaShoppingListRepository
 - Persistir normalized_name
 
 **Validação:**
+
 ```
 ./mvnw test -Dtest="JpaShoppingListRepositoryIntegrationTest"
 [INFO] Tests run: 11, Failures: 0, Errors: 0
@@ -929,14 +1003,17 @@ public interface JpaShoppingListRepository
 Endpoints REST completos para gerenciamento de listas de compras.
 
 **Endpoints implementados:**
+
 ```http
 POST   /api/v1/lists        - Criar nova lista
 GET    /api/v1/lists        - Listar minhas listas
+GET    /api/v1/lists/{id}   - Buscar detalhes de uma lista (com todos os itens)
 PATCH  /api/v1/lists/{id}   - Atualizar lista (título e/ou descrição)
 DELETE /api/v1/lists/{id}   - Deletar lista
 ```
 
 **Características:**
+
 - Autenticação JWT obrigatória em todas as rotas
 - OwnerId extraído automaticamente do SecurityContext
 - Validação de ownership (apenas dono pode modificar)
@@ -955,6 +1032,10 @@ curl -X POST http://localhost:8080/api/v1/lists \
 
 # Listar minhas listas
 curl -X GET http://localhost:8080/api/v1/lists \
+  -H "Authorization: Bearer {token}"
+
+# Buscar detalhes de uma lista (com todos os itens)
+curl -X GET http://localhost:8080/api/v1/lists/1 \
   -H "Authorization: Bearer {token}"
 
 # Atualizar título
@@ -983,6 +1064,7 @@ curl -X DELETE http://localhost:8080/api/v1/lists/1 \
 **Respostas:**
 
 POST /api/v1/lists (201 Created):
+
 ```json
 {
   "id": 1,
@@ -998,6 +1080,7 @@ POST /api/v1/lists (201 Created):
 ```
 
 GET /api/v1/lists (200 OK):
+
 ```json
 [
   {
@@ -1012,12 +1095,42 @@ GET /api/v1/lists (200 OK):
 ]
 ```
 
+GET /api/v1/lists/{id} (200 OK):
+
+```json
+{
+  "id": 1,
+  "ownerId": 1,
+  "title": "Lista da Feira",
+  "description": "Compras semanais",
+  "items": [
+    {
+      "id": 1,
+      "name": "Arroz",
+      "quantity": 2.0,
+      "unit": "kg",
+      "unitPrice": 4.5,
+      "status": "PENDING",
+      "createdAt": "2025-12-30T10:00:00.000Z",
+      "updatedAt": "2025-12-30T10:00:00.000Z"
+    }
+  ],
+  "itemsCount": 1,
+  "pendingItemsCount": 1,
+  "purchasedItemsCount": 0,
+  "createdAt": "2025-12-30T09:00:00.000Z",
+  "updatedAt": "2025-12-30T10:00:00.000Z"
+}
+```
+
 **Validações:**
+
 - Título: mínimo 3, máximo 100 caracteres (obrigatório no POST)
 - Descrição: máximo 255 caracteres (opcional)
 - PATCH: pelo menos um campo deve ser fornecido
 
 **Tratamento de erros:**
+
 ```json
 // 400 Bad Request - Validação falha
 {
@@ -1049,12 +1162,14 @@ GET /api/v1/lists (200 OK):
 ```
 
 **Testes de Integração:** 21 cenários end-to-end
+
 - POST: criar lista, validações, autenticação (5 testes)
 - GET: listar vazia, com dados, apenas minhas listas, autenticação (4 testes)
 - PATCH: atualizar título, descrição, ambos, validações, ownership, autenticação (8 testes)
 - DELETE: deletar, cascata, validações, ownership, autenticação (4 testes)
 
 **Validação:**
+
 ```
 ./mvnw test -Dtest="ShoppingListControllerTest"
 [INFO] Tests run: 21, Failures: 0, Errors: 0
@@ -1065,6 +1180,7 @@ GET /api/v1/lists (200 OK):
 Endpoints REST completos para adicionar, atualizar e remover itens das listas.
 
 **Endpoints implementados:**
+
 ```http
 POST   /api/v1/lists/{listId}/items              - Adicionar item
 PATCH  /api/v1/lists/{listId}/items/{itemId}    - Atualizar item
@@ -1072,6 +1188,7 @@ DELETE /api/v1/lists/{listId}/items/{itemId}    - Remover item
 ```
 
 **Características:**
+
 - Autenticação JWT obrigatória em todas as rotas
 - Validação de ownership da lista em todas as operações
 - Atualização parcial no PATCH (envia apenas campos a alterar)
@@ -1089,7 +1206,8 @@ curl -X POST http://localhost:8080/api/v1/lists/1/items \
   -d '{
     "name": "Arroz Integral",
     "quantity": 2.0,
-    "unit": "kg"
+    "unit": "kg",
+    "unitPrice": 4.50
   }'
 
 # Atualizar nome do item
@@ -1112,6 +1230,7 @@ curl -X PATCH http://localhost:8080/api/v1/lists/1/items/1 \
     "name": "Feijão Preto",
     "quantity": 3,
     "unit": "pacote",
+    "unitPrice": 5.00,
     "status": "PURCHASED"
   }'
 
@@ -1123,12 +1242,14 @@ curl -X DELETE http://localhost:8080/api/v1/lists/1/items/1 \
 **Respostas:**
 
 POST /api/v1/lists/{listId}/items (201 Created):
+
 ```json
 {
   "id": 1,
   "name": "Arroz Integral",
   "quantity": 2.0,
   "unit": "kg",
+  "unitPrice": 4.5,
   "status": "PENDING",
   "createdAt": "2025-12-29T10:00:00.000Z",
   "updatedAt": "2025-12-29T10:00:00.000Z"
@@ -1136,12 +1257,14 @@ POST /api/v1/lists/{listId}/items (201 Created):
 ```
 
 PATCH /api/v1/lists/{listId}/items/{itemId} (200 OK):
+
 ```json
 {
   "id": 1,
   "name": "Feijão Preto",
   "quantity": 3,
   "unit": "pacote",
+  "unitPrice": 5.0,
   "status": "PURCHASED",
   "createdAt": "2025-12-29T10:00:00.000Z",
   "updatedAt": "2025-12-29T10:05:00.000Z"
@@ -1151,15 +1274,18 @@ PATCH /api/v1/lists/{listId}/items/{itemId} (200 OK):
 DELETE /api/v1/lists/{listId}/items/{itemId} (204 No Content)
 
 **Validações:**
+
 - Nome: mínimo 3, máximo 100 caracteres (obrigatório no POST)
 - Quantidade: maior que zero (obrigatório no POST)
 - Unidade: máximo 20 caracteres (opcional)
+- Preço unitário: não pode ser negativo (opcional)
 - Status: PENDING ou PURCHASED (opcional no PATCH)
 - PATCH: pelo menos um campo deve ser fornecido
 - Duplicatas: não permite item com mesmo nome na lista
 - Limite: máximo 100 itens por lista
 
 **Tratamento de erros:**
+
 ```json
 // 400 Bad Request - Item duplicado
 {
@@ -1191,12 +1317,14 @@ DELETE /api/v1/lists/{listId}/items/{itemId} (204 No Content)
 ```
 
 **Testes de Integração:** 36 cenários completos
+
 - POST: adicionar item, validações, duplicatas, ownership, autenticação (7 testes)
 - PATCH: atualizar nome, quantidade, status, múltiplos campos, validações, ownership, autenticação (7 testes)
 - DELETE: remover, validações, ownership, autenticação (4 testes)
 - Use Cases: 18 testes unitários (Add: 5, Update: 9, Remove: 4)
 
 **Validação:**
+
 ```
 ./mvnw test -Dtest="ShoppingListItemControllerTest"
 [INFO] Tests run: 18, Failures: 0, Errors: 0
@@ -1206,6 +1334,7 @@ DELETE /api/v1/lists/{listId}/items/{itemId} (204 No Content)
 ```
 
 **Fluxo completo end-to-end:**
+
 ```
 1. POST /api/v1/lists
    → Criar lista
@@ -1228,6 +1357,7 @@ DELETE /api/v1/lists/{listId}/items/{itemId} (204 No Content)
 O backend está completo para operações básicas de listas e itens. As próximas etapas são:
 
 **Sprint Atual - Recursos Avançados:**
+
 - 🚧 **Use Cases de Itens**: Adicionar, remover, atualizar, marcar como comprado
 - 🚧 **DTOs de Itens**: Request/Response para operações de itens
 - 🚧 **Endpoints REST**: Gerenciar itens dentro de uma lista
@@ -1235,6 +1365,7 @@ O backend está completo para operações básicas de listas e itens. As próxim
 - 🚧 **Testes E2E**: End-to-end com MockMvc para itens
 
 **Próxima Sprint - Recursos Avançados:**
+
 - 🚧 **Filtros e Ordenação**: Buscar listas por status, ordenar por data
 - 🚧 **Paginação**: Para listagens grandes
 - 🚧 **Compartilhamento**: Compartilhar listas entre usuários
@@ -1428,6 +1559,7 @@ O projeto é organizado em camadas para manter responsabilidades bem separadas:
 ## ✅ Funcionalidades Implementadas
 
 ### Health Check Endpoint
+
 - **Endpoint:** `GET /api/v1/health`
 - **Descrição:** Verifica o status da aplicação
 - **Resposta:**
@@ -1442,6 +1574,7 @@ O projeto é organizado em camadas para manter responsabilidades bem separadas:
 - **Testes:** Teste de integração com `@WebMvcTest` validando o comportamento do endpoint
 
 ### Registro de Usuário (User Registration)
+
 - **Endpoint:** `POST /api/v1/auth/register`
 - **Descrição:** Registra novo usuário LOCAL com email e senha
 - **Request Body:**
@@ -1488,6 +1621,7 @@ O projeto é organizado em camadas para manter responsabilidades bem separadas:
   - 6 testes de integração end-to-end (cenários de sucesso e falha)
 
 **Exemplo de uso (cURL):**
+
 ```bash
 curl -X POST http://localhost:8080/api/v1/auth/register \
   -H "Content-Type: application/json" \
@@ -1499,6 +1633,7 @@ curl -X POST http://localhost:8080/api/v1/auth/register \
 ```
 
 ### Login de Usuário (User Login)
+
 - **Endpoint:** `POST /api/v1/auth/login`
 - **Descrição:** Autentica usuário LOCAL e retorna tokens de acesso
 - **Request Body:**
@@ -1551,6 +1686,7 @@ curl -X POST http://localhost:8080/api/v1/auth/register \
   - 10 testes de integração end-to-end (sucesso, erros, persistência, metadata)
 
 **Exemplo de uso (cURL):**
+
 ```bash
 curl -X POST http://localhost:8080/api/v1/auth/login \
   -H "Content-Type: application/json" \
@@ -1564,6 +1700,7 @@ curl -X POST http://localhost:8080/api/v1/auth/login \
 **Múltiplos logins:** A API permite múltiplos logins simultâneos do mesmo usuário (ex: web + mobile). Cada login gera um novo refresh token independente.
 
 ### Renovação de Token (Refresh Token)
+
 - **Endpoint:** `POST /api/v1/auth/refresh`
 - **Descrição:** Renova access token usando refresh token válido com **rotação automática**
 - **Request Body:**
@@ -1628,6 +1765,7 @@ curl -X POST http://localhost:8080/api/v1/auth/login \
   - 10 testes de integração end-to-end (sucessos, falhas, múltiplos refreshes)
 
 **Exemplo de uso (cURL):**
+
 ```bash
 # 1. Fazer login para obter refresh token
 curl -X POST http://localhost:8080/api/v1/auth/login \
@@ -1649,6 +1787,7 @@ curl -X POST http://localhost:8080/api/v1/auth/refresh \
 **Segurança:** Sempre use o **novo** refresh token retornado. O antigo é imediatamente invalidado!
 
 ### Logout de Usuário (User Logout)
+
 - **Endpoint:** `POST /api/v1/auth/logout`
 - **Descrição:** Encerra sessão do usuário revogando o refresh token atual de forma segura
 - **Request Body:**
@@ -1703,6 +1842,7 @@ curl -X POST http://localhost:8080/api/v1/auth/refresh \
   - Status: ✅ 100% passando
 
 **Exemplo de uso (cURL):**
+
 ```bash
 # 1. Fazer login para obter tokens
 curl -X POST http://localhost:8080/api/v1/auth/login \
@@ -1726,6 +1866,7 @@ curl -X POST http://localhost:8080/api/v1/auth/refresh \
 **Segurança:** Após logout, o refresh token fica permanentemente invalidado. Para nova sessão, faça login novamente.
 
 ### Refresh Token via Cookie HttpOnly (Segurança Avançada)
+
 - **Descrição:** Sistema híbrido que suporta refresh token via **cookie HttpOnly** (recomendado) ou body (dev/test)
 - **Configurável por perfil:** Diferentes níveis de segurança para dev/test/prod
 - **Benefícios de Segurança:**
@@ -1736,10 +1877,11 @@ curl -X POST http://localhost:8080/api/v1/auth/refresh \
 - **Estratégia por Perfil:**
   | Perfil | Cookie | Body | Secure | SameSite | Cookie-Only |
   |--------|--------|------|--------|----------|-------------|
-  | dev    | ✅     | ✅   | ❌     | Lax      | false       |
-  | test   | ✅     | ✅   | ❌     | Lax      | false       |
-  | prod   | ✅     | ❌   | ✅     | Strict   | true        |
+  | dev | ✅ | ✅ | ❌ | Lax | false |
+  | test | ✅ | ✅ | ❌ | Lax | false |
+  | prod | ✅ | ❌ | ✅ | Strict | true |
 - **Configuração:**
+
   ```yaml
   # application-dev.yml
   app:
@@ -1750,7 +1892,7 @@ curl -X POST http://localhost:8080/api/v1/auth/refresh \
           secure: false      # HTTP permitido em dev
           same-site: Lax     # Mais permissivo
           cookie-only: false # Retorna no body também
-  
+
   # application-prod.yml
   app:
     security:
@@ -1761,27 +1903,30 @@ curl -X POST http://localhost:8080/api/v1/auth/refresh \
           same-site: Strict  # Máxima proteção CSRF
           cookie-only: true  # Apenas cookie (mais seguro)
   ```
+
 - **Como funciona:**
   1. **Login**: Retorna access token no body + refresh token no cookie (e opcionalmente no body)
   2. **Refresh**: Aceita token do cookie (preferencial) ou body (backward compatibility)
   3. **Logout**: Remove cookie do navegador (Max-Age=0)
 - **Uso no Cliente (JavaScript):**
+
   ```javascript
   // Login com cookies
-  const response = await fetch('/api/v1/auth/login', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+  const response = await fetch("/api/v1/auth/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, password }),
-    credentials: 'include' // IMPORTANTE: inclui cookies
+    credentials: "include", // IMPORTANTE: inclui cookies
   });
-  
+
   // Refresh (automático via cookie)
-  await fetch('/api/v1/auth/refresh', {
-    method: 'POST',
-    body: '{}', // Body vazio, usa cookie
-    credentials: 'include' // IMPORTANTE: inclui cookies
+  await fetch("/api/v1/auth/refresh", {
+    method: "POST",
+    body: "{}", // Body vazio, usa cookie
+    credentials: "include", // IMPORTANTE: inclui cookies
   });
   ```
+
 - **Backward Compatibility:**
   - Dev/test: Continua suportando refresh token no body
   - Produção: Apenas cookie (mais seguro)
@@ -1789,6 +1934,7 @@ curl -X POST http://localhost:8080/api/v1/auth/refresh \
 - **Documentação completa:** Ver [COOKIES_IMPLEMENTATION.md](docs/COOKIES_IMPLEMENTATION.md)
 
 ### JWT Authentication Filter (Proteção de Endpoints)
+
 - **Descrição:** Filtro Spring Security que intercepta todas as requisições e valida tokens JWT
 - **Funcionalidade:** Extrai Bearer token do header Authorization, valida e autentica o usuário
 - **Implementação:**
@@ -1824,16 +1970,17 @@ curl -X POST http://localhost:8080/api/v1/auth/refresh \
   - **Use Case**: `GetCurrentUserUseCase` busca usuário pelo ID extraído do JWT
   - **Útil para**: Carregar dados do usuário no frontend após login
 - **Exemplo de uso (cURL):**
+
   ```bash
   # 1. Fazer login para obter access token
   curl -X POST http://localhost:8080/api/v1/auth/login \
     -H "Content-Type: application/json" \
     -d '{"email":"teste@email.com","password":"senha@123"}'
-  
+
   # 2. Copiar o accessToken e usar para acessar endpoint protegido
   curl -X GET http://localhost:8080/api/v1/users/me \
     -H "Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJwcm92aWRlciI6IkxPQ0FMIiwibmFtZSI6IlRlc3RlIiwiZW1haWwiOiJ0ZXN0ZUBlbWFpbC5jb20iLCJzdWIiOiIxIiwiaXNzIjoic2hvcHBpbmctbGlzdC1hcGkiLCJpYXQiOjE2MDAwMDAwMDAsImV4cCI6MTYwMDAwMzYwMH0.signature"
-  
+
   # Response (200 OK):
   # {
   #   "id": 1,
@@ -1844,10 +1991,10 @@ curl -X POST http://localhost:8080/api/v1/auth/refresh \
   #   "createdAt": "2025-12-25T15:30:00Z",
   #   "updatedAt": "2025-12-25T15:30:00Z"
   # }
-  
+
   # 3. Tentar acessar sem token (401 Unauthorized)
   curl -X GET http://localhost:8080/api/v1/users/me
-  
+
   # Response (401):
   # {
   #   "path": "/api/v1/users/me",
@@ -1857,28 +2004,31 @@ curl -X POST http://localhost:8080/api/v1/auth/refresh \
   #   "timestamp": "2025-12-25T15:35:00Z"
   # }
   ```
+
 - **Exemplo de uso (JavaScript/Frontend):**
+
   ```javascript
   // Login
-  const loginResponse = await fetch('/api/v1/auth/login', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password })
+  const loginResponse = await fetch("/api/v1/auth/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password }),
   });
   const { accessToken } = await loginResponse.json();
-  
+
   // Salvar token (localStorage, sessionStorage, cookie, etc)
-  localStorage.setItem('accessToken', accessToken);
-  
+  localStorage.setItem("accessToken", accessToken);
+
   // Acessar endpoint protegido
-  const userResponse = await fetch('/api/v1/users/me', {
+  const userResponse = await fetch("/api/v1/users/me", {
     headers: {
-      'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
-    }
+      Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+    },
   });
   const userData = await userResponse.json();
-  console.log('Usuário logado:', userData);
+  console.log("Usuário logado:", userData);
   ```
+
 - **Testes:**
   - 8 testes de integração end-to-end
   - Cenários cobertos:
@@ -1899,14 +2049,16 @@ A aplicação suporta autenticação via Google OAuth2, permitindo que usuários
 ### **Configuração**
 
 1. **Obter Google Client ID:**
+
    - Acesse: https://console.cloud.google.com/
    - Crie um projeto (ou selecione existente)
    - Vá para "APIs & Services" > "Credentials"
    - Crie um "OAuth 2.0 Client ID" do tipo "Web application"
 
 2. **Configurar no Backend:**
-   
+
    Adicione ao arquivo `.env`:
+
    ```bash
    GOOGLE_CLIENT_ID=seu-client-id.apps.googleusercontent.com
    ```
@@ -1933,6 +2085,7 @@ Content-Type: application/json
 ```
 
 **Resposta (200 OK):**
+
 ```json
 {
   "accessToken": "eyJhbGciOiJIUzI1NiJ9...",
@@ -1969,6 +2122,7 @@ Para testar rapidamente sem frontend:
 ### ✅ **IMPLEMENTADO**
 
 #### **🔐 Autenticação e Autorização Completa**
+
 - ✅ Registro de usuários locais com validação robusta
 - ✅ Login/logout com JWT + Refresh Token (rotação automática)
 - ✅ Google OAuth2 integration com provisionamento automático
@@ -1978,8 +2132,9 @@ Para testar rapidamente sem frontend:
 - ✅ **42 testes unitários** auth + **32 testes de integração**
 
 #### **🛒 Modelo de Domínio Shopping List (DDD)**
+
 - ✅ **Aggregate Root**: ShoppingList com todas invariantes
-- ✅ **Entities**: ListItem com gestão de estado completa  
+- ✅ **Entities**: ListItem com gestão de estado completa
 - ✅ **Value Objects**: ItemName e Quantity com validações imutáveis
 - ✅ **Business Rules**: Duplicatas, limites, ownership, normalização
 - ✅ **Domain Exceptions**: Tratamento específico de violações
@@ -1988,7 +2143,8 @@ Para testar rapidamente sem frontend:
 - ✅ **100% cobertura** das regras de negócio
 
 #### **📝 Camada de Aplicação Shopping List**
-- ✅ **Use Cases Listas**: CreateShoppingList, GetMyShoppingLists, UpdateShoppingList, DeleteShoppingList
+
+- ✅ **Use Cases Listas**: CreateShoppingList, GetMyShoppingLists, GetShoppingListById, UpdateShoppingList, DeleteShoppingList
 - ✅ **Use Cases Itens**: AddItemToList, UpdateItem, RemoveItemFromList
 - ✅ **DTOs**: 7 DTOs com validações Jakarta (request/response)
 - ✅ **Exceções Customizadas**: ShoppingListNotFoundException, UnauthorizedShoppingListAccessException, ItemNotFoundException, DuplicateItemException, ListLimitExceededException
@@ -1998,18 +2154,21 @@ Para testar rapidamente sem frontend:
 - ✅ **Zero dependência de web/JPA** (apenas mocks)
 
 #### **💾 Persistência JPA Shopping List**
+
 - ✅ **Entidades JPA**: ShoppingList e ListItem com anotações @Entity
 - ✅ **Repository Adapter**: JpaShoppingListRepository implementa port do domínio
 - ✅ **Relacionamentos**: OneToMany/ManyToOne com cascade ALL e orphanRemoval
 - ✅ **Value Objects**: ItemName como @Embeddable (name + normalized_name)
-- ✅ **Migrations**: V7 (tb_shopping_list) e V8 (tb_shopping_item)
+- ✅ **Migrations**: V7 (tb_shopping_list), V8 (tb_shopping_item) e V9 (unit_price)
 - ✅ **Foreign Keys**: owner_id → tb_user, shopping_list_id → tb_shopping_list
 - ✅ **Constraints**: CHECK para status e quantity, ON DELETE CASCADE
 - ✅ **11 testes de integração** com MySQL real via Testcontainers
 - ✅ **100% cobertura** de operações CRUD e relacionamentos
 
 #### **🌐 Controllers REST Shopping List**
-- ✅ **Endpoints CRUD**: POST, GET, PATCH, DELETE em /api/v1/lists
+
+- ✅ **Endpoints CRUD**: POST, GET (listar), GET (detalhes), PATCH, DELETE em /api/v1/lists
+- ✅ **GET /api/v1/lists/{id}**: Retorna lista completa com todos os itens incluídos
 - ✅ **Autenticação JWT**: Obrigatória em todas as rotas
 - ✅ **Autorização por Ownership**: Validação de que lista pertence ao usuário
 - ✅ **Atualização Parcial**: PATCH permite atualizar título e/ou descrição
@@ -2017,26 +2176,29 @@ Para testar rapidamente sem frontend:
 - ✅ **Extração de OwnerId**: Automática do SecurityContext via JWT
 - ✅ **Validações Bean**: Jakarta Validation em todos os DTOs
 - ✅ **Logging Estruturado**: INFO/DEBUG em todas as operações
-- ✅ **21 testes de integração E2E** com MockMvc
+- ✅ **26+ testes de integração E2E** com MockMvc (incluindo GET /api/v1/lists/{id})
 - ✅ **100% cobertura** de cenários (sucesso, validações, erros, auth)
 
 #### **🏗️ Infraestrutura e Qualidade**
+
 - ✅ Clean Architecture com separação clara de camadas
 - ✅ MySQL + Docker Compose para desenvolvimento
 - ✅ Testcontainers para testes de integração (MySQL real)
-- ✅ Flyway migrations versionadas (V1 a V8)
+- ✅ Flyway migrations versionadas (V1 a V9, incluindo unit_price)
 - ✅ Profiles ambiente (dev/test/prod) configurados
 - ✅ Health checks (Spring Actuator + customizado)
 - ✅ CORS configurado para frontend
 - ✅ Logging estruturado com correlation IDs
-- ✅ **231+ testes** automatizados (unitários + integração)
+- ✅ **236+ testes** automatizados (unitários + integração)
 
 #### **🛒 Gerenciamento de Itens (Implementado)**
+
 - ✅ **Use Cases de Itens**: Add, Update, Remove (18 testes unitários)
 - ✅ **DTOs de Itens**: AddItemRequest, UpdateItemRequest, ItemResponse
 - ✅ **Endpoints REST**: POST/PATCH/DELETE em /api/v1/lists/{id}/items
-- ✅ **Atualização Parcial**: PATCH permite atualizar nome, quantidade, unidade, status
+- ✅ **Atualização Parcial**: PATCH permite atualizar nome, quantidade, unidade, preço unitário, status
 - ✅ **Toggle Status**: Marcar item como comprado/pendente
+- ✅ **Preço Unitário**: Campo opcional (unitPrice) para cálculo de total estimado
 - ✅ **Validações**: Duplicatas, limite de 100 itens, ownership
 - ✅ **Testes E2E**: 18 testes de integração com MockMvc
 - ✅ **100% cobertura** de cenários (sucesso, validações, erros, auth)
@@ -2044,6 +2206,7 @@ Para testar rapidamente sem frontend:
 ### 🚧 **EM DESENVOLVIMENTO**
 
 #### **🔄 Sprint Atual - Recursos Avançados**
+
 - 🚧 **Operações em Lote**: Limpar comprados, marcar todos, reordenar
 - 🚧 **Paginação e Ordenação**: Buscar listas por status, ordenar por data
 - 🚧 **Filtros**: Filtros de busca (por título, data, status)
@@ -2052,12 +2215,14 @@ Para testar rapidamente sem frontend:
 ### 📅 **ROADMAP - Próximas Funcionalidades**
 
 #### **🔍 Sprint 1 - Recursos Avançados II**
+
 - 🏗️ Compartilhamento de listas entre usuários
 - 🏗️ Categorização de itens
 - 🏗️ Templates de listas
 - 🏗️ Histórico de alterações
 
 #### **📊 Sprint 2 - Analytics e Relatórios**
+
 - 🏗️ Dashboard de estatísticas
 - 🏗️ Relatórios de gastos por período
 - 🏗️ Análise de padrões de compra
@@ -2065,6 +2230,7 @@ Para testar rapidamente sem frontend:
 - 🏗️ Exportação de dados (CSV, PDF)
 
 #### **🚀 Sprint 3 - Performance e Produção**
+
 - 🏗️ Cache Redis para consultas frequentes
 - 🏗️ Rate limiting por usuário/IP
 - 🏗️ Monitoring com Micrometer + Prometheus
@@ -2102,6 +2268,7 @@ Este projeto segue boas práticas de desenvolvimento:
 6. **Code Review** - Revisão obrigatória antes do merge
 
 Para contribuir:
+
 1. Fork o projeto
 2. Crie sua feature branch (`git checkout -b feature/AmazingFeature`)
 3. **Execute os testes** (`./mvnw test`)
@@ -2120,11 +2287,10 @@ Este projeto está licenciado sob a [MIT License](LICENSE).
 ## 📞 Contato
 
 - **Projeto**: Shopping List API
-- **Versão**: 1.0.0-SNAPSHOT  
+- **Versão**: 1.0.0-SNAPSHOT
 - **Java**: 21 LTS
 - **Spring Boot**: 3.4.1
 - **Arquitetura**: Clean Architecture + DDD
 - **Status**: 🚧 Em desenvolvimento ativo
 
 **Última atualização do README**: 29 de Dezembro de 2025
-

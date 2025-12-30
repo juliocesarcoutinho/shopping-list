@@ -29,6 +29,9 @@ public class UpdateItemRequest {
     @Size(max = 20, message = "Unidade não pode ter mais de 20 caracteres")
     private String unit;
 
+    @DecimalMin(value = "0.0", message = "Preço unitário não pode ser negativo")
+    private BigDecimal unitPrice;
+
     private String status; // PENDING ou PURCHASED
 
     /**
@@ -40,6 +43,7 @@ public class UpdateItemRequest {
         return (name != null && !name.isBlank())
             || quantity != null
             || unit != null
+            || unitPrice != null
             || status != null;
     }
 

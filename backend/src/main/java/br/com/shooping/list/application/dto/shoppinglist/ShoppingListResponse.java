@@ -7,10 +7,12 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.Instant;
+import java.util.List;
 
 /**
  * DTO de resposta completo para uma lista de compras.
  * Inclui detalhes completos da lista e contadores de itens.
+ * O campo items é opcional e só é preenchido quando necessário (ex: GET /api/v1/lists/{id}).
  */
 @Getter
 @NoArgsConstructor
@@ -37,6 +39,13 @@ public class ShoppingListResponse {
      * Descrição da lista (opcional)
      */
     private String description;
+
+    /**
+     * Lista de itens da lista de compras (opcional).
+     * Preenchido apenas quando necessário (ex: GET /api/v1/lists/{id}).
+     * Null ou vazio em outros endpoints para otimizar payload.
+     */
+    private List<ItemResponse> items;
 
     /**
      * Total de itens na lista

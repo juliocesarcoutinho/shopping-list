@@ -29,5 +29,8 @@ public class AddItemRequest {
 
     @Size(max = 20, message = "Unidade não pode ter mais de 20 caracteres")
     private String unit;
+
+    @DecimalMin(value = "0.0", message = "Preço unitário não pode ser negativo")
+    private BigDecimal unitPrice;
 }
 

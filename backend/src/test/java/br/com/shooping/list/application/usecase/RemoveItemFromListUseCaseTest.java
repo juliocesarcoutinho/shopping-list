@@ -44,7 +44,7 @@ class RemoveItemFromListUseCaseTest {
         existingList = ShoppingList.create(ownerId, "Lista", null);
         setField(existingList, "id", listId);
 
-        existingItem = existingList.addItem(ItemName.of("Arroz"), Quantity.of(BigDecimal.ONE), "kg");
+        existingItem = existingList.addItem(ItemName.of("Arroz"), Quantity.of(BigDecimal.ONE), "kg", null);
         setField(existingItem, "id", itemId);
     }
 

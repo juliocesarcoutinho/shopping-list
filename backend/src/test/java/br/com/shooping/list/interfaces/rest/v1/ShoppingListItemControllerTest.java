@@ -80,7 +80,7 @@ class ShoppingListItemControllerTest {
         ShoppingList list = ShoppingList.create(testUser.getId(), "Lista da Feira", null);
         list = shoppingListRepository.save(list);
 
-        AddItemRequest request = new AddItemRequest("Arroz Integral", new BigDecimal("2.0"), "kg");
+        AddItemRequest request = new AddItemRequest("Arroz Integral", new BigDecimal("2.0"), "kg", BigDecimal.valueOf(35.00));
 
         // Act & Assert
         mockMvc.perform(post("/api/v1/lists/" + list.getId() + "/items")
@@ -108,7 +108,7 @@ class ShoppingListItemControllerTest {
         ShoppingList list = ShoppingList.create(testUser.getId(), "Lista", null);
         list = shoppingListRepository.save(list);
 
-        AddItemRequest request = new AddItemRequest("Banana", new BigDecimal("6"), null);
+        AddItemRequest request = new AddItemRequest("Banana", new BigDecimal("6"), null, BigDecimal.valueOf(35.00));
 
         // Act & Assert
         mockMvc.perform(post("/api/v1/lists/" + list.getId() + "/items")
@@ -127,7 +127,7 @@ class ShoppingListItemControllerTest {
         ShoppingList list = ShoppingList.create(testUser.getId(), "Lista", null);
         list = shoppingListRepository.save(list);
 
-        AddItemRequest request = new AddItemRequest("ab", new BigDecimal("1"), null); // Nome muito curto
+        AddItemRequest request = new AddItemRequest("ab", new BigDecimal("1"), null, BigDecimal.valueOf(35.00));
 
         // Act & Assert
         mockMvc.perform(post("/api/v1/lists/" + list.getId() + "/items")
@@ -142,10 +142,10 @@ class ShoppingListItemControllerTest {
     void shouldReturn400WhenDuplicateItem() throws Exception {
         // Arrange
         ShoppingList list = ShoppingList.create(testUser.getId(), "Lista", null);
-        list.addItem(ItemName.of("Arroz"), Quantity.of(BigDecimal.ONE), "kg");
+        list.addItem(ItemName.of("Arroz"), Quantity.of(BigDecimal.ONE), "kg", null);
         list = shoppingListRepository.save(list);
 
-        AddItemRequest request = new AddItemRequest("Arroz", new BigDecimal("2"), "kg");
+        AddItemRequest request = new AddItemRequest("Arroz", new BigDecimal("2"), "kg", BigDecimal.valueOf(35.00));
 
         // Act & Assert
         mockMvc.perform(post("/api/v1/lists/" + list.getId() + "/items")
@@ -159,7 +159,7 @@ class ShoppingListItemControllerTest {
     @DisplayName("POST - Deve retornar 404 quando lista não existe")
     void shouldReturn404WhenListNotFound() throws Exception {
         // Arrange
-        AddItemRequest request = new AddItemRequest("Arroz", new BigDecimal("1"), "kg");
+        AddItemRequest request = new AddItemRequest("Arroz", new BigDecimal("1"), "kg", BigDecimal.valueOf(35.00));
 
         // Act & Assert
         mockMvc.perform(post("/api/v1/lists/999/items")
@@ -179,7 +179,7 @@ class ShoppingListItemControllerTest {
         ShoppingList otherList = ShoppingList.create(anotherUser.getId(), "Lista de Outro", null);
         otherList = shoppingListRepository.save(otherList);
 
-        AddItemRequest request = new AddItemRequest("Arroz", new BigDecimal("1"), "kg");
+        AddItemRequest request = new AddItemRequest("Arroz", new BigDecimal("1"), "kg", BigDecimal.valueOf(35.00));
 
         // Act & Assert
         mockMvc.perform(post("/api/v1/lists/" + otherList.getId() + "/items")
@@ -196,7 +196,7 @@ class ShoppingListItemControllerTest {
         ShoppingList list = ShoppingList.create(testUser.getId(), "Lista", null);
         list = shoppingListRepository.save(list);
 
-        AddItemRequest request = new AddItemRequest("Arroz", new BigDecimal("1"), "kg");
+        AddItemRequest request = new AddItemRequest("Arroz", new BigDecimal("1"), "kg", BigDecimal.valueOf(35.00));
 
         // Act & Assert
         mockMvc.perform(post("/api/v1/lists/" + list.getId() + "/items")
@@ -212,10 +212,10 @@ class ShoppingListItemControllerTest {
     void shouldUpdateItemName() throws Exception {
         // Arrange
         ShoppingList list = ShoppingList.create(testUser.getId(), "Lista", null);
-        ListItem item = list.addItem(ItemName.of("Arroz"), Quantity.of(BigDecimal.ONE), "kg");
+        ListItem item = list.addItem(ItemName.of("Arroz"), Quantity.of(BigDecimal.ONE), "kg", null);
         list = shoppingListRepository.save(list);
 
-        UpdateItemRequest request = new UpdateItemRequest("Feijão", null, null, null);
+        UpdateItemRequest request = new UpdateItemRequest("Feijão", null, null, null, null);
 
         // Act & Assert
         mockMvc.perform(patch("/api/v1/lists/" + list.getId() + "/items/" + item.getId())
@@ -231,10 +231,10 @@ class ShoppingListItemControllerTest {
     void shouldUpdateItemQuantity() throws Exception {
         // Arrange
         ShoppingList list = ShoppingList.create(testUser.getId(), "Lista", null);
-        ListItem item = list.addItem(ItemName.of("Arroz"), Quantity.of(BigDecimal.ONE), "kg");
+        ListItem item = list.addItem(ItemName.of("Arroz"), Quantity.of(BigDecimal.ONE), "kg", null);
         list = shoppingListRepository.save(list);
 
-        UpdateItemRequest request = new UpdateItemRequest(null, new BigDecimal("5"), null, null);
+        UpdateItemRequest request = new UpdateItemRequest(null, new BigDecimal("5"), null, null, null);
 
         // Act & Assert
         mockMvc.perform(patch("/api/v1/lists/" + list.getId() + "/items/" + item.getId())
@@ -250,10 +250,10 @@ class ShoppingListItemControllerTest {
     void shouldMarkItemAsPurchased() throws Exception {
         // Arrange
         ShoppingList list = ShoppingList.create(testUser.getId(), "Lista", null);
-        ListItem item = list.addItem(ItemName.of("Arroz"), Quantity.of(BigDecimal.ONE), "kg");
+        ListItem item = list.addItem(ItemName.of("Arroz"), Quantity.of(BigDecimal.ONE), "kg", null);
         list = shoppingListRepository.save(list);
 
-        UpdateItemRequest request = new UpdateItemRequest(null, null, null, "PURCHASED");
+        UpdateItemRequest request = new UpdateItemRequest(null, null, null, null, "PURCHASED");
 
         // Act & Assert
         mockMvc.perform(patch("/api/v1/lists/" + list.getId() + "/items/" + item.getId())
@@ -269,10 +269,10 @@ class ShoppingListItemControllerTest {
     void shouldUpdateMultipleFields() throws Exception {
         // Arrange
         ShoppingList list = ShoppingList.create(testUser.getId(), "Lista", null);
-        ListItem item = list.addItem(ItemName.of("Arroz"), Quantity.of(BigDecimal.ONE), "kg");
+        ListItem item = list.addItem(ItemName.of("Arroz"), Quantity.of(BigDecimal.ONE), "kg", null);
         list = shoppingListRepository.save(list);
 
-        UpdateItemRequest request = new UpdateItemRequest("Feijão Preto", new BigDecimal("3"), "pacote", "PURCHASED");
+        UpdateItemRequest request = new UpdateItemRequest("Feijão Preto", new BigDecimal("3"), "pacote", BigDecimal.valueOf(30.00), "PURCHASED");
 
         // Act & Assert
         mockMvc.perform(patch("/api/v1/lists/" + list.getId() + "/items/" + item.getId())
@@ -291,10 +291,10 @@ class ShoppingListItemControllerTest {
     void shouldReturn400WhenNoFieldProvided() throws Exception {
         // Arrange
         ShoppingList list = ShoppingList.create(testUser.getId(), "Lista", null);
-        ListItem item = list.addItem(ItemName.of("Arroz"), Quantity.of(BigDecimal.ONE), "kg");
+        ListItem item = list.addItem(ItemName.of("Arroz"), Quantity.of(BigDecimal.ONE), "kg", null);
         list = shoppingListRepository.save(list);
 
-        UpdateItemRequest request = new UpdateItemRequest(null, null, null, null);
+        UpdateItemRequest request = new UpdateItemRequest(null, null, null, null, null);
 
         // Act & Assert
         mockMvc.perform(patch("/api/v1/lists/" + list.getId() + "/items/" + item.getId())
@@ -311,7 +311,7 @@ class ShoppingListItemControllerTest {
         ShoppingList list = ShoppingList.create(testUser.getId(), "Lista", null);
         list = shoppingListRepository.save(list);
 
-        UpdateItemRequest request = new UpdateItemRequest("Novo Nome", null, null, null);
+        UpdateItemRequest request = new UpdateItemRequest("Novo Nome", null, null, null, null);
 
         // Act & Assert
         mockMvc.perform(patch("/api/v1/lists/" + list.getId() + "/items/999")
@@ -326,10 +326,10 @@ class ShoppingListItemControllerTest {
     void shouldReturn401WhenUpdatingWithoutToken() throws Exception {
         // Arrange
         ShoppingList list = ShoppingList.create(testUser.getId(), "Lista", null);
-        ListItem item = list.addItem(ItemName.of("Arroz"), Quantity.of(BigDecimal.ONE), "kg");
+        ListItem item = list.addItem(ItemName.of("Arroz"), Quantity.of(BigDecimal.ONE), "kg", null);
         list = shoppingListRepository.save(list);
 
-        UpdateItemRequest request = new UpdateItemRequest("Novo Nome", null, null, null);
+        UpdateItemRequest request = new UpdateItemRequest("Novo Nome", null, null, null, null);
 
         // Act & Assert
         mockMvc.perform(patch("/api/v1/lists/" + list.getId() + "/items/" + item.getId())
@@ -345,7 +345,7 @@ class ShoppingListItemControllerTest {
     void shouldRemoveItemSuccessfully() throws Exception {
         // Arrange
         ShoppingList list = ShoppingList.create(testUser.getId(), "Lista", null);
-        ListItem item = list.addItem(ItemName.of("Arroz"), Quantity.of(BigDecimal.ONE), "kg");
+        ListItem item = list.addItem(ItemName.of("Arroz"), Quantity.of(BigDecimal.ONE), "kg", null);
         list = shoppingListRepository.save(list);
 
         // Act & Assert
@@ -379,7 +379,7 @@ class ShoppingListItemControllerTest {
         anotherUser = userRepository.save(anotherUser);
 
         ShoppingList otherList = ShoppingList.create(anotherUser.getId(), "Lista de Outro", null);
-        ListItem item = otherList.addItem(ItemName.of("Arroz"), Quantity.of(BigDecimal.ONE), "kg");
+        ListItem item = otherList.addItem(ItemName.of("Arroz"), Quantity.of(BigDecimal.ONE), "kg", null);
         otherList = shoppingListRepository.save(otherList);
 
         // Act & Assert
@@ -393,7 +393,7 @@ class ShoppingListItemControllerTest {
     void shouldReturn401WhenRemovingWithoutToken() throws Exception {
         // Arrange
         ShoppingList list = ShoppingList.create(testUser.getId(), "Lista", null);
-        ListItem item = list.addItem(ItemName.of("Arroz"), Quantity.of(BigDecimal.ONE), "kg");
+        ListItem item = list.addItem(ItemName.of("Arroz"), Quantity.of(BigDecimal.ONE), "kg", null);
         list = shoppingListRepository.save(list);
 
         // Act & Assert

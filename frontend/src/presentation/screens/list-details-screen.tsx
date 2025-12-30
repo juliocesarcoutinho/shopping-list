@@ -6,17 +6,37 @@
  * - Total estimado
  * - Progresso de compras
  *
- * Por enquanto é um placeholder com design mockado
- * (funcionalidade completa será implementada no épico de itens)
+ * Carrega dados reais via GetListDetailsUseCase e renderiza com estados
+ * loading/empty/error conforme critérios de aceite.
  */
 
 import { Ionicons } from '@expo/vector-icons';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import React from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View, ViewStyle } from 'react-native';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useCallback, useState } from 'react';
+import {
+  ActivityIndicator,
+  FlatList,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  ViewStyle,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { ShoppingListRemoteDataSource } from '@/src/data/data-sources/shopping-list-remote-data-source';
+import { ShoppingListRepositoryImpl } from '@/src/data/repositories/shopping-list-repository';
+import { ShoppingList } from '@/src/domain/entities';
+import { GetListDetailsUseCase } from '@/src/domain/use-cases/get-list-details-use-case';
+
+import { Button, ShoppingItemRow } from '../components';
 import { useAppTheme } from '../hooks';
+
+// Instancio use case com repository real
+const remoteDataSource = new ShoppingListRemoteDataSource();
+const repository = new ShoppingListRepositoryImpl(remoteDataSource);
+const getListDetailsUseCase = new GetListDetailsUseCase(repository);
 
 export const ListDetailsScreen: React.FC = () => {
   const theme = useAppTheme();
@@ -24,28 +44,243 @@ export const ListDetailsScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
 
-  // Dados mockados para visualização (serão substituídos por dados reais)
-  const mockList = {
-    id: id || '1',
-    title: 'Compras do Mercado',
-    totalItems: 8,
-    completedItems: 3,
-    estimatedTotal: 79.8,
-    items: [
-      { id: '1', name: 'Leite', quantity: 2, unitPrice: 4.5, isPurchased: true },
-      { id: '2', name: 'Pão', quantity: 1, unitPrice: 6.0, isPurchased: true },
-      { id: '3', name: 'Ovos', quantity: 2, unitPrice: 12.9, isPurchased: false },
-      { id: '4', name: 'Manteiga', quantity: 1, unitPrice: 0, isPurchased: false },
-      { id: '5', name: 'Queijo', quantity: 1, unitPrice: 25.0, isPurchased: false },
-      { id: '6', name: 'Iogurte', quantity: 4, unitPrice: 3.5, isPurchased: false },
-      { id: '7', name: 'Maçã', quantity: 6, unitPrice: 0, isPurchased: true },
-      { id: '8', name: 'Banana', quantity: 3, unitPrice: 4.2, isPurchased: false },
-    ],
+  const [list, setList] = useState<ShoppingList | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Função para carregar dados da lista
+  const fetchListDetails = useCallback(async () => {
+    if (!id) {
+      setError('ID da lista não fornecido');
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await getListDetailsUseCase.execute(id);
+      setList(data);
+    } catch (err) {
+      const error = err as Error & { status?: number };
+      // Se for 404, a lista não existe
+      if (error?.status === 404) {
+        setError('Lista não encontrada');
+      } else if (error?.status === 500) {
+        // Erro 500 pode indicar que o endpoint não está implementado no backend
+        setError(
+          'Endpoint não disponível. O backend precisa implementar GET /api/v1/lists/{id} para buscar detalhes da lista com itens.'
+        );
+      } else {
+        setError(error?.message || 'Erro ao carregar lista');
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [id]);
+
+  // Função para pull-to-refresh
+  const onRefresh = useCallback(async () => {
+    if (!id) return;
+
+    setRefreshing(true);
+    setError(null);
+    try {
+      const data = await getListDetailsUseCase.execute(id);
+      setList(data);
+    } catch (err) {
+      const error = err as Error & { status?: number };
+      if (error?.status === 404) {
+        setError('Lista não encontrada');
+      } else if (error?.status === 500) {
+        setError(
+          'Endpoint não disponível. O backend precisa implementar GET /api/v1/lists/{id} para buscar detalhes da lista com itens.'
+        );
+      } else {
+        setError(error?.message || 'Erro ao recarregar lista');
+      }
+    } finally {
+      setRefreshing(false);
+    }
+  }, [id]);
+
+  // Recarrega automaticamente quando a tela ganha foco
+  // Isso garante que após adicionar/editar itens, a tela seja atualizada
+  useFocusEffect(
+    useCallback(() => {
+      fetchListDetails();
+    }, [fetchListDetails])
+  );
+
+  // Calcula total estimado somando subtotais dos itens com preço
+  const calculateEstimatedTotal = useCallback(() => {
+    if (!list?.items) return 0;
+    return list.items.reduce((total, item) => {
+      if (item.unitPrice !== undefined && item.unitPrice !== null && item.unitPrice > 0) {
+        return total + item.quantity * item.unitPrice;
+      }
+      return total;
+    }, 0);
+  }, [list]);
+
+  // Calcula contadores
+  const totalItems = list?.items.length ?? 0;
+  const purchasedItems = list?.items.filter(item => item.isPurchased).length ?? 0;
+  const estimatedTotal = calculateEstimatedTotal();
+
+  // Formata valores monetários
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+    }).format(value);
   };
 
-  const formatCurrency = (value: number) => {
-    return `R$ ${value.toFixed(2).replace('.', ',')}`;
-  };
+  // Handler para toggle de item (placeholder - será implementado no próximo épico)
+  const handleTogglePurchased = useCallback((itemId: string, newValue: boolean) => {
+    // TODO: Implementar UpdateItemUseCase no próximo épico
+    console.log('Toggle item:', itemId, newValue);
+  }, []);
+
+  // Handler para editar item (placeholder - será implementado no próximo épico)
+  const handleEditItem = useCallback((itemId: string) => {
+    // TODO: Implementar navegação para edição no próximo épico
+    console.log('Edit item:', itemId);
+  }, []);
+
+  // Handler para adicionar item (placeholder - será implementado no próximo épico)
+  const handleAddItem = useCallback(() => {
+    // TODO: Implementar modal de adicionar item no próximo épico
+    console.log('Add item');
+  }, []);
+
+  // Renderiza item na FlatList
+  const renderItem = useCallback(
+    ({ item }: { item: ShoppingList['items'][0] }) => {
+      return (
+        <ShoppingItemRow
+          id={item.id}
+          name={item.name}
+          quantity={item.quantity}
+          unitPrice={item.unitPrice}
+          isPurchased={item.isPurchased}
+          onPress={() => handleEditItem(item.id)}
+          onTogglePurchased={handleTogglePurchased}
+          testID={`item-${item.id}`}
+        />
+      );
+    },
+    [handleEditItem, handleTogglePurchased]
+  );
+
+  // Estado Loading: skeleton/loader
+  if (loading) {
+    return (
+      <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+        <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
+          <View style={styles.headerContent}>
+            <TouchableOpacity
+              onPress={() => router.back()}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              accessibilityLabel='Voltar'
+            >
+              <Ionicons name='arrow-back' size={24} color={theme.colors.text} />
+            </TouchableOpacity>
+            <View style={styles.headerCenter}>
+              <ActivityIndicator size='small' color={theme.colors.primary} />
+            </View>
+            <View style={{ width: 24 }} />
+          </View>
+        </View>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size='large' color={theme.colors.primary} />
+          <Text style={[styles.loadingText, { color: theme.colors.textSecondary }]}>
+            Carregando lista...
+          </Text>
+        </View>
+      </View>
+    );
+  }
+
+  // Estado Error: mensagem + retry
+  if (error) {
+    return (
+      <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+        <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
+          <View style={styles.headerContent}>
+            <TouchableOpacity
+              onPress={() => router.back()}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              accessibilityLabel='Voltar'
+            >
+              <Ionicons name='arrow-back' size={24} color={theme.colors.text} />
+            </TouchableOpacity>
+            <View style={styles.headerCenter}>
+              <Text style={[styles.headerTitle, { color: theme.colors.text }]}>Erro</Text>
+            </View>
+            <View style={{ width: 24 }} />
+          </View>
+        </View>
+        <View style={styles.errorContainer}>
+          <Ionicons name='alert-circle-outline' size={48} color={theme.colors.error} />
+          <Text style={[styles.errorText, { color: theme.colors.text }]}>{error}</Text>
+          <Button
+            title='Tentar novamente'
+            onPress={fetchListDetails}
+            variant='primary'
+            size='medium'
+          />
+        </View>
+      </View>
+    );
+  }
+
+  // Estado Empty: mensagem + CTA "Adicionar item"
+  if (!list || totalItems === 0) {
+    return (
+      <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+        <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
+          <View style={styles.headerContent}>
+            <TouchableOpacity
+              onPress={() => router.back()}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              accessibilityLabel='Voltar'
+            >
+              <Ionicons name='arrow-back' size={24} color={theme.colors.text} />
+            </TouchableOpacity>
+            <View style={styles.headerCenter}>
+              <Text style={[styles.headerTitle, { color: theme.colors.text }]}>
+                {list?.title || 'Lista'}
+              </Text>
+              <Text style={[styles.headerSubtitle, { color: theme.colors.textSecondary }]}>
+                0 itens
+              </Text>
+            </View>
+            <TouchableOpacity
+              onPress={() => {
+                /* Abrir menu de opções */
+              }}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              accessibilityLabel='Menu de opções'
+            >
+              <Ionicons name='ellipsis-vertical' size={24} color={theme.colors.text} />
+            </TouchableOpacity>
+          </View>
+        </View>
+        <View style={styles.emptyContainer}>
+          <Ionicons name='list-outline' size={64} color={theme.colors.textTertiary} />
+          <Text style={[styles.emptyTitle, { color: theme.colors.text }]}>Lista vazia</Text>
+          <Text style={[styles.emptySubtitle, { color: theme.colors.textSecondary }]}>
+            Adicione itens para começar suas compras
+          </Text>
+          <Button title='Adicionar item' onPress={handleAddItem} variant='primary' size='large' />
+        </View>
+      </View>
+    );
+  }
+
+  // Estado Sucesso: itens reais renderizados
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
@@ -61,9 +296,9 @@ export const ListDetailsScreen: React.FC = () => {
           </TouchableOpacity>
 
           <View style={styles.headerCenter}>
-            <Text style={[styles.headerTitle, { color: theme.colors.text }]}>{mockList.title}</Text>
+            <Text style={[styles.headerTitle, { color: theme.colors.primary }]}>{list.title}</Text>
             <Text style={[styles.headerSubtitle, { color: theme.colors.textSecondary }]}>
-              {mockList.completedItems} de {mockList.totalItems} itens
+              {purchasedItems} de {totalItems} itens
             </Text>
           </View>
 
@@ -79,111 +314,44 @@ export const ListDetailsScreen: React.FC = () => {
         </View>
       </View>
 
-      <ScrollView
-        style={styles.content}
-        contentContainerStyle={{ paddingBottom: insets.bottom + 20 }}
+      <FlatList
+        data={list.items}
+        keyExtractor={item => item.id}
+        renderItem={renderItem}
+        contentContainerStyle={{
+          paddingHorizontal: 20,
+          paddingTop: 16,
+          paddingBottom: insets.bottom + 100,
+        }}
+        ListHeaderComponent={
+          <View
+            style={[
+              styles.totalCard,
+              {
+                backgroundColor: theme.colors.primary + '20',
+                borderColor: theme.colors.primary + '40',
+              },
+            ]}
+          >
+            <Text style={[styles.totalLabel, { color: theme.colors.primary }]}>
+              Total estimado:
+            </Text>
+            <Text style={[styles.totalValue, { color: theme.colors.primary }]}>
+              {estimatedTotal > 0 ? formatCurrency(estimatedTotal) : 'R$ 0,00'}
+            </Text>
+          </View>
+        }
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={theme.colors.primary}
+          />
+        }
         showsVerticalScrollIndicator={false}
-      >
-        {/* Card de Total Estimado */}
-        <View
-          style={[
-            styles.totalCard,
-            {
-              backgroundColor: theme.colors.primary + '15', // primary com 15% opacity
-              borderColor: theme.colors.primary + '30',
-            },
-          ]}
-        >
-          <Text style={[styles.totalLabel, { color: theme.colors.textSecondary }]}>
-            Total estimado:
-          </Text>
-          <Text style={[styles.totalValue, { color: theme.colors.primary }]}>
-            {formatCurrency(mockList.estimatedTotal)}
-          </Text>
-        </View>
-
-        {/* Lista de Itens */}
-        <View style={styles.itemsList}>
-          {mockList.items.map(item => (
-            <View
-              key={item.id}
-              style={[
-                styles.itemCard,
-                {
-                  backgroundColor: theme.colors.surface,
-                  borderColor: theme.colors.border,
-                },
-              ]}
-            >
-              {/* Checkbox */}
-              <TouchableOpacity
-                style={[
-                  styles.checkbox,
-                  {
-                    borderColor: item.isPurchased ? theme.colors.success : theme.colors.border,
-                    backgroundColor: item.isPurchased ? theme.colors.success : 'transparent',
-                  },
-                ]}
-                onPress={() => {
-                  /* Toggle item */
-                }}
-              >
-                {item.isPurchased && <Ionicons name='checkmark' size={16} color='white' />}
-              </TouchableOpacity>
-
-              {/* Conteúdo do Item */}
-              <View style={styles.itemContent}>
-                <Text
-                  style={[
-                    styles.itemName,
-                    {
-                      color: theme.colors.text,
-                      textDecorationLine: item.isPurchased ? 'line-through' : 'none',
-                      opacity: item.isPurchased ? 0.6 : 1,
-                    },
-                  ]}
-                >
-                  {item.name}
-                </Text>
-
-                <View style={styles.itemDetails}>
-                  {/* Quantidade */}
-                  <Text style={[styles.itemQuantity, { color: theme.colors.textSecondary }]}>
-                    # {item.quantity}x
-                  </Text>
-
-                  {/* Preço */}
-                  {item.unitPrice > 0 && (
-                    <>
-                      <Text style={[styles.itemPrice, { color: theme.colors.success }]}>
-                        {formatCurrency(item.unitPrice)}
-                      </Text>
-
-                      {/* Total */}
-                      <Text style={[styles.itemTotal, { color: theme.colors.textSecondary }]}>
-                        (total: {formatCurrency(item.quantity * item.unitPrice)})
-                      </Text>
-                    </>
-                  )}
-                </View>
-              </View>
-            </View>
-          ))}
-        </View>
-
-        {/* Placeholder de "Em Construção" */}
-        <View style={styles.placeholderContainer}>
-          <Ionicons name='construct-outline' size={48} color={theme.colors.textTertiary} />
-          <Text style={[styles.placeholderTitle, { color: theme.colors.text }]}>
-            Funcionalidade em Construção
-          </Text>
-          <Text style={[styles.placeholderText, { color: theme.colors.textSecondary }]}>
-            Esta é uma visualização mockada.{'\n'}A funcionalidade completa de gerenciamento de
-            itens{'\n'}
-            será implementada no próximo épico.
-          </Text>
-        </View>
-      </ScrollView>
+        accessibilityRole='list'
+        testID='list-items-flatlist'
+      />
     </View>
   );
 };
@@ -208,8 +376,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   } as ViewStyle,
   headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
+    fontSize: 20,
+    fontWeight: '700',
     letterSpacing: 0.2,
   },
   headerSubtitle: {
@@ -217,14 +385,10 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     marginTop: 2,
   },
-  content: {
-    flex: 1,
-    paddingHorizontal: 20,
-  } as ViewStyle,
   totalCard: {
-    marginTop: 20,
+    marginBottom: 24,
     padding: 20,
-    borderRadius: 16,
+    borderRadius: 12,
     borderWidth: 1,
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -232,75 +396,56 @@ const styles = StyleSheet.create({
   } as ViewStyle,
   totalLabel: {
     fontSize: 16,
-    fontWeight: '500',
+    fontWeight: '600',
   },
   totalValue: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: '700',
     letterSpacing: 0.3,
   },
-  itemsList: {
-    marginTop: 20,
-    gap: 12,
-  } as ViewStyle,
-  itemCard: {
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    flexDirection: 'row',
-    gap: 12,
-  } as ViewStyle,
-  checkbox: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    borderWidth: 2,
+  loadingContainer: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    gap: 16,
   } as ViewStyle,
-  itemContent: {
-    flex: 1,
-    gap: 6,
-  } as ViewStyle,
-  itemName: {
+  loadingText: {
     fontSize: 16,
-    fontWeight: '600',
-    letterSpacing: 0.2,
-  },
-  itemDetails: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    flexWrap: 'wrap',
-  } as ViewStyle,
-  itemQuantity: {
-    fontSize: 14,
     fontWeight: '500',
   },
-  itemPrice: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  itemTotal: {
-    fontSize: 13,
-    fontWeight: '400',
-  },
-  placeholderContainer: {
-    marginTop: 40,
-    marginBottom: 20,
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 40,
+    paddingHorizontal: 24,
+    gap: 16,
   } as ViewStyle,
-  placeholderTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  placeholderText: {
-    fontSize: 14,
+  errorText: {
+    fontSize: 16,
+    fontWeight: '500',
     textAlign: 'center',
-    lineHeight: 20,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    paddingBottom: 32,
+  } as ViewStyle,
+  emptyTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+    marginTop: 24,
+    marginBottom: 8,
+    textAlign: 'center',
+    letterSpacing: 0.2,
+  },
+  emptySubtitle: {
+    fontSize: 15,
+    marginBottom: 24,
+    textAlign: 'center',
+    fontWeight: '400',
+    lineHeight: 22,
   },
 });
 

@@ -72,6 +72,8 @@ export interface ShoppingItemDto {
   quantity: number;
   unit_price?: number;
   unitPrice?: number;
+  unit?: string;
+  status?: string; // "PENDING" ou "PURCHASED" (formato do backend)
   is_purchased?: boolean;
   isPurchased?: boolean;
   is_completed?: boolean;

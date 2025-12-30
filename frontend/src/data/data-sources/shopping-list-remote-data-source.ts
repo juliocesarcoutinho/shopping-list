@@ -27,6 +27,18 @@ export class ShoppingListRemoteDataSource {
     }
   }
 
+  /**
+   * Busca uma lista específica por ID com todos os itens
+   *
+   * IMPORTANTE: Este endpoint (GET /api/v1/lists/{id}) precisa ser implementado no backend.
+   * Atualmente o backend só possui:
+   * - GET /api/v1/lists (retorna resumos sem itens)
+   * - POST /api/v1/lists (criar)
+   * - PATCH /api/v1/lists/{id} (atualizar)
+   * - DELETE /api/v1/lists/{id} (deletar)
+   *
+   * Este método retornará erro 500 até que o endpoint seja implementado no backend.
+   */
   async getListById(listId: string): Promise<ShoppingListDto> {
     try {
       return await apiClient.get<ShoppingListDto>(`/lists/${listId}`);

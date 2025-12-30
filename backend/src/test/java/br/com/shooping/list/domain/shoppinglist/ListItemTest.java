@@ -22,7 +22,7 @@ class ListItemTest {
         ItemName name = ItemName.of("Arroz");
         Quantity quantity = Quantity.of(2);
 
-        ListItem item = ListItem.create(shoppingList, name, quantity, "kg");
+        ListItem item = ListItem.create(shoppingList, name, quantity, "kg", null);
 
         assertThat(item.getName()).isEqualTo(name);
         assertThat(item.getQuantityAsValueObject()).isEqualTo(quantity);
@@ -39,7 +39,7 @@ class ListItemTest {
         ItemName name = ItemName.of("Pão");
         Quantity quantity = Quantity.of(5);
 
-        ListItem item = ListItem.create(shoppingList, name, quantity, null);
+        ListItem item = ListItem.create(shoppingList, name, quantity, null, null);
 
         assertThat(item.getUnit()).isNull();
     }
@@ -50,7 +50,7 @@ class ListItemTest {
         ItemName name = ItemName.of("Leite");
         Quantity quantity = Quantity.of(1);
 
-        ListItem item = ListItem.create(shoppingList, name, quantity, "  litro  ");
+        ListItem item = ListItem.create(shoppingList, name, quantity, "  litro  ", null);
 
         assertThat(item.getUnit()).isEqualTo("litro");
     }
@@ -61,7 +61,7 @@ class ListItemTest {
         ItemName name = ItemName.of("Banana");
         Quantity quantity = Quantity.of(6);
 
-        ListItem item = ListItem.create(shoppingList, name, quantity, "   ");
+        ListItem item = ListItem.create(shoppingList, name, quantity, "   ", null);
 
         assertThat(item.getUnit()).isNull();
     }
@@ -72,7 +72,7 @@ class ListItemTest {
         ItemName name = ItemName.of("Arroz");
         Quantity quantity = Quantity.of(2);
 
-        assertThatThrownBy(() -> ListItem.create(null, name, quantity, "kg"))
+        assertThatThrownBy(() -> ListItem.create(null, name, quantity, "kg", null))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Lista de compras não pode ser nula");
     }
@@ -84,7 +84,7 @@ class ListItemTest {
         Quantity quantity = Quantity.of(1);
         String longUnit = "A".repeat(21);
 
-        assertThatThrownBy(() -> ListItem.create(shoppingList, name, quantity, longUnit))
+        assertThatThrownBy(() -> ListItem.create(shoppingList, name, quantity, longUnit, null))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Unidade de medida não pode ter mais de 20 caracteres");
     }
@@ -94,7 +94,7 @@ class ListItemTest {
     void shouldMarkItemAsPurchased() {
         ItemName name = ItemName.of("Café");
         Quantity quantity = Quantity.of(1);
-        ListItem item = ListItem.create(shoppingList, name, quantity, "pacote");
+        ListItem item = ListItem.create(shoppingList, name, quantity, "pacote", null);
 
         item.markAsPurchased();
 
@@ -108,7 +108,7 @@ class ListItemTest {
     void shouldMarkItemAsPending() {
         ItemName name = ItemName.of("Açúcar");
         Quantity quantity = Quantity.of(1);
-        ListItem item = ListItem.create(shoppingList, name, quantity, "kg");
+        ListItem item = ListItem.create(shoppingList, name, quantity, "kg", null);
         item.markAsPurchased();
 
         item.markAsPending();
@@ -123,7 +123,7 @@ class ListItemTest {
     void shouldDoNothingWhenMarkingAlreadyPurchasedItemAsPurchased() {
         ItemName name = ItemName.of("Óleo");
         Quantity quantity = Quantity.of(1);
-        ListItem item = ListItem.create(shoppingList, name, quantity, "litro");
+        ListItem item = ListItem.create(shoppingList, name, quantity, "litro", null);
         item.markAsPurchased();
 
         item.markAsPurchased();
@@ -136,7 +136,7 @@ class ListItemTest {
     void shouldUpdateItemQuantity() {
         ItemName name = ItemName.of("Maçã");
         Quantity quantity = Quantity.of(3);
-        ListItem item = ListItem.create(shoppingList, name, quantity, "kg");
+        ListItem item = ListItem.create(shoppingList, name, quantity, "kg", null);
 
         Quantity newQuantity = Quantity.of(5);
         item.updateQuantity(newQuantity);
@@ -149,7 +149,7 @@ class ListItemTest {
     void shouldThrowExceptionWhenUpdatingQuantityToNull() {
         ItemName name = ItemName.of("Tomate");
         Quantity quantity = Quantity.of(2);
-        ListItem item = ListItem.create(shoppingList, name, quantity, "kg");
+        ListItem item = ListItem.create(shoppingList, name, quantity, "kg", null);
 
         assertThatThrownBy(() -> item.updateQuantity(null))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -161,7 +161,7 @@ class ListItemTest {
     void shouldUpdateItemName() {
         ItemName name = ItemName.of("Feijão Preto");
         Quantity quantity = Quantity.of(1);
-        ListItem item = ListItem.create(shoppingList, name, quantity, "kg");
+        ListItem item = ListItem.create(shoppingList, name, quantity, "kg", null);
 
         ItemName newName = ItemName.of("Feijão Carioca");
         item.updateName(newName);
@@ -174,7 +174,7 @@ class ListItemTest {
     void shouldThrowExceptionWhenUpdatingNameToNull() {
         ItemName name = ItemName.of("Sal");
         Quantity quantity = Quantity.of(1);
-        ListItem item = ListItem.create(shoppingList, name, quantity, "kg");
+        ListItem item = ListItem.create(shoppingList, name, quantity, "kg", null);
 
         assertThatThrownBy(() -> item.updateName(null))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -186,7 +186,7 @@ class ListItemTest {
     void shouldUpdateItemUnit() {
         ItemName name = ItemName.of("Refrigerante");
         Quantity quantity = Quantity.of(2);
-        ListItem item = ListItem.create(shoppingList, name, quantity, "litro");
+        ListItem item = ListItem.create(shoppingList, name, quantity, "litro", null);
 
         item.updateUnit("garrafa");
 
@@ -198,7 +198,7 @@ class ListItemTest {
     void shouldAllowUpdatingUnitToNull() {
         ItemName name = ItemName.of("Ovos");
         Quantity quantity = Quantity.of(12);
-        ListItem item = ListItem.create(shoppingList, name, quantity, "unidades");
+        ListItem item = ListItem.create(shoppingList, name, quantity, "unidades", null);
 
         item.updateUnit(null);
 
@@ -212,8 +212,8 @@ class ListItemTest {
         ItemName name2 = ItemName.of("ARROZ");
         Quantity quantity = Quantity.of(1);
 
-        ListItem item1 = ListItem.create(shoppingList, name1, quantity, "kg");
-        ListItem item2 = ListItem.create(shoppingList, name2, quantity, "kg");
+        ListItem item1 = ListItem.create(shoppingList, name1, quantity, "kg", null);
+        ListItem item2 = ListItem.create(shoppingList, name2, quantity, "kg", null);
 
         assertThat(item1.hasSameNameAs(item2)).isTrue();
     }
@@ -223,7 +223,7 @@ class ListItemTest {
     void shouldCheckIfItemHasSpecificName() {
         ItemName name = ItemName.of("Macarrão");
         Quantity quantity = Quantity.of(2);
-        ListItem item = ListItem.create(shoppingList, name, quantity, "pacote");
+        ListItem item = ListItem.create(shoppingList, name, quantity, "pacote", null);
 
         ItemName searchName = ItemName.of("MACARRÃO");
 
@@ -235,7 +235,7 @@ class ListItemTest {
     void shouldReturnFalseWhenCheckingNameWithNull() {
         ItemName name = ItemName.of("Farinha");
         Quantity quantity = Quantity.of(1);
-        ListItem item = ListItem.create(shoppingList, name, quantity, "kg");
+        ListItem item = ListItem.create(shoppingList, name, quantity, "kg", null);
 
         assertThat(item.hasSameNameAs(null)).isFalse();
     }
@@ -245,8 +245,8 @@ class ListItemTest {
     void shouldHaveEqualsBasedOnId() {
         ItemName name = ItemName.of("Presunto");
         Quantity quantity = Quantity.of(200);
-        ListItem item1 = ListItem.create(shoppingList, name, quantity, "gramas");
-        ListItem item2 = ListItem.create(shoppingList, name, quantity, "gramas");
+        ListItem item1 = ListItem.create(shoppingList, name, quantity, "gramas", null);
+        ListItem item2 = ListItem.create(shoppingList, name, quantity, "gramas", null);
 
         item1.setId(1L);
         item2.setId(1L);
@@ -259,7 +259,7 @@ class ListItemTest {
     void shouldHaveToStringWithMainInfo() {
         ItemName name = ItemName.of("Queijo");
         Quantity quantity = Quantity.of(300);
-        ListItem item = ListItem.create(shoppingList, name, quantity, "gramas");
+        ListItem item = ListItem.create(shoppingList, name, quantity, "gramas", null);
         item.setId(5L);
 
         String toString = item.toString();

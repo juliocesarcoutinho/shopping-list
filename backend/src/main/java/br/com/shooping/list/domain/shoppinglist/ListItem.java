@@ -45,6 +45,9 @@ public class ListItem {
     @Column(length = 20)
     private String unit;
 
+    @Column(name = "unit_price", precision = 10, scale = 2)
+    private BigDecimal unitPrice;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private ItemStatus status;
@@ -59,12 +62,13 @@ public class ListItem {
      * Construtor privado.
      * Use o factory method create() para criar instâncias.
      */
-    private ListItem(ShoppingList shoppingList, ItemName name, Quantity quantity, String unit) {
+    private ListItem(ShoppingList shoppingList, ItemName name, Quantity quantity, String unit, BigDecimal unitPrice) {
         validateShoppingList(shoppingList);
         this.shoppingList = shoppingList;
         this.name = name;
         this.quantity = quantity.getValue();
         this.unit = validateUnit(unit);
+        this.unitPrice = validateUnitPrice(unitPrice);
         this.status = ItemStatus.PENDING;
         this.createdAt = Instant.now();
         this.updatedAt = Instant.now();
@@ -77,11 +81,12 @@ public class ListItem {
      * @param name nome do item (obrigatório)
      * @param quantity quantidade (obrigatório)
      * @param unit unidade de medida (opcional)
+     * @param unitPrice preço unitário (opcional)
      * @return nova instância de ListItem
-     * @throws IllegalArgumentException se lista for nula
+     * @throws IllegalArgumentException se lista for nula ou preço for negativo
      */
-    public static ListItem create(ShoppingList shoppingList, ItemName name, Quantity quantity, String unit) {
-        return new ListItem(shoppingList, name, quantity, unit);
+    public static ListItem create(ShoppingList shoppingList, ItemName name, Quantity quantity, String unit, BigDecimal unitPrice) {
+        return new ListItem(shoppingList, name, quantity, unit, unitPrice);
     }
 
     private void validateShoppingList(ShoppingList shoppingList) {
@@ -105,6 +110,18 @@ public class ListItem {
         }
 
         return trimmed;
+    }
+
+    private BigDecimal validateUnitPrice(BigDecimal unitPrice) {
+        if (unitPrice == null) {
+            return null;
+        }
+
+        if (unitPrice.compareTo(BigDecimal.ZERO) < 0) {
+            throw new IllegalArgumentException("Preço unitário não pode ser negativo");
+        }
+
+        return unitPrice;
     }
 
     /**
@@ -171,6 +188,17 @@ public class ListItem {
      */
     public void updateUnit(String unit) {
         this.unit = validateUnit(unit);
+        this.updatedAt = Instant.now();
+    }
+
+    /**
+     * Atualiza o preço unitário do item.
+     *
+     * @param unitPrice novo preço unitário (pode ser null)
+     * @throws IllegalArgumentException se preço for negativo
+     */
+    public void updateUnitPrice(BigDecimal unitPrice) {
+        this.unitPrice = validateUnitPrice(unitPrice);
         this.updatedAt = Instant.now();
     }
 

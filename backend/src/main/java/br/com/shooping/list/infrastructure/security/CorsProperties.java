@@ -34,6 +34,8 @@ public final class CorsProperties {
         /** Própria API (para testes) */
         public static final String SELF = "http://localhost:8080";
 
+        public static final String EXPO_WEB = "http://localhost:8081";
+
 
         /**
          * Lista de todas as origens permitidas.
@@ -42,7 +44,7 @@ public final class CorsProperties {
          * - https://shoppinglist.com.br
          */
         public static List<String> getAll() {
-            return List.of(REACT, ANGULAR, SELF, VUEJS);
+            return List.of(REACT, ANGULAR, SELF, VUEJS, EXPO_WEB);
         }
 
         private AllowedOrigins() {

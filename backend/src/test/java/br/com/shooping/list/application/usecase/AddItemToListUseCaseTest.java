@@ -44,7 +44,7 @@ class AddItemToListUseCaseTest {
     void setUp() {
         ownerId = 1L;
         listId = 10L;
-        validRequest = new AddItemRequest("Arroz Integral", new BigDecimal("2.0"), "kg");
+        validRequest = new AddItemRequest("Arroz Integral", new BigDecimal("2.0"), "kg", BigDecimal.valueOf(35.00));
 
         existingList = ShoppingList.create(ownerId, "Lista da Feira", null);
         setField(existingList, "id", listId);
@@ -106,7 +106,7 @@ class AddItemToListUseCaseTest {
     void shouldThrowExceptionWhenDuplicateItem() {
         // Arrange
         // Adiciona item primeiro
-        existingList.addItem(ItemName.of("Arroz Integral"), Quantity.of(BigDecimal.ONE), "kg");
+        existingList.addItem(ItemName.of("Arroz Integral"), Quantity.of(BigDecimal.ONE), "kg", null);
 
         when(shoppingListRepository.findById(listId)).thenReturn(Optional.of(existingList));
 
@@ -123,7 +123,7 @@ class AddItemToListUseCaseTest {
     @DisplayName("Deve adicionar item sem unidade")
     void shouldAddItemWithoutUnit() {
         // Arrange
-        AddItemRequest requestWithoutUnit = new AddItemRequest("Banana", new BigDecimal("6"), null);
+        AddItemRequest requestWithoutUnit = new AddItemRequest("Banana", new BigDecimal("6"), null, BigDecimal.valueOf(30.00));
         when(shoppingListRepository.findById(listId)).thenReturn(Optional.of(existingList));
         when(shoppingListRepository.save(any(ShoppingList.class))).thenAnswer(invocation -> invocation.getArgument(0));
 

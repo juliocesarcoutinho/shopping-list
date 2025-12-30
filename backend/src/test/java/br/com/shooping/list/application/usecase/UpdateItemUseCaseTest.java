@@ -46,7 +46,7 @@ class UpdateItemUseCaseTest {
         existingList = ShoppingList.create(ownerId, "Lista", null);
         setField(existingList, "id", listId);
 
-        existingItem = existingList.addItem(ItemName.of("Arroz"), Quantity.of(BigDecimal.ONE), "kg");
+        existingItem = existingList.addItem(ItemName.of("Arroz"), Quantity.of(BigDecimal.ONE), "kg", null);
         setField(existingItem, "id", itemId);
     }
 
@@ -54,7 +54,7 @@ class UpdateItemUseCaseTest {
     @DisplayName("Deve atualizar apenas nome quando fornecido")
     void shouldUpdateOnlyNameWhenProvided() {
         // Arrange
-        UpdateItemRequest request = new UpdateItemRequest("Feijão", null, null, null);
+        UpdateItemRequest request = new UpdateItemRequest("Feijão", null, null, null, null);
         when(shoppingListRepository.findById(listId)).thenReturn(Optional.of(existingList));
         when(shoppingListRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -71,7 +71,7 @@ class UpdateItemUseCaseTest {
     @DisplayName("Deve atualizar apenas quantidade quando fornecida")
     void shouldUpdateOnlyQuantityWhenProvided() {
         // Arrange
-        UpdateItemRequest request = new UpdateItemRequest(null, new BigDecimal("5"), null, null);
+        UpdateItemRequest request = new UpdateItemRequest(null, new BigDecimal("5"), null, null, null);
         when(shoppingListRepository.findById(listId)).thenReturn(Optional.of(existingList));
         when(shoppingListRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -88,7 +88,7 @@ class UpdateItemUseCaseTest {
     @DisplayName("Deve atualizar status para PURCHASED")
     void shouldUpdateStatusToPurchased() {
         // Arrange
-        UpdateItemRequest request = new UpdateItemRequest(null, null, null, "PURCHASED");
+        UpdateItemRequest request = new UpdateItemRequest(null, null, null, null, "PURCHASED");
         when(shoppingListRepository.findById(listId)).thenReturn(Optional.of(existingList));
         when(shoppingListRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -104,7 +104,7 @@ class UpdateItemUseCaseTest {
     @DisplayName("Deve atualizar múltiplos campos")
     void shouldUpdateMultipleFields() {
         // Arrange
-        UpdateItemRequest request = new UpdateItemRequest("Feijão Preto", new BigDecimal("2"), "pacote", "PURCHASED");
+        UpdateItemRequest request = new UpdateItemRequest("Feijão Preto", new BigDecimal("2"), "pacote", null, "PURCHASED");
         when(shoppingListRepository.findById(listId)).thenReturn(Optional.of(existingList));
         when(shoppingListRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -123,7 +123,7 @@ class UpdateItemUseCaseTest {
     @DisplayName("Deve lançar exceção quando nenhum campo fornecido")
     void shouldThrowExceptionWhenNoFieldProvided() {
         // Arrange
-        UpdateItemRequest request = new UpdateItemRequest(null, null, null, null);
+        UpdateItemRequest request = new UpdateItemRequest(null, null, null, null, null);
 
         // Act & Assert
         assertThatThrownBy(() -> updateItemUseCase.execute(ownerId, listId, itemId, request))
@@ -137,7 +137,7 @@ class UpdateItemUseCaseTest {
     @DisplayName("Deve lançar exceção quando status inválido")
     void shouldThrowExceptionWhenInvalidStatus() {
         // Arrange
-        UpdateItemRequest request = new UpdateItemRequest(null, null, null, "INVALID");
+        UpdateItemRequest request = new UpdateItemRequest(null, null, null, null, "INVALID");
 
         // Act & Assert
         assertThatThrownBy(() -> updateItemUseCase.execute(ownerId, listId, itemId, request))
@@ -151,7 +151,7 @@ class UpdateItemUseCaseTest {
     @DisplayName("Deve lançar exceção quando lista não existe")
     void shouldThrowExceptionWhenListDoesNotExist() {
         // Arrange
-        UpdateItemRequest request = new UpdateItemRequest("Novo Nome", null, null, null);
+        UpdateItemRequest request = new UpdateItemRequest("Novo Nome", null, null, null, null);
         when(shoppingListRepository.findById(listId)).thenReturn(Optional.empty());
 
         // Act & Assert
@@ -167,7 +167,7 @@ class UpdateItemUseCaseTest {
     void shouldThrowExceptionWhenUserIsNotOwner() {
         // Arrange
         Long differentOwnerId = 999L;
-        UpdateItemRequest request = new UpdateItemRequest("Novo Nome", null, null, null);
+        UpdateItemRequest request = new UpdateItemRequest("Novo Nome", null, null, null, null);
         when(shoppingListRepository.findById(listId)).thenReturn(Optional.of(existingList));
 
         // Act & Assert
@@ -183,7 +183,7 @@ class UpdateItemUseCaseTest {
     void shouldThrowExceptionWhenItemDoesNotExist() {
         // Arrange
         Long nonExistentItemId = 999L;
-        UpdateItemRequest request = new UpdateItemRequest("Novo Nome", null, null, null);
+        UpdateItemRequest request = new UpdateItemRequest("Novo Nome", null, null, null, null);
         when(shoppingListRepository.findById(listId)).thenReturn(Optional.of(existingList));
 
         // Act & Assert

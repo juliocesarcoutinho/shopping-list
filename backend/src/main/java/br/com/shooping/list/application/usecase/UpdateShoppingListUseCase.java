@@ -81,12 +81,13 @@ public class UpdateShoppingListUseCase {
 
         log.info("Lista atualizada com sucesso: listId={}, ownerId={}", listId, ownerId);
 
-        // Mapear para resposta
+        // Mapear para resposta (items null pois não é necessário neste endpoint)
         return new ShoppingListResponse(
                 updatedList.getId(),
                 updatedList.getOwnerId(),
                 updatedList.getTitle(),
                 updatedList.getDescription(),
+                null,
                 updatedList.getItems().size(),
                 updatedList.countPendingItems(),
                 updatedList.countPurchasedItems(),

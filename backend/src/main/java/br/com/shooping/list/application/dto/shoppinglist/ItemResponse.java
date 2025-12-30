@@ -40,6 +40,11 @@ public class ItemResponse {
     private String unit;
 
     /**
+     * Preço unitário (opcional)
+     */
+    private BigDecimal unitPrice;
+
+    /**
      * Status do item (PENDING ou PURCHASED)
      */
     private String status;

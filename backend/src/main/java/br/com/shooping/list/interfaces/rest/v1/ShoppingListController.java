@@ -7,6 +7,7 @@ import br.com.shooping.list.application.dto.shoppinglist.UpdateShoppingListReque
 import br.com.shooping.list.application.usecase.CreateShoppingListUseCase;
 import br.com.shooping.list.application.usecase.DeleteShoppingListUseCase;
 import br.com.shooping.list.application.usecase.GetMyShoppingListsUseCase;
+import br.com.shooping.list.application.usecase.GetShoppingListByIdUseCase;
 import br.com.shooping.list.application.usecase.UpdateShoppingListUseCase;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -34,6 +35,7 @@ public class ShoppingListController {
 
     private final CreateShoppingListUseCase createShoppingListUseCase;
     private final GetMyShoppingListsUseCase getMyShoppingListsUseCase;
+    private final GetShoppingListByIdUseCase getShoppingListByIdUseCase;
     private final UpdateShoppingListUseCase updateShoppingListUseCase;
     private final DeleteShoppingListUseCase deleteShoppingListUseCase;
 
@@ -71,6 +73,27 @@ public class ShoppingListController {
         List<ShoppingListSummaryResponse> response = getMyShoppingListsUseCase.execute(ownerId);
 
         log.info("Listas retornadas com sucesso: ownerId={}, quantidade={}", ownerId, response.size());
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Retorna detalhes completos de uma lista de compras específica, incluindo todos os itens.
+     * Valida que a lista pertence ao usuário autenticado.
+     *
+     * @param id ID da lista a ser buscada
+     * @return lista completa com todos os itens
+     */
+    @GetMapping("/{id}")
+    public ResponseEntity<ShoppingListResponse> getListById(@PathVariable Long id) {
+        log.info("Requisição recebida: GET /api/v1/lists/{}", id);
+
+        Long ownerId = extractOwnerId();
+        log.debug("Buscando lista de compras: listId={}, ownerId={}", id, ownerId);
+
+        ShoppingListResponse response = getShoppingListByIdUseCase.execute(ownerId, id);
+
+        log.info("Lista retornada com sucesso: listId={}, ownerId={}, itemsCount={}",
+                id, ownerId, response.getItemsCount());
         return ResponseEntity.ok(response);
     }
 

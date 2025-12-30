@@ -569,27 +569,35 @@ Navegação para tela de detalhes ao clicar em um card de lista.
 
 ✅ **Lista de Itens:**
 - Checkbox circular (verde quando marcado)
-- Nome do item (strikethrough quando completo)
+- Nome do item em verde (strikethrough quando completo)
 - Quantidade: # 2x, # 1x
-- Preço unitário: R$ X.XX (em verde)
-- Total calculado: (total: R$ XX.XX)
+- Preço unitário: $ R$ X.XX (em verde, quando disponível)
+- Total calculado: (total: R$ XX.XX) quando há preço
 - Cards brancos com border sutil
 - Gap de 12px entre itens
+- Total estimado calculado automaticamente no topo
 
 ✅ **Placeholder "Em Construção":**
 - Ícone e mensagem informando que é visualização mockada
 - Explica que funcionalidade completa vem no próximo épico
 
-**Dados Mockados:**
-8 itens de exemplo com quantidades, preços e status variados para demonstração do layout.
+**Integração com API:**
+- ✅ Carrega dados reais via `GetListDetailsUseCase`
+- ✅ Estados de loading, error e empty implementados
+- ✅ Pull-to-refresh para atualizar lista
+- ✅ `useFocusEffect` recarrega automaticamente ao voltar de outras telas
+- ✅ Header exibe título e contadores reais
+- ✅ Total estimado calculado dinamicamente dos itens
+- ✅ Lista de itens renderizada com `FlatList` usando `ShoppingItemRow`
+- ✅ Tratamento de erros (404, 500, etc.) com mensagens amigáveis
 
 **Funcionalidade Atual:**
 - ✅ Navegação completa (ida e volta)
 - ✅ Layout responsivo com Safe Area
 - ✅ Design profissional seguindo Fresh Market
 - ✅ Parâmetros tipados (listId)
-- ⏳ Gerenciamento de itens (próximo épico)
-- ⏳ Integração com API real (próximo épico)
+- ✅ Integração completa com API real
+- ⏳ Gerenciamento de itens (adicionar/editar/remover - próximo épico)
 
 ### Fluxo inicial
 - Ao logar, o usuário é direcionado para a tab Home, que agora exibe o dashboard de listas (ListsDashboardScreen)
@@ -606,10 +614,10 @@ Arquivo: `src/data/data-sources/shopping-list-remote-data-source.ts`
 Responsável por consumir as APIs de listas usando o `apiClient` padrão:
 
 **Endpoints:**
-- `GET /api/v1/lists` - Buscar listas do usuário (retorna metadados com itemsCount/pendingItemsCount)
-- `GET /api/v1/lists/{id}` - Buscar detalhes de uma lista específica (retorna lista com items completos)
-- `POST /api/v1/lists` - Criar nova lista
-- `DELETE /api/v1/lists/{id}` - Deletar lista por ID
+- `GET /api/v1/lists` - Buscar listas do usuário (retorna metadados com itemsCount/pendingItemsCount) ✅
+- `GET /api/v1/lists/{id}` - Buscar detalhes de uma lista específica (retorna lista com items completos) ✅
+- `POST /api/v1/lists` - Criar nova lista ✅
+- `DELETE /api/v1/lists/{id}` - Deletar lista por ID ✅
 
 ```typescript
 export class ShoppingListRemoteDataSource {
@@ -841,8 +849,9 @@ interface ShoppingItemRowProps {
 - **Checkbox interativo** com ícone checkmark (Ionicons)
 - **Nome com strike-through** quando `isPurchased: true`
 - **Quantidade formatada** (ex: "2x", "5x")
-- **Preço unitário** opcional formatado em BRL (R$ 4,50 / un)
-- **Subtotal calculado** automaticamente (quantity * unitPrice)
+- **Preço unitário** opcional formatado em BRL ($ R$ 4,50) quando disponível
+- **Subtotal calculado** automaticamente (quantity * unitPrice) quando há preço
+- **Total estimado** somado no card superior da lista
 - **Estado loading** com skeleton placeholder simples
 - **Acessibilidade completa:**
   - `accessibilityRole="button"` na row
@@ -1001,8 +1010,10 @@ export interface ShoppingItemDto {
   id: string | number;
   name: string;
   quantity: number;
-  unit_price?: number;
-  unitPrice?: number;
+  unit?: string;            // Unidade de medida (opcional)
+  unit_price?: number;       // Preço unitário (snake_case - compatibilidade)
+  unitPrice?: number;        // Preço unitário (camelCase)
+  status?: string;           // "PENDING" ou "PURCHASED" (formato do backend)
   is_purchased?: boolean;
   isPurchased?: boolean;
   is_completed?: boolean;   // Sinônimo aceito
@@ -1017,7 +1028,8 @@ export interface ShoppingItemDto {
 **Flexibilidade:**
 - Aceita `id` como string ou number (converte para string no mapper)
 - Suporta snake_case e camelCase simultaneamente
-- Campos de status: `is_purchased`, `isPurchased`, `is_completed`, `isCompleted`
+- Campos de status: `status` (backend: "PENDING"/"PURCHASED"), `is_purchased`, `isPurchased`, `is_completed`, `isCompleted`
+- Campos de preço: `unit_price` (snake_case) ou `unitPrice` (camelCase) - opcional
 - Timestamps: `created_at`/`createdAt`, `updated_at`/`updatedAt`
 
 ### Mapper DTO → Domain
@@ -1034,13 +1046,10 @@ export function mapShoppingItemDtoToDomain(dto: ShoppingItemDto): ShoppingItem {
   const updatedAt = dto.updatedAt || dto.updated_at;
   const unitPrice = dto.unitPrice ?? dto.unit_price;
   
-  // Suporto variações de nome do campo de status
-  const isPurchased = 
-    dto.isPurchased ?? 
-    dto.is_purchased ?? 
-    dto.isCompleted ?? 
-    dto.is_completed ?? 
-    false;
+  // Suporta campo status do backend ("PENDING"/"PURCHASED") e campos booleanos
+  const isPurchased = dto.status === 'PURCHASED' 
+    ? true 
+    : (dto.isPurchased ?? dto.is_purchased ?? dto.isCompleted ?? dto.is_completed ?? false);
 
   // Valido campos obrigatórios
   if (!id || !dto.name || dto.quantity === undefined || !createdAt || !updatedAt) {
@@ -1762,11 +1771,13 @@ Loading (ActivityIndicator)
 - [x] **DeleteShoppingListUseCase - Exclusão de listas com validações**
 - [x] **Fluxo UX profissional para exclusão (modal + toast)**
 - [x] **Navegação para detalhes da lista - Rota dinâmica /lists/[id]**
-- [x] **ListDetailsScreen - Tela de detalhes (placeholder) com design profissional**
+- [x] **ListDetailsScreen - Tela de detalhes funcional com dados reais da API**
 - [x] **Parâmetros tipados - useLocalSearchParams com TypeScript**
 - [x] **ShoppingItem - Entidade de domínio para itens de compras**
-- [x] **ShoppingItemDto - DTO com suporte snake_case e camelCase**
+- [x] **ShoppingItemDto - DTO com suporte snake_case e camelCase + campo status e unitPrice**
 - [x] **shopping-item-mapper - Mapper robusto com 18 testes (validações completas)**
+- [x] **Suporte ao campo status do backend ("PENDING"/"PURCHASED") convertido para isPurchased**
+- [x] **Suporte ao campo unitPrice para cálculo de total estimado**
 - [x] **Validações de tipos e campos obrigatórios com mensagens claras**
 - [x] **getListById - Endpoint para buscar lista específica com items completos**
 - [x] **GetListDetailsUseCase - Buscar detalhes de lista com validações (13 testes)**
@@ -1782,13 +1793,18 @@ Loading (ActivityIndicator)
 - [x] Criar lista de compras
 - [x] Listar listas do usuário (com itemsCount/pendingItemsCount)
 - [x] Excluir lista (com modal de confirmação customizado + toast)
-- [x] Visualizar detalhes de uma lista (navegação + placeholder)
+- [x] Visualizar detalhes de uma lista (navegação + tela funcional)
 - [x] Base de domínio para ShoppingItem (entity + DTO + mapper)
 - [x] getListById no datasource e repository
 - [x] GetListDetailsUseCase com validações completas
 - [x] Ordenação de itens (não comprados primeiro, por updatedAt desc)
 - [x] ShoppingItemRow - Componente de exibição de item
-- [ ] Integrar dados reais no ListDetailsScreen (substituir mockup)
+- [x] Integrar dados reais no ListDetailsScreen (GET /api/v1/lists/{id})
+- [x] Estados de loading, error e empty na tela de detalhes
+- [x] Pull-to-refresh para atualizar lista
+- [x] useFocusEffect para recarregar ao voltar de outras telas
+- [x] Exibição de preços unitários e cálculo de total estimado
+- [x] Card de total estimado sempre visível (mostra R$ 0,00 quando não há preços)
 - [ ] Repository e Data Source para operações de itens (CRUD)
 - [ ] Use Cases para adicionar/editar/remover itens
 - [ ] Editar lista existente

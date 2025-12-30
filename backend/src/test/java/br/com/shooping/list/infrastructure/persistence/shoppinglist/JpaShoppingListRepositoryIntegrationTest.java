@@ -151,10 +151,10 @@ class JpaShoppingListRepositoryIntegrationTest extends AbstractIntegrationTest {
 
         ItemName arroz = ItemName.of("Arroz");
         Quantity quantidade = Quantity.of(2);
-        list.addItem(arroz, quantidade, "kg");
+        list.addItem(arroz, quantidade, "kg", null);
 
         ItemName leite = ItemName.of("Leite");
-        list.addItem(leite, Quantity.of(1), "litro");
+        list.addItem(leite, Quantity.of(1), "litro", null);
 
         // Act
         ShoppingList savedList = shoppingListRepository.save(list);
@@ -173,8 +173,8 @@ class JpaShoppingListRepositoryIntegrationTest extends AbstractIntegrationTest {
     void shouldDeleteItemsInCascade() {
         // Arrange
         ShoppingList list = ShoppingList.create(testUser.getId(), "Lista para Deletar", null);
-        list.addItem(ItemName.of("Item 1"), Quantity.of(1), null);
-        list.addItem(ItemName.of("Item 2"), Quantity.of(2), null);
+        list.addItem(ItemName.of("Item 1"), Quantity.of(1), null, null);
+        list.addItem(ItemName.of("Item 2"), Quantity.of(2), null, null);
 
         list = shoppingListRepository.save(list);
         Long listId = list.getId();
@@ -227,7 +227,7 @@ class JpaShoppingListRepositoryIntegrationTest extends AbstractIntegrationTest {
         // Arrange
         ShoppingList list = ShoppingList.create(testUser.getId(), "Lista Teste", null);
         ItemName nome = ItemName.of("ARROZ Integral");
-        list.addItem(nome, Quantity.of(1), "kg");
+        list.addItem(nome, Quantity.of(1), "kg", null);
 
         // Act
         list = shoppingListRepository.save(list);

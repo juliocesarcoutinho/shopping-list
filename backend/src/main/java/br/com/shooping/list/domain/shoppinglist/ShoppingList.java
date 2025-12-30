@@ -165,15 +165,16 @@ public class ShoppingList {
      * @param name nome do item (obrigatório)
      * @param quantity quantidade (obrigatório, maior que zero)
      * @param unit unidade de medida (opcional)
+     * @param unitPrice preço unitário (opcional)
      * @return item criado
      * @throws DuplicateItemException se já existe item com mesmo nome
      * @throws ListLimitExceededException se lista atingiu limite de 100 itens
      */
-    public ListItem addItem(ItemName name, Quantity quantity, String unit) {
+    public ListItem addItem(ItemName name, Quantity quantity, String unit, java.math.BigDecimal unitPrice) {
         validateItemLimit();
         validateDuplicateItem(name);
 
-        ListItem item = ListItem.create(this, name, quantity, unit);
+        ListItem item = ListItem.create(this, name, quantity, unit, unitPrice);
         items.add(item);
         this.updatedAt = Instant.now();
         return item;
@@ -298,6 +299,20 @@ public class ShoppingList {
     public void updateItemUnit(Long itemId, String unit) {
         ListItem item = findItemById(itemId);
         item.updateUnit(unit);
+        this.updatedAt = Instant.now();
+    }
+
+    /**
+     * Atualiza o preço unitário de um item.
+     *
+     * @param itemId ID do item
+     * @param unitPrice novo preço unitário (pode ser null)
+     * @throws ItemNotFoundException se item não existir na lista
+     * @throws IllegalArgumentException se preço for negativo
+     */
+    public void updateItemUnitPrice(Long itemId, java.math.BigDecimal unitPrice) {
+        ListItem item = findItemById(itemId);
+        item.updateUnitPrice(unitPrice);
         this.updatedAt = Instant.now();
     }
 

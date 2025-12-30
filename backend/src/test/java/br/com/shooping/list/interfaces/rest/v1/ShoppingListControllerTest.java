@@ -2,8 +2,12 @@ package br.com.shooping.list.interfaces.rest.v1;
 
 import br.com.shooping.list.application.dto.shoppinglist.CreateShoppingListRequest;
 import br.com.shooping.list.application.dto.shoppinglist.UpdateShoppingListRequest;
+import br.com.shooping.list.domain.shoppinglist.ItemName;
+import br.com.shooping.list.domain.shoppinglist.Quantity;
 import br.com.shooping.list.domain.shoppinglist.ShoppingList;
 import br.com.shooping.list.domain.user.User;
+
+import java.math.BigDecimal;
 import br.com.shooping.list.infrastructure.persistence.shoppinglist.JpaShoppingListRepository;
 import br.com.shooping.list.infrastructure.security.JwtService;
 import br.com.shooping.list.domain.user.UserRepository;
@@ -229,6 +233,96 @@ class ShoppingListControllerTest {
     void shouldReturn401WhenListingWithoutToken() throws Exception {
         // Act & Assert
         mockMvc.perform(get("/api/v1/lists"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    // ==================== GET /api/v1/lists/{id} ====================
+
+    @Test
+    @DisplayName("GET /api/v1/lists/{id} - Deve retornar lista com itens com sucesso")
+    void shouldGetListByIdWithItemsSuccessfully() throws Exception {
+        // Arrange
+        ShoppingList list = ShoppingList.create(testUser.getId(), "Lista da Feira", "Compras semanais");
+        list.addItem(ItemName.of("Arroz"), Quantity.of(new BigDecimal("2.0")), "kg", null);
+        list.addItem(ItemName.of("Feijão"), Quantity.of(new BigDecimal("1.0")), "kg", null);
+        list = shoppingListRepository.save(list);
+
+        // Act & Assert
+        mockMvc.perform(get("/api/v1/lists/" + list.getId())
+                        .header("Authorization", "Bearer " + validToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id", is(list.getId().intValue())))
+                .andExpect(jsonPath("$.ownerId", is(testUser.getId().intValue())))
+                .andExpect(jsonPath("$.title", is("Lista da Feira")))
+                .andExpect(jsonPath("$.description", is("Compras semanais")))
+                .andExpect(jsonPath("$.items", notNullValue()))
+                .andExpect(jsonPath("$.items", hasSize(2)))
+                .andExpect(jsonPath("$.items[0].name", is("Arroz")))
+                .andExpect(jsonPath("$.items[0].quantity").value(2.0))
+                .andExpect(jsonPath("$.items[0].unit", is("kg")))
+                .andExpect(jsonPath("$.items[0].status", is("PENDING")))
+                .andExpect(jsonPath("$.items[1].name", is("Feijão")))
+                .andExpect(jsonPath("$.itemsCount", is(2)))
+                .andExpect(jsonPath("$.pendingItemsCount", is(2)))
+                .andExpect(jsonPath("$.purchasedItemsCount", is(0)))
+                .andExpect(jsonPath("$.createdAt", notNullValue()))
+                .andExpect(jsonPath("$.updatedAt", notNullValue()));
+    }
+
+    @Test
+    @DisplayName("GET /api/v1/lists/{id} - Deve retornar lista vazia (sem itens)")
+    void shouldGetListByIdWithoutItems() throws Exception {
+        // Arrange
+        ShoppingList list = ShoppingList.create(testUser.getId(), "Lista Vazia", null);
+        list = shoppingListRepository.save(list);
+
+        // Act & Assert
+        mockMvc.perform(get("/api/v1/lists/" + list.getId())
+                        .header("Authorization", "Bearer " + validToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id", is(list.getId().intValue())))
+                .andExpect(jsonPath("$.title", is("Lista Vazia")))
+                .andExpect(jsonPath("$.items", notNullValue()))
+                .andExpect(jsonPath("$.items", hasSize(0)))
+                .andExpect(jsonPath("$.itemsCount", is(0)))
+                .andExpect(jsonPath("$.pendingItemsCount", is(0)))
+                .andExpect(jsonPath("$.purchasedItemsCount", is(0)));
+    }
+
+    @Test
+    @DisplayName("GET /api/v1/lists/{id} - Deve retornar 404 quando lista não existe")
+    void shouldReturn404WhenListNotFound() throws Exception {
+        // Act & Assert
+        mockMvc.perform(get("/api/v1/lists/99999")
+                        .header("Authorization", "Bearer " + validToken))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("GET /api/v1/lists/{id} - Deve retornar 403 quando lista pertence a outro usuário")
+    void shouldReturn403WhenListBelongsToAnotherUser() throws Exception {
+        // Arrange - Criar outro usuário com lista
+        User anotherUser = User.createLocalUser("another@email.com", "Another User", "hash");
+        anotherUser = userRepository.save(anotherUser);
+
+        ShoppingList otherList = ShoppingList.create(anotherUser.getId(), "Lista de Outro", null);
+        otherList = shoppingListRepository.save(otherList);
+
+        // Act & Assert
+        mockMvc.perform(get("/api/v1/lists/" + otherList.getId())
+                        .header("Authorization", "Bearer " + validToken))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("GET /api/v1/lists/{id} - Deve retornar 401 sem token JWT")
+    void shouldReturn401WhenGettingByIdWithoutToken() throws Exception {
+        // Arrange
+        ShoppingList list = ShoppingList.create(testUser.getId(), "Lista", null);
+        list = shoppingListRepository.save(list);
+
+        // Act & Assert
+        mockMvc.perform(get("/api/v1/lists/" + list.getId()))
                 .andExpect(status().isUnauthorized());
     }
 

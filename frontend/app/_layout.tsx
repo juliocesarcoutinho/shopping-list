@@ -55,6 +55,12 @@ function NavigationContent() {
           headerShown: true,
         }}
       />
+      <Stack.Screen
+        name='lists/[id]'
+        options={{
+          headerShown: false,
+        }}
+      />
     </Stack>
   );
 }

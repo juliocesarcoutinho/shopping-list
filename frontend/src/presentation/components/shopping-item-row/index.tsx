@@ -44,8 +44,11 @@ export const ShoppingItemRow: React.FC<ShoppingItemRowProps> = ({
 }) => {
   const theme = useAppTheme();
 
-  // Calcula subtotal se houver preço
-  const subtotal = unitPrice ? quantity * unitPrice : undefined;
+  // Calcula subtotal se houver preço válido
+  const subtotal =
+    unitPrice !== undefined && unitPrice !== null && unitPrice > 0
+      ? quantity * unitPrice
+      : undefined;
 
   // Formata valores monetários
   const formatCurrency = (value: number) => {
@@ -130,42 +133,47 @@ export const ShoppingItemRow: React.FC<ShoppingItemRowProps> = ({
 
       {/* Content */}
       <View style={styles.content}>
-        {/* Nome e Quantidade */}
-        <View style={styles.nameRow}>
-          <Text
-            style={[styles.name, { color: theme.colors.text }, isPurchased && styles.strikethrough]}
-            numberOfLines={2}
-            testID={testID ? `${testID}-name` : undefined}
-          >
-            {name}
-          </Text>
+        {/* Nome */}
+        <Text
+          style={[
+            styles.name,
+            { color: isPurchased ? theme.colors.textSecondary : theme.colors.primary },
+            isPurchased && styles.strikethrough,
+          ]}
+          numberOfLines={2}
+          testID={testID ? `${testID}-name` : undefined}
+        >
+          {name}
+        </Text>
+
+        {/* Quantidade, Preço Unitário e Subtotal */}
+        <View style={styles.detailsRow}>
           <Text
             style={[styles.quantity, { color: theme.colors.textSecondary }]}
             testID={testID ? `${testID}-quantity` : undefined}
           >
+            #{' '}
             {quantity}x
           </Text>
-        </View>
-
-        {/* Preço Unitário e Subtotal (se houver) */}
-        {unitPrice !== undefined && (
-          <View style={styles.priceRow}>
-            <Text
-              style={[styles.unitPrice, { color: theme.colors.textSecondary }]}
-              testID={testID ? `${testID}-unit-price` : undefined}
-            >
-              {formatCurrency(unitPrice)} / un
-            </Text>
-            {subtotal && (
+          {unitPrice !== undefined && unitPrice !== null && unitPrice > 0 && (
+            <>
               <Text
-                style={[styles.subtotal, { color: theme.colors.primary }]}
-                testID={testID ? `${testID}-subtotal` : undefined}
+                style={[styles.unitPrice, { color: theme.colors.primary }]}
+                testID={testID ? `${testID}-unit-price` : undefined}
               >
-                {formatCurrency(subtotal)}
+                $ {formatCurrency(unitPrice)}
               </Text>
-            )}
-          </View>
-        )}
+              {subtotal && subtotal > 0 && (
+                <Text
+                  style={[styles.subtotal, { color: theme.colors.textSecondary }]}
+                  testID={testID ? `${testID}-subtotal` : undefined}
+                >
+                  (total: {formatCurrency(subtotal)})
+                </Text>
+              )}
+            </>
+          )}
+        </View>
       </View>
     </TouchableOpacity>
   );
@@ -174,65 +182,57 @@ export const ShoppingItemRow: React.FC<ShoppingItemRowProps> = ({
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
+    alignItems: 'flex-start',
+    paddingVertical: 16,
     paddingHorizontal: 16,
-    borderRadius: 8,
+    borderRadius: 12,
     borderWidth: 1,
-    marginBottom: 8,
-    minHeight: 60,
+    marginBottom: 12,
+    minHeight: 70,
   },
 
   // Checkbox
   checkbox: {
     width: 24,
     height: 24,
-    borderRadius: 6,
+    borderRadius: 12,
     borderWidth: 2,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
+    marginTop: 2,
   },
 
   // Content
   content: {
     flex: 1,
   },
-  nameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 4,
-  },
   name: {
     fontSize: 16,
-    fontWeight: '500',
-    flex: 1,
-    marginRight: 8,
+    fontWeight: '600',
+    marginBottom: 6,
   },
   strikethrough: {
     textDecorationLine: 'line-through',
     opacity: 0.6,
   },
-  quantity: {
-    fontSize: 14,
-    fontWeight: '600',
-    minWidth: 35,
-    textAlign: 'right',
-  },
-
-  // Prices
-  priceRow: {
+  detailsRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  quantity: {
+    fontSize: 14,
+    fontWeight: '500',
   },
   unitPrice: {
-    fontSize: 12,
+    fontSize: 14,
+    fontWeight: '500',
   },
   subtotal: {
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '400',
   },
 
   // Loading Skeleton

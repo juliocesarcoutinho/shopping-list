@@ -89,6 +89,11 @@ public class UpdateItemUseCase {
             list.updateItemUnit(itemId, request.getUnit());
         }
 
+        if (request.getUnitPrice() != null) {
+            log.debug("Atualizando preço unitário do item: itemId={}, novoPreco={}", itemId, request.getUnitPrice());
+            list.updateItemUnitPrice(itemId, request.getUnitPrice());
+        }
+
         if (request.getStatus() != null) {
             log.debug("Atualizando status do item: itemId={}, novoStatus={}", itemId, request.getStatus());
             if ("PURCHASED".equals(request.getStatus())) {
@@ -112,6 +117,7 @@ public class UpdateItemUseCase {
                 .name(updatedItem.getName().getValue())
                 .quantity(updatedItem.getQuantity())
                 .unit(updatedItem.getUnit())
+                .unitPrice(updatedItem.getUnitPrice())
                 .status(updatedItem.getStatus().name())
                 .createdAt(updatedItem.getCreatedAt())
                 .updatedAt(updatedItem.getUpdatedAt())

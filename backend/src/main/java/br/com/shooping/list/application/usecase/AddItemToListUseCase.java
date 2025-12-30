@@ -61,7 +61,7 @@ public class AddItemToListUseCase {
         // Delegar criação ao domínio (valida duplicatas e limite)
         ItemName itemName = ItemName.of(request.getName());
         Quantity quantity = Quantity.of(request.getQuantity());
-        ListItem item = list.addItem(itemName, quantity, request.getUnit());
+        ListItem item = list.addItem(itemName, quantity, request.getUnit(), request.getUnitPrice());
 
         // Persistir alterações (flush para gerar IDs)
         ShoppingList savedList = shoppingListRepository.save(list);
@@ -81,6 +81,7 @@ public class AddItemToListUseCase {
                 .name(savedItem.getName().getValue())
                 .quantity(savedItem.getQuantity())
                 .unit(savedItem.getUnit())
+                .unitPrice(savedItem.getUnitPrice())
                 .status(savedItem.getStatus().name())
                 .createdAt(savedItem.getCreatedAt())
                 .updatedAt(savedItem.getUpdatedAt())
