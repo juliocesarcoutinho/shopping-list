@@ -6,19 +6,21 @@
 
 import React, { useState } from 'react';
 import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
   ActivityIndicator,
+  StyleSheet,
+  Text,
   TextInput,
   TextInputProps,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 
 import { useAppTheme } from '../hooks';
 
 // Export custom components
 export { ConfirmModal } from './confirm-modal';
+export { ShoppingItemRow } from './shopping-item-row';
+export type { ShoppingItemRowProps } from './shopping-item-row';
 export { Toast } from './toast';
 
 // Button Component (melhorado com loading state)
