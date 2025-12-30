@@ -37,33 +37,6 @@ export class CreateShoppingListUseCase {
   }
 }
 
-export class AddItemToListUseCase {
-  constructor(
-    private shoppingItemRepository: ShoppingItemRepository,
-    private shoppingListRepository: ShoppingListRepository
-  ) {}
-
-  async execute(listId: string, itemName: string, quantity: number = 1): Promise<ShoppingItem> {
-    if (!itemName.trim()) {
-      throw new Error('Item name cannot be empty');
-    }
-
-    if (quantity <= 0) {
-      throw new Error('Quantity must be greater than 0');
-    }
-
-    const list = await this.shoppingListRepository.getById(listId);
-    if (!list) {
-      throw new Error('Shopping list not found');
-    }
-
-    return this.shoppingItemRepository.create(listId, {
-      name: itemName.trim(),
-      quantity,
-      isPurchased: false,
-    });
-  }
-}
 
 export class ToggleItemCompletionUseCase {
   constructor(private shoppingItemRepository: ShoppingItemRepository) {}
